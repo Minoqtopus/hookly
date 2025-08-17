@@ -4,9 +4,9 @@ import AuthModal from '@/app/components/AuthModal';
 import { AlertCircle, ArrowLeft, Home, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 
-export default function AuthErrorPage() {
+function AuthErrorPageContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -149,5 +149,13 @@ export default function AuthErrorPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function AuthErrorPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AuthErrorPageContent />
+    </Suspense>
   );
 }

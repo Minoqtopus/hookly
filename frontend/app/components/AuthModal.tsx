@@ -109,13 +109,15 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
         return {
           title: '🎉 Love Your Ad?',
           subtitle: 'Save it forever and create unlimited more!',
-          urgency: `Demo expires in ${formatTime(timeLeft)}`,
+          urgency: timeLeft > 60 ? 'Demo ending soon' : `Demo expires in ${formatTime(timeLeft)}`,
           buttonText: 'Save My Ad with Google',
           benefits: [
             'Keep this amazing ad forever',
             'Generate unlimited variations',
-            'Access advanced features'
-          ]
+            'Access advanced features',
+            'Track performance metrics'
+          ],
+          urgencyStyle: timeLeft <= 60 ? 'text-red-600 font-semibold' : 'text-blue-600'
         };
       case 'try_again':
         return {
@@ -126,33 +128,52 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
           benefits: [
             'Unlimited ad generations',
             'Save and organize your ads',
-            'Track performance metrics'
-          ]
+            'Track performance metrics',
+            'Access premium templates'
+          ],
+          urgencyStyle: 'text-blue-600'
+        };
+      case 'nav_signup':
+        return {
+          title: '🚀 Start Creating Viral Ads',
+          subtitle: 'Join the AI revolution in advertising',
+          urgency: 'Free plan: 3 generations per day',
+          buttonText: 'Sign Up with Google',
+          benefits: [
+            '3 free generations daily',
+            'Access to all features',
+            'Save your best work',
+            'Upgrade anytime'
+          ],
+          urgencyStyle: 'text-green-600'
         };
       case 'login':
         return {
-          title: 'Welcome Back! 👋',
-          subtitle: 'Continue creating viral ads in seconds',
-          urgency: null,
-          buttonText: 'Continue with Google',
+          title: 'Welcome Back!',
+          subtitle: 'Continue creating amazing ads',
+          urgency: 'Your work is waiting for you',
+          buttonText: 'Sign In with Google',
           benefits: [
-            'All your saved ad campaigns',
-            'Generation history and analytics',
-            'Favorite ads collection',
-            'Custom templates (Pro)'
-          ]
+            'Access your saved ads',
+            'Continue where you left off',
+            'Track your progress',
+            'Generate more content'
+          ],
+          urgencyStyle: 'text-blue-600'
         };
       default:
         return {
-          title: '✨ Join Hookly',
-          subtitle: 'Start creating viral ads in seconds',
-          urgency: null,
-          buttonText: 'Sign Up with Google',
+          title: '🚀 Start Creating',
+          subtitle: 'Join thousands of marketers',
+          urgency: 'Free to start, upgrade anytime',
+          buttonText: 'Get Started with Google',
           benefits: [
-            'Free forever plan available',
-            'No credit card required',
-            'Start generating immediately'
-          ]
+            'Create viral ads instantly',
+            'Save and organize your work',
+            'Track performance metrics',
+            'Access premium features'
+          ],
+          urgencyStyle: 'text-blue-600'
         };
     }
   };
@@ -208,6 +229,13 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                 </div>
               )}
             </div>
+
+            {/* Urgency message */}
+            {content.urgency && (
+              <div className={`text-center text-sm mb-4 ${content.urgencyStyle}`}>
+                {content.urgency}
+              </div>
+            )}
 
             {/* Demo Preview (if available) */}
             {demoData && triggerSource === 'demo_save' && (

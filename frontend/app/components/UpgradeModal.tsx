@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Crown, Check, Zap, TrendingUp, Shield, Star } from 'lucide-react';
 import { useUpgrade } from '@/app/lib/useUpgrade';
+import { Check, Crown, Shield, Star, TrendingUp, X, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import ScarcityIndicator from './ScarcityIndicator';
 
 interface UpgradeModalProps {
@@ -36,21 +36,31 @@ export default function UpgradeModal({ isOpen, onClose, source = 'dashboard' }: 
     switch (source) {
       case 'limit_reached':
         return {
-          title: '🚫 Daily Limit Reached',
-          subtitle: 'Upgrade to Pro for unlimited generations',
-          urgency: 'Don\'t lose momentum - upgrade now!',
+          title: '🎯 Ready for More?',
+          subtitle: 'You\'ve hit your daily limit - time to unlock unlimited access!',
+          urgency: 'Don\'t lose momentum - upgrade now and keep creating',
+          cta: 'Unlock Unlimited Access',
         };
       case 'feature_gate':
         return {
-          title: '🔒 Pro Feature',
-          subtitle: 'Unlock advanced features with Pro',
+          title: '🚀 You\'re Loving This Tool!',
+          subtitle: 'Ready to unlock advanced features and unlimited generations?',
           urgency: 'Join 1,000+ Pro creators making $10K+/month',
+          cta: 'Upgrade to Pro',
+        };
+      case 'nav':
+        return {
+          title: '👑 Start Your Pro Journey',
+          subtitle: 'Unlock your full creative potential with unlimited access',
+          urgency: 'Limited time: Save 40% on yearly plans',
+          cta: 'Get Started',
         };
       default:
         return {
           title: '👑 Upgrade to Pro',
           subtitle: 'Unlock your full creative potential',
           urgency: 'Limited time: Save 40% on yearly plans',
+          cta: 'Upgrade Now',
         };
     }
   };
@@ -218,18 +228,9 @@ export default function UpgradeModal({ isOpen, onClose, source = 'dashboard' }: 
               <button
                 onClick={handleUpgrade}
                 disabled={isUpgrading}
-                className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-primary-700 hover:to-secondary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isUpgrading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2 inline-block"></div>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    Start Free Trial - Just ${plans[selectedPlan].dailyPrice}/day
-                  </>
-                )}
+                {isUpgrading ? 'Processing...' : content.cta}
               </button>
               
               <button

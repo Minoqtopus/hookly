@@ -2,50 +2,23 @@
 
 import AuthModal from '@/app/components/AuthModal';
 import ScarcityIndicator from '@/app/components/ScarcityIndicator';
-import SocialProofLoader from '@/app/components/SocialProofLoader';
 import { useAuth } from '@/app/lib/AppContext';
-import { useGeneration } from '@/app/lib/useGeneration';
 import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import { ArrowRight, CheckCircle, Play, Sparkles, Star, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [showDemo, setShowDemo] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authTrigger, setAuthTrigger] = useState<'demo_save' | 'try_again' | 'nav_signup' | 'login'>('nav_signup');
-  const [demoData, setDemoData] = useState({
-    productName: 'Fitness Protein Powder',
-    niche: 'Health & Fitness',
-    targetAudience: 'Fitness enthusiasts aged 25-35',
-    generatedAd: null as any
-  });
-
-  const { isGenerating, generatedAd, generateGuestAd, clearGeneration } = useGeneration();
-
+  const [authTrigger, setAuthTrigger] = useState<'nav_signup' | 'login'>('nav_signup');
+  
   // Apply route guard - redirect authenticated users to dashboard
   useRouteGuard(routeConfigs.landing);
-
-  // Auto-start demo on page load for immediate engagement
-  useEffect(() => {
-    const timer = setTimeout(() => setShowDemo(true), 1000);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleTryDemo = () => {
     // Navigate to generate page with demo mode
     window.location.href = '/generate?demo=true&timer=300';
-  };
-
-  const handleSaveAd = () => {
-    setAuthTrigger('demo_save');
-    setShowAuthModal(true);
-  };
-
-  const handleTryAgain = () => {
-    setAuthTrigger('try_again');
-    setShowAuthModal(true);
   };
 
   return (
@@ -117,19 +90,9 @@ export default function HomePage() {
               <button 
                 onClick={handleTryDemo}
                 className="btn-primary text-lg px-8 py-4 flex items-center justify-center"
-                disabled={isGenerating}
               >
-                {isGenerating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Generating Magic...
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-5 w-5 mr-2" />
-                    Try Free Demo
-                  </>
-                )}
+                <Play className="h-5 w-5 mr-2" />
+                Try Free Demo
               </button>
               <Link href="/examples" className="btn-secondary text-lg px-8 py-4 flex items-center justify-center">
                 See Examples
@@ -160,121 +123,6 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-r from-primary-100/20 to-secondary-100/20 transform skew-y-1"></div>
         </div>
       </div>
-
-      {/* Live Demo Section */}
-      {showDemo && (
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="card">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
-                Watch AI Create Your Ad
-              </h2>
-              <p className="text-gray-600">
-                See how our AI generates viral-ready content in real-time
-              </p>
-            </div>
-
-            {/* Demo Form */}
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Product Name
-                  </label>
-                  <input 
-                    type="text" 
-                    placeholder="Fitness Protein Powder"
-                    className="input-field"
-                    defaultValue="Fitness Protein Powder"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Niche
-                  </label>
-                  <input 
-                    type="text" 
-                    placeholder="Health & Fitness"
-                    className="input-field"
-                    defaultValue="Health & Fitness"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Target Audience
-                  </label>
-                  <input 
-                    type="text" 
-                    placeholder="Fitness enthusiasts aged 25-35"
-                    className="input-field"
-                    defaultValue="Fitness enthusiasts aged 25-35"
-                  />
-                </div>
-                <button 
-                  onClick={handleTryDemo}
-                  className="btn-primary w-full"
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? 'Generating...' : 'Generate My Ad'}
-                </button>
-              </div>
-
-              {/* Demo Results */}
-              <div id="demo-results" className="space-y-4">
-                {isGenerating ? (
-                  <div className="flex items-center justify-center h-64">
-                    <SocialProofLoader size="large" />
-                  </div>
-                ) : (
-                  <div className="bg-gray-50 rounded-lg p-6 space-y-6">
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">🎯 Hook</h4>
-                      <p className="text-gray-700 italic">
-                        {generatedAd?.hook || demoData.generatedAd?.hook || "I was skeptical about protein powders until I tried this one thing..."}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">📜 Script</h4>
-                      <p className="text-gray-700">
-                        {generatedAd?.script || demoData.generatedAd?.script || "Okay guys, I need to share this because it's actually insane. I've been trying different protein powders for months and nothing was giving me the results I wanted. Then my trainer recommended this one and within 2 weeks I could see the difference..."}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">🎬 Visual Prompts</h4>
-                      <ul className="text-gray-700 space-y-1">
-                        {(generatedAd?.visuals || demoData.generatedAd?.visuals || [
-                          "Close-up of mixing the protein shake",
-                          "Before/after transformation shots",
-                          "Workout montage with energy boost",
-                          "Product placement on kitchen counter"
-                        ]).map((visual: string, index: number) => (
-                          <li key={index}>• {visual}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    
-                    {/* Upgrade Prompt */}
-                    <div className="bg-gradient-to-r from-primary-50 to-secondary-50 rounded-lg p-4 border border-primary-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-gray-900 mb-1">Love this ad?</p>
-                          <p className="text-sm text-gray-600">Sign up to save and create unlimited ads!</p>
-                        </div>
-                        <button 
-                          onClick={handleSaveAd}
-                          className="btn-primary text-sm px-4 py-2"
-                        >
-                          Save & Continue
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Social Proof Section */}
       <div className="bg-white py-16">
@@ -308,10 +156,6 @@ export default function HomePage() {
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
-        demoData={{
-          ...demoData,
-          generatedAd: generatedAd || demoData.generatedAd
-        }}
         triggerSource={authTrigger}
       />
     </div>

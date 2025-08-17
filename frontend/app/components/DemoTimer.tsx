@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Clock, AlertTriangle, Zap } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Clock, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface DemoTimerProps {
   onExpiry: () => void;
@@ -88,13 +88,13 @@ export default function DemoTimer({ onExpiry, onAlmostExpired, className = '' }:
   const getColorClasses = () => {
     switch (urgencyLevel) {
       case 'critical':
-        return 'bg-red-500 text-white border-red-600 animate-pulse';
+        return 'bg-red-50 text-red-800 border-red-200';
       case 'warning':
-        return 'bg-orange-500 text-white border-orange-600';
+        return 'bg-orange-50 text-orange-800 border-orange-200';
       case 'attention':
-        return 'bg-yellow-500 text-white border-yellow-600';
+        return 'bg-yellow-50 text-yellow-800 border-yellow-200';
       default:
-        return 'bg-primary-500 text-white border-primary-600';
+        return 'bg-gray-50 text-gray-800 border-gray-200';
     }
   };
 
@@ -112,13 +112,26 @@ export default function DemoTimer({ onExpiry, onAlmostExpired, className = '' }:
   const getUrgencyMessage = () => {
     switch (urgencyLevel) {
       case 'critical':
-        return 'Demo expiring soon!';
+        return 'Demo ending soon';
       case 'warning':
-        return 'Less than 1 minute left!';
+        return 'Demo ending soon';
       case 'attention':
-        return 'Demo time running low';
+        return 'Demo ending soon';
       default:
-        return 'Demo time remaining';
+        return 'Demo in progress';
+    }
+  };
+
+  const getUrgencySubtext = () => {
+    switch (urgencyLevel) {
+      case 'critical':
+        return 'Sign up to save your work';
+      case 'warning':
+        return 'Sign up to save your work';
+      case 'attention':
+        return 'Sign up to save your work';
+      default:
+        return '';
     }
   };
 
@@ -126,8 +139,22 @@ export default function DemoTimer({ onExpiry, onAlmostExpired, className = '' }:
     return (
       <div className={`rounded-lg border-2 p-4 bg-red-50 border-red-200 text-center ${className}`}>
         <AlertTriangle className="h-6 w-6 text-red-600 mx-auto mb-2" />
-        <div className="font-semibold text-red-800">Demo Time Expired!</div>
-        <div className="text-sm text-red-600">Sign up to continue creating ads</div>
+        <div className="font-semibold text-red-800">Demo Complete!</div>
+        <div className="text-sm text-red-600">Sign up to save your work and continue creating</div>
+      </div>
+    );
+  }
+
+  // Don't show timer for first 4 minutes to reduce anxiety
+  if (timeLeft > 240) {
+    return (
+      <div className={`rounded-lg border p-2 bg-gray-50 border-gray-200 text-center ${className}`}>
+        <div className="flex items-center justify-center space-x-2">
+          <CheckCircle className="h-3 w-3 text-gray-600" />
+          <div className="text-xs text-gray-600">
+            Demo Active
+          </div>
+        </div>
       </div>
     );
   }
@@ -139,21 +166,16 @@ export default function DemoTimer({ onExpiry, onAlmostExpired, className = '' }:
         <div className="font-semibold text-sm">
           {getUrgencyMessage()}
         </div>
-        <div className="font-mono text-lg font-bold">
-          {formatTime(timeLeft)}
-        </div>
+        {timeLeft <= 120 && (
+          <div className="font-mono text-lg font-bold">
+            {formatTime(timeLeft)}
+          </div>
+        )}
       </div>
       
-      {urgencyLevel !== 'normal' && (
-        <div className="text-center text-xs mt-1 opacity-90">
-          {urgencyLevel === 'critical' 
-            ? 'Sign up now to save your progress!'
-            : urgencyLevel === 'warning'
-            ? 'Create account to continue unlimited'
-            : 'Sign up for unlimited generations'
-          }
-        </div>
-      )}
+      <div className="text-center text-xs mt-1 opacity-90">
+        {getUrgencySubtext()}
+      </div>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import VariationsGenerator from '@/app/components/VariationsGenerator';
 import { useAuth, useUserStats } from '@/app/lib/AppContext';
 import { AuthService } from '@/app/lib/auth';
 import { LocalSaveService } from '@/app/lib/localSaves';
+import { useDemoOptimization } from '@/app/lib/useDemoOptimization';
 import { useDemoTimer } from '@/app/lib/useDemoTimer';
 import { useGeneration } from '@/app/lib/useGeneration';
 import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
@@ -47,6 +48,7 @@ function GeneratePageContent() {
   const userStats = useUserStats();
   const { isGenerating, generatedAd, error, generateAd, generateGuestAd, clearError } = useGeneration();
   const demoTimer = useDemoTimer();
+  const demoOptimization = useDemoOptimization();
   
   // Apply route guard - allow both authenticated and unauthenticated users
   useRouteGuard(routeConfigs.generate);
@@ -117,6 +119,22 @@ function GeneratePageContent() {
     }
   }, [restored, isDemoMode, demoTimer, searchParams]);
 
+  // Smart signup triggers based on user engagement
+  useEffect(() => {
+    // Only show signup triggers when in demo mode and user has engaged
+    if (demoOptimization.shouldShowSignup && !showUpgradeModal && !showAuthModal && isDemoMode) {
+      // Show auth modal for signup instead of upgrade
+      setShowAuthModal(true);
+    }
+  }, [demoOptimization.shouldShowSignup, showUpgradeModal, showAuthModal, isDemoMode]);
+
+  // Track generation for smart triggers
+  useEffect(() => {
+    if (generatedAd && demoTimer.isActive) {
+      demoOptimization.trackGeneration();
+    }
+  }, [generatedAd, demoTimer.isActive, demoOptimization]);
+
   useEffect(() => {
     // Load teams when share modal is opened
     if (showShareModal && user?.plan === 'agency') {
@@ -125,13 +143,13 @@ function GeneratePageContent() {
   }, [showShareModal, user?.plan]);
 
   const handleDemoExpiry = () => {
-    setUpgradeSource('limit_reached');
+    // Show auth modal for signup instead of upgrade
     setShowAuthModal(true);
   };
 
   const handleDemoAlmostExpired = () => {
-    // Show a gentle nudge when 1 minute left
-    // Could trigger a toast notification or modal preview
+    // Show gentle signup nudge when 1 minute left
+    setShowAuthModal(true);
   };
 
   const handleGenerate = async () => {
@@ -335,10 +353,12 @@ function GeneratePageContent() {
             
             {/* Demo Timer or Usage Indicator */}
             {demoTimer.isActive ? (
-              <DemoTimer 
-                onExpiry={handleDemoExpiry}
-                onAlmostExpired={handleDemoAlmostExpired}
-              />
+              <div className="space-y-4">
+                <DemoTimer 
+                  onExpiry={handleDemoExpiry}
+                  onAlmostExpired={handleDemoAlmostExpired}
+                />
+              </div>
             ) : user && (user.plan === 'free' || user.plan === 'starter') && remainingGenerations !== null && (
               <div className="flex items-center space-x-2">
                 <div className="text-sm text-gray-600">
