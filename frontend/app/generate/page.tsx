@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Sparkles, 
@@ -17,7 +17,8 @@ import {
   TrendingUp,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Users
 } from 'lucide-react';
 import { useAuth, useUserStats } from '@/app/lib/AppContext';
 import { useGeneration } from '@/app/lib/useGeneration';
@@ -28,24 +29,29 @@ import ScarcityIndicator from '@/app/components/ScarcityIndicator';
 import TemplateLibrary from '@/app/components/TemplateLibrary';
 import ExportModal from '@/app/components/ExportModal';
 import VariationsGenerator from '@/app/components/VariationsGenerator';
+import DemoTimer from '@/app/components/DemoTimer';
 import { LocalSaveService } from '@/app/lib/localSaves';
+import { useDemoTimer } from '@/app/lib/useDemoTimer';
 import Link from 'next/link';
 
-export default function GeneratePage() {
+function GeneratePageContent() {
   const [showResult, setShowResult] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showVariations, setShowVariations] = useState(false);
-  const [upgradeSource, setUpgradeSource] = useState<'limit_reached' | 'feature_gate' | 'generator'>('feature_gate');
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [upgradeSource, setUpgradeSource] = useState<'dashboard' | 'limit_reached' | 'feature_gate' | 'nav'>('feature_gate');
   
   const { user, isAuthenticated } = useAuth();
   const userStats = useUserStats();
   const { isGenerating, generatedAd, error, generateAd, generateGuestAd, clearError } = useGeneration();
+  const demoTimer = useDemoTimer();
   
   const router = useRouter();
   const searchParams = useSearchParams();
   const restored = searchParams.get('restored');
+  const isDemoMode = searchParams.get('demo') === 'true';
 
   const [formData, setFormData] = useState({
     productName: '',
@@ -53,10 +59,22 @@ export default function GeneratePage() {
     targetAudience: '',
   });
 
+  const [userTeams, setUserTeams] = useState<any[]>([]);
+  const [shareTitle, setShareTitle] = useState('');
+  const [shareNotes, setShareNotes] = useState('');
+  const [selectedTeamId, setSelectedTeamId] = useState('');
+
   const dailyLimit = user?.plan === 'free' ? 3 : (user?.plan === 'starter' ? 50 : null);
   const remainingGenerations = dailyLimit ? Math.max(0, dailyLimit - (userStats?.generationsToday || 0)) : null;
 
   useEffect(() => {
+    // Initialize demo timer if in demo mode
+    if (isDemoMode && !demoTimer.isActive) {
+      const timerParam = searchParams.get('timer');
+      const duration = timerParam ? parseInt(timerParam) : 300; // Default 5 minutes
+      demoTimer.startDemo(duration);
+    }
+
     // Restore demo data if coming from auth flow
     if (restored) {
       const pendingDemo = sessionStorage.getItem('pendingDemoData');
@@ -82,12 +100,63 @@ export default function GeneratePage() {
       setFormData(templateData);
       sessionStorage.removeItem('selectedTemplate');
     }
-  }, [restored]);
+
+    // Load demo data if available
+    const demoData = sessionStorage.getItem('demo_data');
+    if (demoData && isDemoMode) {
+      const data = JSON.parse(demoData);
+      setFormData({
+        productName: data.productName,
+        niche: data.niche,
+        targetAudience: data.targetAudience,
+      });
+      sessionStorage.removeItem('demo_data');
+    }
+  }, [restored, isDemoMode, demoTimer, searchParams]);
+
+  useEffect(() => {
+    // Load teams when share modal is opened
+    if (showShareModal && user?.plan === 'agency') {
+      loadUserTeams();
+    }
+  }, [showShareModal, user?.plan]);
+
+  const handleDemoExpiry = () => {
+    setUpgradeSource('limit_reached');
+    setShowAuthModal(true);
+  };
+
+  const handleDemoAlmostExpired = () => {
+    // Show a gentle nudge when 1 minute left
+    // Could trigger a toast notification or modal preview
+  };
 
   const handleGenerate = async () => {
     clearError();
     
-    // Check if user is authenticated
+    // Check if demo has expired
+    if (demoTimer.isExpired && !isAuthenticated) {
+      handleDemoExpiry();
+      return;
+    }
+    
+    // For demo mode, use guest generation
+    if (isDemoMode && !isAuthenticated) {
+      setShowResult(false);
+      
+      const result = await generateGuestAd({
+        productName: formData.productName,
+        niche: formData.niche,
+        targetAudience: formData.targetAudience,
+      });
+
+      if (result) {
+        setShowResult(true);
+      }
+      return;
+    }
+    
+    // Check if user is authenticated for non-demo mode
     if (!isAuthenticated) {
       setShowAuthModal(true);
       return;
@@ -114,7 +183,7 @@ export default function GeneratePage() {
       // Show upgrade modal after 2nd generation for free/starter users
       if ((user?.plan === 'free' || user?.plan === 'starter') && userStats?.totalGenerations === 2) {
         setTimeout(() => {
-          setUpgradeSource('generator');
+          setUpgradeSource('feature_gate');
           setShowUpgradeModal(true);
         }, 3000); // Show 3 seconds after results appear
       }
@@ -133,7 +202,7 @@ export default function GeneratePage() {
       
       if (copyCount === 3) {
         setTimeout(() => {
-          setUpgradeSource('generator');
+          setUpgradeSource('feature_gate');
           setShowUpgradeModal(true);
         }, 1000);
       }
@@ -145,12 +214,12 @@ export default function GeneratePage() {
       // For unauthenticated users, save locally (up to 3 saves)
       const saveResult = LocalSaveService.saveAd({
         title: `${formData.productName} Ad`,
-        hook: generatedAd.hook,
-        script: generatedAd.script,
-        visuals: generatedAd.visuals,
+        hook: generatedAd?.hook || '',
+        script: generatedAd?.script || '',
+        visuals: generatedAd?.visuals || [],
         niche: formData.niche,
         targetAudience: formData.targetAudience,
-        performance: generatedAd.performance,
+        performance: generatedAd?.performance || { estimatedViews: 0, estimatedCTR: 0, viralScore: 0 },
         isFavorite: true,
       });
 
@@ -179,11 +248,64 @@ export default function GeneratePage() {
     document.querySelector('.card')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const loadUserTeams = async () => {
+    if (user?.plan !== 'agency') return;
+    
+    try {
+      const response = await fetch('/api/teams', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUserTeams(data.teams);
+        if (data.teams.length > 0) {
+          setSelectedTeamId(data.teams[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load teams:', error);
+    }
+  };
+
+  const handleShareWithTeam = async () => {
+    if (!selectedTeamId || !generatedAd) return;
+    
+    try {
+      const response = await fetch(`/api/teams/${selectedTeamId}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        body: JSON.stringify({
+          generationId: generatedAd.id, // We'll need to get this from the generation response
+          title: shareTitle || `${formData.productName} Ad`,
+          notes: shareNotes,
+        }),
+      });
+
+      if (response.ok) {
+        alert('Ad shared with team successfully!');
+        setShowShareModal(false);
+        setShareTitle('');
+        setShareNotes('');
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Failed to share with team');
+      }
+    } catch (error) {
+      alert('Failed to share with team');
+    }
+  };
+
   const suggestedInputs = [
-    { productName: 'Wireless Earbuds', niche: 'Tech', audience: 'Music lovers aged 18-35' },
-    { productName: 'Skincare Serum', niche: 'Beauty', audience: 'Women aged 25-45 with skin concerns' },
-    { productName: 'Protein Powder', niche: 'Fitness', audience: 'Gym enthusiasts and athletes' },
-    { productName: 'Coffee Blend', niche: 'Food & Beverage', audience: 'Coffee enthusiasts aged 25-50' },
+    { productName: 'Wireless Earbuds', niche: 'Tech', targetAudience: 'Music lovers aged 18-35' },
+    { productName: 'Skincare Serum', niche: 'Beauty', targetAudience: 'Women aged 25-45 with skin concerns' },
+    { productName: 'Protein Powder', niche: 'Fitness', targetAudience: 'Gym enthusiasts and athletes' },
+    { productName: 'Coffee Blend', niche: 'Food & Beverage', targetAudience: 'Coffee enthusiasts aged 25-50' },
   ];
 
   return (
@@ -202,8 +324,13 @@ export default function GeneratePage() {
               </div>
             </div>
             
-            {/* Usage Indicator */}
-            {user && (user.plan === 'free' || user.plan === 'starter') && remainingGenerations !== null && (
+            {/* Demo Timer or Usage Indicator */}
+            {demoTimer.isActive ? (
+              <DemoTimer 
+                onExpiry={handleDemoExpiry}
+                onAlmostExpired={handleDemoAlmostExpired}
+              />
+            ) : user && (user.plan === 'free' || user.plan === 'starter') && remainingGenerations !== null && (
               <div className="flex items-center space-x-2">
                 <div className="text-sm text-gray-600">
                   {remainingGenerations}/{dailyLimit} left {user.plan === 'starter' ? 'this month' : 'today'}
@@ -226,12 +353,23 @@ export default function GeneratePage() {
           <div className="space-y-8">
             {/* Title Section */}
             <div className="text-center">
+              {demoTimer.isActive && (
+                <div className="inline-flex items-center bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full mb-4">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  <span className="text-sm font-medium">
+                    Free Demo Mode - No signup required!
+                  </span>
+                </div>
+              )}
               <h1 className="text-3xl font-bold text-gray-900 mb-4">
                 Create Your Viral Ad ✨
               </h1>
               <p className="text-gray-600 max-w-2xl mx-auto">
                 Our AI analyzes millions of viral TikTok ads to create scripts that actually convert. 
-                Start with a proven template or create from scratch.
+                {demoTimer.isActive 
+                  ? " Try it free - no signup required for this demo!"
+                  : " Start with a proven template or create from scratch."
+                }
               </p>
             </div>
 
@@ -251,7 +389,7 @@ export default function GeneratePage() {
                     className="text-left p-3 border border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all duration-200"
                   >
                     <div className="font-medium text-gray-900">{suggestion.productName}</div>
-                    <div className="text-sm text-gray-600">{suggestion.niche} • {suggestion.audience}</div>
+                    <div className="text-sm text-gray-600">{suggestion.niche} • {suggestion.targetAudience}</div>
                   </button>
                 ))}
               </div>
@@ -424,19 +562,19 @@ export default function GeneratePage() {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-2xl font-bold text-blue-600">
-                    {(generatedAd.performance.estimatedViews / 1000).toFixed(0)}K
+                    {((generatedAd?.performance?.estimatedViews || 0) / 1000).toFixed(0)}K
                   </div>
                   <div className="text-xs text-gray-600">Est. Views</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-green-600">
-                    {generatedAd.performance.estimatedCTR}%
+                    {generatedAd?.performance?.estimatedCTR || 0}%
                   </div>
                   <div className="text-xs text-gray-600">Est. CTR</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-purple-600">
-                    {generatedAd.performance.viralScore}/10
+                    {generatedAd?.performance?.viralScore || 0}/10
                   </div>
                   <div className="text-xs text-gray-600">Viral Score</div>
                 </div>
@@ -458,7 +596,7 @@ export default function GeneratePage() {
                     Hook (First 3 seconds)
                   </h3>
                   <button
-                    onClick={() => handleCopyToClipboard(generatedAd.hook, 'Hook')}
+                    onClick={() => handleCopyToClipboard(generatedAd?.hook || '', 'Hook')}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     <Copy className="h-4 w-4" />
@@ -466,7 +604,7 @@ export default function GeneratePage() {
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
                   <p className="text-gray-800 font-medium italic">
-                    {generatedAd.hook}
+                    {generatedAd?.hook || ''}
                   </p>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
@@ -482,7 +620,7 @@ export default function GeneratePage() {
                     Full Script (30-60 seconds)
                   </h3>
                   <button
-                    onClick={() => handleCopyToClipboard(generatedAd.script, 'Script')}
+                    onClick={() => handleCopyToClipboard(generatedAd?.script || '', 'Script')}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     <Copy className="h-4 w-4" />
@@ -490,7 +628,7 @@ export default function GeneratePage() {
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
                   <p className="text-gray-800 leading-relaxed">
-                    {generatedAd.script}
+                    {generatedAd?.script || ''}
                   </p>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
@@ -506,14 +644,14 @@ export default function GeneratePage() {
                     Visual Prompts
                   </h3>
                   <button
-                    onClick={() => handleCopyToClipboard(generatedAd.visuals.join('\n'), 'Visual prompts')}
+                    onClick={() => handleCopyToClipboard((generatedAd?.visuals || []).join('\n'), 'Visual prompts')}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     <Copy className="h-4 w-4" />
                   </button>
                 </div>
                 <div className="space-y-2">
-                  {generatedAd.visuals.map((visual: string, index: number) => (
+                  {(generatedAd?.visuals || []).map((visual: string, index: number) => (
                     <div key={index} className="bg-gray-50 rounded-lg p-3">
                       <p className="text-gray-800 text-sm">
                         <span className="font-medium text-primary-600">Shot {index + 1}:</span> {visual}
@@ -533,7 +671,10 @@ export default function GeneratePage() {
                 <Heart className="h-4 w-4 mr-2" />
                 Save
               </button>
-              <button className="btn-secondary flex items-center justify-center">
+              <button 
+                onClick={() => setShowShareModal(true)}
+                className="btn-secondary flex items-center justify-center"
+              >
                 <Share2 className="h-4 w-4 mr-2" />
                 Share
               </button>
@@ -573,7 +714,7 @@ export default function GeneratePage() {
                   </p>
                   <button 
                     onClick={() => {
-                      setUpgradeSource('generator');
+                      setUpgradeSource('feature_gate');
                       setShowUpgradeModal(true);
                     }}
                     className="btn-primary"
@@ -616,6 +757,130 @@ export default function GeneratePage() {
           performance: generatedAd?.performance
         }}
       />
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Share Ad</h3>
+            
+            {user?.plan === 'agency' && userTeams.length > 0 ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Share with Team
+                  </label>
+                  <select
+                    value={selectedTeamId}
+                    onChange={(e) => setSelectedTeamId(e.target.value)}
+                    className="input-field"
+                  >
+                    {userTeams.map((team) => (
+                      <option key={team.id} value={team.id}>
+                        {team.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Title (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={shareTitle}
+                    onChange={(e) => setShareTitle(e.target.value)}
+                    placeholder={`${formData.productName} Ad`}
+                    className="input-field"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Notes (optional)
+                  </label>
+                  <textarea
+                    value={shareNotes}
+                    onChange={(e) => setShareNotes(e.target.value)}
+                    placeholder="Add notes about this ad for your team..."
+                    className="input-field"
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleShareWithTeam}
+                    className="btn-primary flex-1"
+                  >
+                    Share with Team
+                  </button>
+                  <button
+                    onClick={() => setShowShareModal(false)}
+                    className="btn-secondary flex-1"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                {user?.plan !== 'agency' ? (
+                  <>
+                    <p className="text-gray-600 mb-4">
+                      Team sharing is available with Agency plan
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowShareModal(false);
+                        setShowUpgradeModal(true);
+                      }}
+                      className="btn-primary"
+                    >
+                      Upgrade to Agency
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-gray-600 mb-4">
+                      You don't have any teams yet. Create a team first to share ads.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowShareModal(false);
+                        router.push('/teams');
+                      }}
+                      className="btn-primary"
+                    >
+                      Create Team
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="btn-secondary mt-2"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function GeneratePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    }>
+      <GeneratePageContent />
+    </Suspense>
   );
 }

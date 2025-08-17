@@ -38,6 +38,10 @@ export class AuthService {
     
     localStorage.setItem('access_token', accessToken);
     localStorage.setItem('refresh_token', refreshToken);
+    
+    // Also store in cookies for middleware access
+    document.cookie = `access_token=${accessToken}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=strict`;
+    document.cookie = `refresh_token=${refreshToken}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=strict`;
   }
 
   static clearTokens() {
@@ -46,6 +50,10 @@ export class AuthService {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
+    
+    // Also clear cookies
+    document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   }
 
   static getStoredUser(): User | null {

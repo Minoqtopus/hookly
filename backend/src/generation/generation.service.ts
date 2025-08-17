@@ -5,6 +5,7 @@ import { User, UserPlan } from '../entities/user.entity';
 import { Generation } from '../entities/generation.entity';
 import { OpenAIService } from '../openai/openai.service';
 import { GenerateDto } from './dto/generate.dto';
+import { GenerateVariationsDto } from './dto/generate-variations.dto';
 import { GuestGenerateDto } from './dto/guest-generate.dto';
 
 @Injectable()
@@ -173,5 +174,92 @@ export class GenerationService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async generateVariations(userId: string, generateVariationsDto: GenerateVariationsDto) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Check if user has batch generation feature (Pro+ only)
+    if (!user.has_batch_generation) {
+      throw new ForbiddenException('Batch generation is a Pro feature. Upgrade to generate multiple variations at once.');
+    }
+
+    // Check daily limits (variations count as 3 generations)
+    const today = new Date().toISOString().split('T')[0];
+    if (user.reset_date.toISOString().split('T')[0] !== today) {
+      user.daily_count = 0;
+      user.reset_date = new Date();
+      await this.userRepository.save(user);
+    }
+
+    const dailyLimits = {
+      [UserPlan.FREE]: 3,
+      [UserPlan.STARTER]: 50,
+      [UserPlan.PRO]: null,
+      [UserPlan.AGENCY]: null
+    };
+
+    const limit = dailyLimits[user.plan];
+    const variationsCount = 3; // Always generate 3 variations
+    
+    if (limit && (user.daily_count + variationsCount) > limit) {
+      throw new ForbiddenException(`Not enough generations remaining. Need ${variationsCount} generations for variations.`);
+    }
+
+    try {
+      // Generate 3 variations with single API call
+      const variationsData = await this.openaiService.generateUGCVariations({
+        productName: generateVariationsDto.productName,
+        niche: generateVariationsDto.niche,
+        targetAudience: generateVariationsDto.targetAudience,
+      });
+
+      // Save each variation as a separate generation
+      const savedGenerations = [];
+      for (let i = 0; i < variationsData.variations.length; i++) {
+        const variation = variationsData.variations[i];
+        const performance = variationsData.performance[i];
+
+        // Add performance data to the variation
+        const variationWithPerformance = {
+          ...variation,
+          performance,
+          variationNumber: i + 1,
+          variationApproach: i === 0 ? 'Problem/Solution' : i === 1 ? 'Transformation/Results' : 'Social Proof/Trending'
+        };
+
+        const generation = this.generationRepository.create({
+          user_id: userId,
+          output: variationWithPerformance,
+          product_name: generateVariationsDto.productName,
+          niche: generateVariationsDto.niche,
+          target_audience: generateVariationsDto.targetAudience,
+        });
+
+        const saved = await this.generationRepository.save(generation);
+        savedGenerations.push({
+          id: saved.id,
+          output: variationWithPerformance,
+          created_at: saved.created_at,
+        });
+      }
+
+      // Update user's daily count
+      user.daily_count += variationsCount;
+      await this.userRepository.save(user);
+
+      return {
+        variations: savedGenerations,
+        totalGenerated: variationsCount,
+        remaining_generations: limit ? Math.max(0, limit - user.daily_count) : null,
+        message: `Generated ${variationsCount} variations with different approaches for maximum testing potential.`
+      };
+    } catch (error) {
+      console.error('Variations generation error:', error);
+      throw new BadRequestException('Failed to generate variations. Please try again.');
+    }
   }
 }

@@ -17,7 +17,8 @@ import {
   Gift,
   ArrowRight,
   Settings,
-  LogOut
+  LogOut,
+  Users
 } from 'lucide-react';
 import { useApp, useAuth, useUserStats, useRecentGenerations } from '@/app/lib/AppContext';
 import UpgradeModal from '@/app/components/UpgradeModal';
@@ -335,13 +336,23 @@ export default function DashboardPage() {
                   </div>
                 </button>
                 
-                <button className="p-4 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary-500 hover:bg-primary-50 transition-all duration-200 group">
-                  <div className="text-center">
-                    <Copy className="h-8 w-8 text-gray-400 group-hover:text-primary-600 mx-auto mb-2" />
-                    <p className="font-medium text-gray-700 group-hover:text-primary-700">Duplicate</p>
-                    <p className="text-sm text-gray-500">Best performer</p>
-                  </div>
-                </button>
+                {user?.plan === 'agency' ? (
+                  <Link href="/teams" className="group p-4 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary-500 hover:bg-primary-50 transition-all duration-200">
+                    <div className="text-center">
+                      <Users className="h-8 w-8 text-gray-400 group-hover:text-primary-600 mx-auto mb-2" />
+                      <p className="font-medium text-gray-700 group-hover:text-primary-700">Teams</p>
+                      <p className="text-sm text-gray-500">Collaborate</p>
+                    </div>
+                  </Link>
+                ) : (
+                  <button className="p-4 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary-500 hover:bg-primary-50 transition-all duration-200 group">
+                    <div className="text-center">
+                      <Copy className="h-8 w-8 text-gray-400 group-hover:text-primary-600 mx-auto mb-2" />
+                      <p className="font-medium text-gray-700 group-hover:text-primary-700">Duplicate</p>
+                      <p className="text-sm text-gray-500">Best performer</p>
+                    </div>
+                  </button>
+                )}
               </div>
             </div>
           </div>

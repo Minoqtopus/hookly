@@ -1,6 +1,6 @@
 import { AuthService } from './auth';
 
-export interface ApiError {
+export interface ApiErrorInfo {
   message: string;
   status: number;
   code?: string;
@@ -208,7 +208,7 @@ export class ApiClient {
 
 // Custom error class for API errors
 class ApiError extends Error {
-  constructor(public details: ApiError) {
+  constructor(public details: ApiErrorInfo) {
     super(details.message);
     this.name = 'ApiError';
   }

@@ -27,23 +27,19 @@ export default function HomePage() {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleTryDemo = async () => {
-    clearGeneration();
+  const handleTryDemo = () => {
+    // Start demo timer in sessionStorage
+    const DEMO_TIMER_KEY = 'demo_timer_start';
+    const DEMO_DURATION = 300; // 5 minutes in seconds
     
-    const result = await generateGuestAd({
-      productName: demoData.productName,
-      niche: demoData.niche,
-      targetAudience: demoData.targetAudience,
-    });
+    sessionStorage.setItem(DEMO_TIMER_KEY, Date.now().toString());
+    sessionStorage.setItem('demo_duration', DEMO_DURATION.toString());
     
-    if (result) {
-      setDemoData(prev => ({ ...prev, generatedAd: result }));
-      
-      // Scroll to demo results
-      setTimeout(() => {
-        document.getElementById('demo-results')?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    }
+    // Store demo data for the generation page
+    sessionStorage.setItem('demo_data', JSON.stringify(demoData));
+    
+    // Navigate to generate page with demo parameters
+    window.location.href = `/generate?demo=true&timer=${DEMO_DURATION}`;
   };
 
   const handleSaveAd = () => {
@@ -133,7 +129,7 @@ export default function HomePage() {
                   </>
                 )}
               </button>
-              <Link href="/generate" className="btn-secondary text-lg px-8 py-4 flex items-center justify-center">
+              <Link href="/examples" className="btn-secondary text-lg px-8 py-4 flex items-center justify-center">
                 See Examples
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Link>

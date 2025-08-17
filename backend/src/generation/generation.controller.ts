@@ -1,6 +1,7 @@
 import { Controller, Post, Get, Body, UseGuards, Request, Query, Ip } from '@nestjs/common';
 import { GenerationService } from './generation.service';
 import { GenerateDto } from './dto/generate.dto';
+import { GenerateVariationsDto } from './dto/generate-variations.dto';
 import { GuestGenerateDto } from './dto/guest-generate.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -12,6 +13,12 @@ export class GenerationController {
   @UseGuards(JwtAuthGuard)
   async generate(@Request() req: any, @Body() generateDto: GenerateDto) {
     return this.generationService.generateContent(req.user.userId, generateDto);
+  }
+
+  @Post('variations')
+  @UseGuards(JwtAuthGuard)
+  async generateVariations(@Request() req: any, @Body() generateVariationsDto: GenerateVariationsDto) {
+    return this.generationService.generateVariations(req.user.userId, generateVariationsDto);
   }
 
   @Post('guest')

@@ -8,7 +8,12 @@
     "start": "node dist/main.js",
     "start:dev": "ts-node src/main.ts",
     "start:watch": "ts-node --watch src/main.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:payments": "jest test/payments.test.ts",
+    "test:generation": "jest test/generation.test.ts",
+    "test:teams": "jest test/teams.test.ts"
   },
   "keywords": [],
   "author": "",
@@ -38,10 +43,16 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.10",
+    "@nestjs/testing": "^11.1.6",
     "@types/bcrypt": "^6.0.0",
+    "@types/jest": "^29.5.12",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.3.0",
     "@types/passport-jwt": "^4.0.1",
+    "@types/supertest": "^6.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   }

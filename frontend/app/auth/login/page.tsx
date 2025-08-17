@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Sparkles, ArrowLeft, Shield } from 'lucide-react';
 import { AuthService } from '@/app/lib/auth';
 import Link from 'next/link';
@@ -9,9 +9,17 @@ import Link from 'next/link';
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get('redirect') || '/dashboard';
 
   const handleGoogleLogin = () => {
     setIsLoading(true);
+    
+    // Store redirect path for post-auth navigation
+    if (redirectPath && redirectPath !== '/dashboard') {
+      sessionStorage.setItem('post_auth_redirect', redirectPath);
+    }
+    
     AuthService.initiateGoogleAuth();
   };
 

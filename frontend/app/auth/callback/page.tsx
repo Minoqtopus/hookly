@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { CheckCircle, Sparkles, ArrowRight, X } from 'lucide-react';
 import { AuthService } from '@/app/lib/auth';
 
-export default function AuthCallbackPage() {
+function AuthCallbackPageContent() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [user, setUser] = useState<any>(null);
   const [redirecting, setRedirecting] = useState(false);
@@ -32,8 +32,8 @@ export default function AuthCallbackPage() {
         const userData = {
           id: tokenPayload.sub,
           email: tokenPayload.email,
-          plan: 'free',
-          auth_provider: 'google',
+          plan: 'free' as const,
+          auth_provider: 'google' as const,
           is_verified: true
         };
         
@@ -45,11 +45,18 @@ export default function AuthCallbackPage() {
         setTimeout(() => {
           setRedirecting(true);
           
+          // Check for stored redirect path from middleware
+          const postAuthRedirect = sessionStorage.getItem('post_auth_redirect');
+          
           // Check if there's pending demo data to restore
           const pendingDemo = sessionStorage.getItem('pendingDemoData');
+          
           if (pendingDemo) {
             sessionStorage.removeItem('pendingDemoData');
             router.push('/generate?restored=true');
+          } else if (postAuthRedirect) {
+            sessionStorage.removeItem('post_auth_redirect');
+            router.push(postAuthRedirect);
           } else {
             router.push('/dashboard');
           }
@@ -177,5 +184,17 @@ export default function AuthCallbackPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    }>
+      <AuthCallbackPageContent />
+    </Suspense>
   );
 }

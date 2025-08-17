@@ -157,12 +157,6 @@ export default function UpgradeModal({ isOpen, onClose, source = 'dashboard' }: 
                 <p className="text-sm text-gray-500">
                   (${plans[selectedPlan].price}/{plans[selectedPlan].billing})
                 </p>
-                {selectedPlan === 'yearly' && plans.yearly.originalPrice && (
-                  <p className="text-gray-500 mt-1">
-                    <span className="line-through">${plans.yearly.originalPrice}/month</span>
-                    <span className="text-green-600 font-medium ml-2">Save ${(plans.yearly.originalYearlyTotal - plans.yearly.yearlyTotal).toFixed(0)}/year!</span>
-                  </p>
-                )}
                 <div className="inline-flex items-center bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-medium mt-3">
                   ✨ 7-day free trial • Cancel anytime
                 </div>

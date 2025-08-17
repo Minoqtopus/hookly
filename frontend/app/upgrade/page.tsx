@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Crown, 
@@ -22,7 +22,7 @@ import { useUpgrade } from '@/app/lib/useUpgrade';
 import ScarcityIndicator from '@/app/components/ScarcityIndicator';
 import Link from 'next/link';
 
-export default function UpgradePage() {
+function UpgradePageContent() {
   const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro' | 'agency'>('pro'); // Default to pro for better value
   const [showTestimonials, setShowTestimonials] = useState(false);
   
@@ -56,8 +56,8 @@ export default function UpgradePage() {
     
     if (checkoutUrl) {
       // Track conversion event
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('event', 'begin_checkout', {
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'begin_checkout', {
           currency: 'USD',
           value: plans[selectedPlan].price,
           items: [{
@@ -513,5 +513,17 @@ export default function UpgradePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function UpgradePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    }>
+      <UpgradePageContent />
+    </Suspense>
   );
 }

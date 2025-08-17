@@ -1,11 +1,12 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { AlertCircle, ArrowLeft, RefreshCw, Home } from 'lucide-react';
 import { AuthService } from '@/app/lib/auth';
 import Link from 'next/link';
 
-export default function AuthErrorPage() {
+function AuthErrorPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const errorMessage = searchParams.get('message') || 'unknown';
@@ -140,5 +141,17 @@ export default function AuthErrorPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AuthErrorPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    }>
+      <AuthErrorPageContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   CheckCircle, 
@@ -15,7 +15,7 @@ import {
 import { useApp } from '@/app/lib/AppContext';
 import Link from 'next/link';
 
-export default function UpgradeSuccessPage() {
+function UpgradeSuccessPageContent() {
   const [showConfetti, setShowConfetti] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -232,5 +232,17 @@ export default function UpgradeSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function UpgradeSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-primary-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    }>
+      <UpgradeSuccessPageContent />
+    </Suspense>
   );
 }
