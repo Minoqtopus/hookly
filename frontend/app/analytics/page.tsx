@@ -3,30 +3,26 @@
 import AuthModal from '@/app/components/AuthModal';
 import PerformanceDashboard from '@/app/components/PerformanceDashboard';
 import { useAuth } from '@/app/lib/AppContext';
+import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function AnalyticsPage() {
+  const { user } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const router = useRouter();
   
-  const { user, isAuthenticated, isLoading } = useAuth();
+  // Apply route guard - redirect unauthenticated users to homepage
+  useRouteGuard(routeConfigs.analytics);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!user) return; // No need to show auth modal if user is not logged in
+    if (!user) {
       setShowAuthModal(true);
     }
-  }, [isAuthenticated, isLoading]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
+  }, [user]);
 
   if (!user) return null;
 

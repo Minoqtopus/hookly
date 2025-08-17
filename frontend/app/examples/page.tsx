@@ -5,6 +5,7 @@ import ScarcityIndicator from '@/app/components/ScarcityIndicator';
 import TemplateLibrary from '@/app/components/TemplateLibrary';
 import UpgradeModal from '@/app/components/UpgradeModal';
 import { useAuth } from '@/app/lib/AppContext';
+import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import {
   ArrowLeft,
   ArrowRight,
@@ -26,6 +27,9 @@ export default function ExamplesPage() {
   const router = useRouter();
   
   const { user, isAuthenticated } = useAuth();
+
+  // Apply route guard - redirect authenticated users to dashboard
+  useRouteGuard(routeConfigs.examples);
 
   const handleUseTemplate = (template: any) => {
     if (!isAuthenticated) {

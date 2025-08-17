@@ -1,17 +1,26 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-// Define protected routes that require authentication
+// Define route categories for proper authentication boundaries
+
+// Routes that require authentication (redirect to homepage if not authenticated)
 const protectedRoutes = [
   '/dashboard',
   '/settings',
   '/teams',
+  '/analytics',
   '/upgrade/success',
   '/upgrade/cancel',
   '/upgrade/cancelled',
 ];
 
-// Define routes that should redirect authenticated users away
+// Routes that should redirect authenticated users away (guest-only routes)
+const guestOnlyRoutes = [
+  '/', // Landing page - should redirect authenticated users to dashboard
+  '/examples', // Examples page - should redirect authenticated users to dashboard
+];
+
+// Routes that should redirect authenticated users away (auth pages)
 const authRoutes = [
   '/auth/register',
 ];
@@ -19,6 +28,17 @@ const authRoutes = [
 // Routes that have demo functionality and should allow guest access
 const demoRoutes = [
   '/generate',
+];
+
+// Routes that are accessible to both but show different content
+const mixedRoutes = [
+  '/upgrade',
+];
+
+// Routes that should always be accessible
+const alwaysAccessibleRoutes = [
+  '/auth/callback',
+  '/auth/error',
 ];
 
 export function middleware(request: NextRequest) {
@@ -31,7 +51,7 @@ export function middleware(request: NextRequest) {
   // Check if user is authenticated
   const isAuthenticated = !!token;
   
-  // Handle protected routes
+  // Handle protected routes (require authentication)
   if (protectedRoutes.some(route => pathname.startsWith(route))) {
     if (!isAuthenticated) {
       // Redirect to homepage where user can use the auth modal
@@ -42,7 +62,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
   
-  // Handle auth routes (register only now)
+  // Handle guest-only routes (redirect authenticated users away)
+  if (guestOnlyRoutes.some(route => pathname.startsWith(route))) {
+    if (isAuthenticated) {
+      // User is authenticated, redirect to dashboard
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+    
+    // User is not authenticated, allow access
+    return NextResponse.next();
+  }
+  
+  // Handle auth routes (redirect authenticated users away)
   if (authRoutes.some(route => pathname.startsWith(route))) {
     if (isAuthenticated) {
       // User is already authenticated, redirect to dashboard
@@ -53,27 +84,28 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
   
-  // Handle demo routes
+  // Handle demo routes (allow both authenticated and unauthenticated users)
   if (demoRoutes.some(route => pathname.startsWith(route))) {
-    // Allow both authenticated and unauthenticated users
+    // Allow access to all users
     // Demo mode is controlled by URL parameters and client-side logic
     return NextResponse.next();
   }
   
-  // Handle upgrade routes based on authentication and plan
-  if (pathname.startsWith('/upgrade')) {
-    // Allow access to upgrade page regardless of auth state
-    // The page itself will handle showing appropriate content
+  // Handle mixed routes (accessible to both but show different content)
+  if (mixedRoutes.some(route => pathname.startsWith(route))) {
+    // Allow access to all users
+    // The page itself will handle showing appropriate content based on auth state
     return NextResponse.next();
   }
   
-  // Handle auth callback routes
-  if (pathname.startsWith('/auth/callback') || pathname.startsWith('/auth/error')) {
-    // Always allow access to auth callback routes
+  // Handle always accessible routes
+  if (alwaysAccessibleRoutes.some(route => pathname.startsWith(route))) {
+    // Always allow access to these routes
     return NextResponse.next();
   }
   
-  // Allow access to all other routes (home, examples, etc.)
+  // Default: allow access to all other routes
+  // This includes any new routes that aren't explicitly categorized
   return NextResponse.next();
 }
 

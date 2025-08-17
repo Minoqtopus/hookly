@@ -1,28 +1,33 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  User, 
-  Crown, 
-  CreditCard, 
-  Bell, 
-  Shield, 
-  Download,
-  ArrowLeft,
-  CheckCircle,
-  AlertCircle,
-  ExternalLink,
-  Calendar,
-  DollarSign
-} from 'lucide-react';
 import { useAuth } from '@/app/lib/AppContext';
+import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
+import {
+  AlertCircle,
+  ArrowLeft,
+  Bell,
+  Calendar,
+  CheckCircle,
+  CreditCard,
+  Crown,
+  DollarSign,
+  Download,
+  ExternalLink,
+  Shield,
+  User
+} from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('account');
   const { user } = useAuth();
   const router = useRouter();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  // Apply route guard - redirect unauthenticated users to homepage
+  useRouteGuard(routeConfigs.settings);
 
   if (!user) {
     return (

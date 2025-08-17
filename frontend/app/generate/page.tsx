@@ -13,6 +13,7 @@ import { AuthService } from '@/app/lib/auth';
 import { LocalSaveService } from '@/app/lib/localSaves';
 import { useDemoTimer } from '@/app/lib/useDemoTimer';
 import { useGeneration } from '@/app/lib/useGeneration';
+import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import {
   AlertCircle,
   ArrowLeft,
@@ -46,6 +47,9 @@ function GeneratePageContent() {
   const userStats = useUserStats();
   const { isGenerating, generatedAd, error, generateAd, generateGuestAd, clearError } = useGeneration();
   const demoTimer = useDemoTimer();
+  
+  // Apply route guard - allow both authenticated and unauthenticated users
+  useRouteGuard(routeConfigs.generate);
   
   const router = useRouter();
   const searchParams = useSearchParams();

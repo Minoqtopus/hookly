@@ -3,15 +3,18 @@
 import AuthModal from '@/app/components/AuthModal';
 import ScarcityIndicator from '@/app/components/ScarcityIndicator';
 import SocialProofLoader from '@/app/components/SocialProofLoader';
+import { useAuth } from '@/app/lib/AppContext';
 import { useGeneration } from '@/app/lib/useGeneration';
+import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import { ArrowRight, CheckCircle, Play, Sparkles, Star, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 export default function HomePage() {
+  const { user } = useAuth();
   const [showDemo, setShowDemo] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authTrigger, setAuthTrigger] = useState<'demo_save' | 'try_again' | 'nav_signup' | 'login'>('demo_save');
+  const [authTrigger, setAuthTrigger] = useState<'demo_save' | 'try_again' | 'nav_signup' | 'login'>('nav_signup');
   const [demoData, setDemoData] = useState({
     productName: 'Fitness Protein Powder',
     niche: 'Health & Fitness',
@@ -21,6 +24,9 @@ export default function HomePage() {
 
   const { isGenerating, generatedAd, generateGuestAd, clearGeneration } = useGeneration();
 
+  // Apply route guard - redirect authenticated users to dashboard
+  useRouteGuard(routeConfigs.landing);
+
   // Auto-start demo on page load for immediate engagement
   useEffect(() => {
     const timer = setTimeout(() => setShowDemo(true), 1000);
@@ -28,18 +34,8 @@ export default function HomePage() {
   }, []);
 
   const handleTryDemo = () => {
-    // Start demo timer in sessionStorage
-    const DEMO_TIMER_KEY = 'demo_timer_start';
-    const DEMO_DURATION = 300; // 5 minutes in seconds
-    
-    sessionStorage.setItem(DEMO_TIMER_KEY, Date.now().toString());
-    sessionStorage.setItem('demo_duration', DEMO_DURATION.toString());
-    
-    // Store demo data for the generation page
-    sessionStorage.setItem('demo_data', JSON.stringify(demoData));
-    
-    // Navigate to generate page with demo parameters
-    window.location.href = `/generate?demo=true&timer=${DEMO_DURATION}`;
+    // Navigate to generate page with demo mode
+    window.location.href = '/generate?demo=true&timer=300';
   };
 
   const handleSaveAd = () => {

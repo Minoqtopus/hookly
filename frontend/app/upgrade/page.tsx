@@ -3,6 +3,7 @@
 import AuthModal from '@/app/components/AuthModal';
 import ScarcityIndicator from '@/app/components/ScarcityIndicator';
 import { useAuth } from '@/app/lib/AppContext';
+import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import { useUpgrade } from '@/app/lib/useUpgrade';
 import {
   AlertCircle,
@@ -525,6 +526,12 @@ function UpgradePageContent() {
 }
 
 export default function UpgradePage() {
+  const { user } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  // Apply route guard - allow both authenticated and unauthenticated users
+  useRouteGuard(routeConfigs.upgrade);
+
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

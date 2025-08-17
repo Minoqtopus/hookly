@@ -5,6 +5,7 @@ import LocalSavesViewer from '@/app/components/LocalSavesViewer';
 import TemplateLibrary from '@/app/components/TemplateLibrary';
 import UpgradeModal from '@/app/components/UpgradeModal';
 import { useApp, useAuth, useRecentGenerations, useUserStats } from '@/app/lib/AppContext';
+import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import {
   ArrowRight,
   BarChart3,
@@ -36,6 +37,9 @@ export default function DashboardPage() {
   const userStats = useUserStats();
   const recentGenerations = useRecentGenerations();
   const { actions } = useApp();
+
+  // Apply route guard - redirect unauthenticated users to homepage
+  useRouteGuard(routeConfigs.dashboard);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
