@@ -27,6 +27,7 @@ import SocialProofLoader from '@/app/components/SocialProofLoader';
 import ScarcityIndicator from '@/app/components/ScarcityIndicator';
 import TemplateLibrary from '@/app/components/TemplateLibrary';
 import ExportModal from '@/app/components/ExportModal';
+import VariationsGenerator from '@/app/components/VariationsGenerator';
 import { LocalSaveService } from '@/app/lib/localSaves';
 import Link from 'next/link';
 
@@ -35,6 +36,7 @@ export default function GeneratePage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showVariations, setShowVariations] = useState(false);
   const [upgradeSource, setUpgradeSource] = useState<'limit_reached' | 'feature_gate' | 'generator'>('feature_gate');
   
   const { user, isAuthenticated } = useAuth();
@@ -362,6 +364,39 @@ export default function GeneratePage() {
                 )}
               </div>
             </div>
+
+            {/* Variations Generator Section */}
+            {user?.has_batch_generation && (
+              <div className="card">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">🚀 Pro Feature: Batch Variations</h3>
+                    <p className="text-sm text-gray-600">Generate 3 different approaches in one click</p>
+                  </div>
+                  <button
+                    onClick={() => setShowVariations(!showVariations)}
+                    className="text-primary-600 hover:text-primary-700 font-medium text-sm"
+                  >
+                    {showVariations ? 'Hide Variations' : 'Generate 3 Variations'}
+                  </button>
+                </div>
+                
+                {showVariations && (
+                  <VariationsGenerator
+                    formData={formData}
+                    onUpgrade={() => setShowUpgradeModal(true)}
+                    onSave={(variation) => {
+                      // Handle save variation
+                      alert('Variation saved!');
+                    }}
+                    onExport={(variation) => {
+                      // Handle export variation
+                      setShowExportModal(true);
+                    }}
+                  />
+                )}
+              </div>
+            )}
           </div>
         ) : (
           // Results Section
