@@ -1,7 +1,6 @@
 'use client';
 
 import AuthModal from '@/app/components/AuthModal';
-import DemoTimer from '@/app/components/DemoTimer';
 import ExportModal from '@/app/components/ExportModal';
 import ScarcityIndicator from '@/app/components/ScarcityIndicator';
 import SocialProofLoader from '@/app/components/SocialProofLoader';
@@ -12,7 +11,6 @@ import { useAuth, useUserStats } from '@/app/lib/AppContext';
 import { AuthService } from '@/app/lib/auth';
 import { LocalSaveService } from '@/app/lib/localSaves';
 import { useDemoOptimization } from '@/app/lib/useDemoOptimization';
-import { useDemoTimer } from '@/app/lib/useDemoTimer';
 import { useGeneration } from '@/app/lib/useGeneration';
 import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import {
@@ -47,7 +45,6 @@ function GeneratePageContent() {
   const { user, isAuthenticated } = useAuth();
   const userStats = useUserStats();
   const { isGenerating, generatedAd, error, generateAd, generateGuestAd, clearError } = useGeneration();
-  const demoTimer = useDemoTimer();
   const demoOptimization = useDemoOptimization();
   
   // Apply route guard - allow both authenticated and unauthenticated users
@@ -69,16 +66,11 @@ function GeneratePageContent() {
   const [shareNotes, setShareNotes] = useState('');
   const [selectedTeamId, setSelectedTeamId] = useState('');
 
-  const dailyLimit = user?.plan === 'free' ? 3 : (user?.plan === 'starter' ? 50 : null);
-  const remainingGenerations = dailyLimit ? Math.max(0, dailyLimit - (userStats?.generationsToday || 0)) : null;
+  const monthlyLimit = user?.plan === 'trial' ? 15 : (user?.plan === 'creator' ? 150 : 500);
+  const remainingGenerations = monthlyLimit ? Math.max(0, monthlyLimit - (userStats?.generationsThisMonth || 0)) : null;
 
   useEffect(() => {
-    // Initialize demo timer if in demo mode
-    if (isDemoMode && !demoTimer.isActive) {
-      const timerParam = searchParams.get('timer');
-      const duration = timerParam ? parseInt(timerParam) : 300; // Default 5 minutes
-      demoTimer.startDemo(duration);
-    }
+    // Demo mode - no timer needed anymore
 
     // Restore demo data if coming from auth flow
     if (restored) {
@@ -117,7 +109,7 @@ function GeneratePageContent() {
       });
       sessionStorage.removeItem('demo_data');
     }
-  }, [restored, isDemoMode, demoTimer, searchParams]);
+  }, [restored, isDemoMode, searchParams]);
 
   // Smart signup triggers based on user engagement
   useEffect(() => {
@@ -130,10 +122,20 @@ function GeneratePageContent() {
 
   // Track generation for smart triggers
   useEffect(() => {
-    if (generatedAd && demoTimer.isActive) {
+    if (generatedAd && isDemoMode) {
       demoOptimization.trackGeneration();
     }
-  }, [generatedAd, demoTimer.isActive, demoOptimization]);
+  }, [generatedAd, isDemoMode, demoOptimization]);
+
+  // Handle auth modal close to prevent reopening
+  const handleAuthModalClose = () => {
+    setShowAuthModal(false);
+    // Reset the demo optimization state to prevent modal from reopening
+    if (demoOptimization.shouldShowSignup) {
+      // This will prevent the modal from reopening immediately
+      sessionStorage.setItem('demo_signup_shown', 'true');
+    }
+  };
 
   useEffect(() => {
     // Load teams when share modal is opened
@@ -154,12 +156,6 @@ function GeneratePageContent() {
 
   const handleGenerate = async () => {
     clearError();
-    
-    // Check if demo has expired
-    if (demoTimer.isExpired && !isAuthenticated) {
-      handleDemoExpiry();
-      return;
-    }
     
     // For demo mode, use guest generation
     if (isDemoMode && !isAuthenticated) {
@@ -351,15 +347,8 @@ function GeneratePageContent() {
               </div>
             </div>
             
-            {/* Demo Timer or Usage Indicator */}
-            {demoTimer.isActive ? (
-              <div className="space-y-4">
-                <DemoTimer 
-                  onExpiry={handleDemoExpiry}
-                  onAlmostExpired={handleDemoAlmostExpired}
-                />
-              </div>
-            ) : user && (user.plan === 'free' || user.plan === 'starter') && remainingGenerations !== null && (
+            {/* Usage Indicator */}
+            {user && (user.plan === 'free' || user.plan === 'starter') && remainingGenerations !== null && (
               <div className="flex items-center space-x-2">
                 <div className="text-sm text-gray-600">
                   {remainingGenerations}/{dailyLimit} left {user.plan === 'starter' ? 'this month' : 'today'}
@@ -382,11 +371,11 @@ function GeneratePageContent() {
           <div className="space-y-8">
             {/* Title Section */}
             <div className="text-center">
-              {demoTimer.isActive && (
-                <div className="inline-flex items-center bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full mb-4">
+              {isDemoMode && (
+                <div className="inline-flex items-center bg-blue-100 text-blue-800 px-4 py-2 rounded-full mb-4">
                   <Sparkles className="h-4 w-4 mr-2" />
                   <span className="text-sm font-medium">
-                    Free Demo Mode - No signup required!
+                    Demo Mode - See what Hookly can create for you!
                   </span>
                 </div>
               )}
@@ -395,8 +384,8 @@ function GeneratePageContent() {
               </h1>
               <p className="text-gray-600 max-w-2xl mx-auto">
                 Our AI analyzes millions of viral TikTok ads to create scripts that actually convert. 
-                {demoTimer.isActive 
-                  ? " Try it free - no signup required for this demo!"
+                {isDemoMode 
+                  ? " Try it now - no signup required for this demo!"
                   : " Start with a proven template or create from scratch."
                 }
               </p>
@@ -727,8 +716,43 @@ function GeneratePageContent() {
               </button>
             </div>
 
+            {/* Demo to Trial Conversion */}
+            {isDemoMode && !isAuthenticated && (
+              <div className="card bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">🎉 Amazing! Your ad looks great!</h3>
+                  <p className="text-gray-600 mb-4">
+                    Want to save this ad and create 3 more with your free trial?
+                  </p>
+                  
+                  <div className="bg-white rounded-lg p-4 mb-4 text-left">
+                    <h4 className="font-semibold text-gray-900 mb-2">Your Free Trial Includes:</h4>
+                    <ul className="space-y-1 text-sm text-gray-700">
+                      <li>✅ Save this ad to your account</li>
+                      <li>✅ Generate 3 more ads (7-day trial)</li>
+                      <li>✅ Access to all templates</li>
+                      <li>✅ No credit card required</li>
+                    </ul>
+                  </div>
+                  
+                  <button 
+                    onClick={() => setShowAuthModal(true)}
+                    className="btn-primary text-lg px-8 py-3 mb-3"
+                  >
+                    Save Ad + Start Free Trial
+                  </button>
+                  <p className="text-xs text-gray-500">
+                    Takes 30 seconds • No spam, we promise
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Pro Upsell */}
-            {(user?.plan === 'free' || user?.plan === 'starter') && (
+            {(user?.plan === 'trial' || user?.plan === 'creator') && (
               <div className="card bg-gradient-to-r from-primary-50 to-secondary-50 border-primary-200">
                 <div className="text-center">
                   <Crown className="h-12 w-12 text-primary-600 mx-auto mb-4" />
@@ -769,7 +793,7 @@ function GeneratePageContent() {
 
       <AuthModal
         isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
+        onClose={handleAuthModalClose}
         triggerSource="try_again"
       />
 

@@ -52,6 +52,17 @@ export function useDemoOptimization() {
   const shouldTriggerUpgrade = useCallback((behavior: UserBehavior): DemoOptimizationState => {
     const { generationsCreated, timeSpent, demoTimeLeft } = behavior;
 
+    // Check if signup modal has already been shown and closed
+    const signupAlreadyShown = sessionStorage.getItem('demo_signup_shown') === 'true';
+    if (signupAlreadyShown) {
+      return {
+        shouldShowSignup: false,
+        signupReason: 'engagement',
+        signupMessage: '',
+        signupUrgency: 'low',
+      };
+    }
+
     // CRITICAL: Don't show upgrade until user has actually engaged
     // Wait for at least 1 generation before considering any upgrade triggers
     if (generationsCreated === 0) {

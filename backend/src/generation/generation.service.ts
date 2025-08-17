@@ -24,28 +24,54 @@ export class GenerationService {
       throw new BadRequestException('User not found');
     }
 
-    // Check if user has reached daily limit
-    const today = new Date().toISOString().split('T')[0];
-    if (user.reset_date.toISOString().split('T')[0] !== today) {
-      // Reset daily count if it's a new day
-      user.daily_count = 0;
+    // Check if user has reached monthly limit or trial limit
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const resetMonth = user.reset_date.getMonth();
+    const resetYear = user.reset_date.getFullYear();
+    
+    if (currentMonth !== resetMonth || currentYear !== resetYear) {
+      // Reset monthly count if it's a new month
+      user.monthly_count = 0;
       user.reset_date = new Date();
       await this.userRepository.save(user);
     }
 
-    // Check rate limits based on plan
-    const dailyLimits = {
-      [UserPlan.FREE]: 3,
-      [UserPlan.STARTER]: 50, // 50 per month, roughly 1.6 per day
-      [UserPlan.PRO]: null, // unlimited
-      [UserPlan.AGENCY]: null // unlimited
+    // Check trial status and limits
+    if (user.plan === UserPlan.TRIAL) {
+      // Start trial if not started
+      if (!user.trial_started_at) {
+        user.trial_started_at = now;
+        user.trial_ends_at = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+        await this.userRepository.save(user);
+      }
+      
+      // Check if trial has expired
+      if (user.trial_ends_at && now > user.trial_ends_at) {
+        throw new ForbiddenException('Free trial has expired. Please upgrade to continue creating ads.');
+      }
+      
+      // Check trial generation limit (3 generations)
+      if (user.trial_generations_used >= 3) {
+        throw new ForbiddenException('Trial generation limit reached. Upgrade to Creator plan for 150 generations/month.');
+      }
+    }
+
+    // Check monthly limits for paid plans
+    const monthlyLimits = {
+      [UserPlan.TRIAL]: 3, // handled above but keeping for consistency
+      [UserPlan.CREATOR]: 150,
+      [UserPlan.AGENCY]: 500
     };
 
-    const limit = dailyLimits[user.plan];
-    if (limit && user.daily_count >= limit) {
-      const upgradeMessage = user.plan === UserPlan.FREE 
-        ? 'Daily generation limit reached. Upgrade to Starter for 50 generations/month or Pro for unlimited.'
-        : `Monthly generation limit of ${limit} reached. Upgrade to Pro for unlimited generations.`;
+    const limit = monthlyLimits[user.plan];
+    const currentCount = user.plan === UserPlan.TRIAL ? user.trial_generations_used : user.monthly_count;
+    
+    if (limit && currentCount >= limit) {
+      const upgradeMessage = user.plan === UserPlan.CREATOR 
+        ? 'Monthly generation limit of 150 reached. Upgrade to Agency for 500 generations/month.'
+        : 'Generation limit reached. Please upgrade your plan.';
       throw new ForbiddenException(upgradeMessage);
     }
 
@@ -57,22 +83,16 @@ export class GenerationService {
         targetAudience: generateDto.targetAudience,
       });
 
-      // Add watermark for free and starter users
+      // Add watermark for trial users
       let output = generatedContent;
-      if (user.plan === UserPlan.FREE) {
+      if (user.plan === UserPlan.TRIAL) {
         output = {
           ...generatedContent,
-          script: generatedContent.script + '\n\n---\nGenerated with AI UGC Ad Generator (Free Plan)',
-          hook: generatedContent.hook + ' [Generated with AI UGC Ad Generator]',
-        };
-      } else if (user.plan === UserPlan.STARTER) {
-        output = {
-          ...generatedContent,
-          script: generatedContent.script + '\n\n---\nGenerated with AI UGC Ad Generator (Starter Plan)',
-          hook: generatedContent.hook + ' [AI UGC Ad Generator]',
+          script: generatedContent.script + '\n\n---\nGenerated with Hookly (Trial)',
+          hook: generatedContent.hook + ' [Generated with Hookly Trial]',
         };
       }
-      // Pro and Agency plans get no watermarks
+      // Creator and Agency plans get no watermarks
 
       // Save generation to database
       const generation = this.generationRepository.create({
@@ -81,15 +101,26 @@ export class GenerationService {
       });
       await this.generationRepository.save(generation);
 
-      // Increment daily count
-      user.daily_count += 1;
+      // Increment appropriate counter
+      if (user.plan === UserPlan.TRIAL) {
+        user.trial_generations_used += 1;
+      } else {
+        user.monthly_count += 1;
+      }
       await this.userRepository.save(user);
+
+      const remainingGenerations = user.plan === UserPlan.TRIAL 
+        ? Math.max(0, 3 - user.trial_generations_used)
+        : limit ? Math.max(0, limit - user.monthly_count) : null;
 
       return {
         id: generation.id,
         output,
         created_at: generation.created_at,
-        remaining_generations: limit ? Math.max(0, limit - user.daily_count) : null,
+        remaining_generations: remainingGenerations,
+        trial_days_left: user.trial_ends_at && user.plan === UserPlan.TRIAL 
+          ? Math.max(0, Math.ceil((user.trial_ends_at.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)))
+          : null,
       };
     } catch (error) {
       console.error('Generation error:', error);
@@ -124,8 +155,8 @@ export class GenerationService {
       // Always add watermark for guest users
       const output = {
         ...generatedContent,
-        script: generatedContent.script + '\n\n---\n🚀 Generated with AI UGC Ad Generator - Sign up for unlimited generations!',
-        hook: generatedContent.hook + ' [Try AI UGC Ad Generator Free]',
+        script: generatedContent.script + '\n\n---\n🚀 Generated with Hookly - Start your free trial for more!',
+        hook: generatedContent.hook + ' [Try Hookly Free Trial]',
       };
 
       // Save guest generation
@@ -145,7 +176,7 @@ export class GenerationService {
         output,
         created_at: generation.created_at,
         is_guest: true,
-        upgrade_message: 'Sign up to save this generation and create unlimited ads!',
+        upgrade_message: 'Start your free trial to save this generation and get 3 more!',
       };
     } catch (error) {
       console.error('Guest generation error:', error);
@@ -187,25 +218,30 @@ export class GenerationService {
       throw new ForbiddenException('Batch generation is a Pro feature. Upgrade to generate multiple variations at once.');
     }
 
-    // Check daily limits (variations count as 3 generations)
-    const today = new Date().toISOString().split('T')[0];
-    if (user.reset_date.toISOString().split('T')[0] !== today) {
-      user.daily_count = 0;
+    // Check monthly limits (variations count as 3 generations)
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const resetMonth = user.reset_date.getMonth();
+    const resetYear = user.reset_date.getFullYear();
+    
+    if (currentMonth !== resetMonth || currentYear !== resetYear) {
+      user.monthly_count = 0;
       user.reset_date = new Date();
       await this.userRepository.save(user);
     }
 
-    const dailyLimits = {
-      [UserPlan.FREE]: 3,
-      [UserPlan.STARTER]: 50,
-      [UserPlan.PRO]: null,
-      [UserPlan.AGENCY]: null
+    const monthlyLimits = {
+      [UserPlan.TRIAL]: 3,
+      [UserPlan.CREATOR]: 150,
+      [UserPlan.AGENCY]: 500
     };
 
-    const limit = dailyLimits[user.plan];
+    const limit = monthlyLimits[user.plan];
     const variationsCount = 3; // Always generate 3 variations
+    const currentCount = user.plan === UserPlan.TRIAL ? user.trial_generations_used : user.monthly_count;
     
-    if (limit && (user.daily_count + variationsCount) > limit) {
+    if (limit && (currentCount + variationsCount) > limit) {
       throw new ForbiddenException(`Not enough generations remaining. Need ${variationsCount} generations for variations.`);
     }
 
@@ -247,14 +283,20 @@ export class GenerationService {
         });
       }
 
-      // Update user's daily count
-      user.daily_count += variationsCount;
+      // Update user's count
+      if (user.plan === UserPlan.TRIAL) {
+        user.trial_generations_used += variationsCount;
+      } else {
+        user.monthly_count += variationsCount;
+      }
       await this.userRepository.save(user);
 
+      const updatedCurrentCount = user.plan === UserPlan.TRIAL ? user.trial_generations_used : user.monthly_count;
+      
       return {
         variations: savedGenerations,
         totalGenerated: variationsCount,
-        remaining_generations: limit ? Math.max(0, limit - user.daily_count) : null,
+        remaining_generations: limit ? Math.max(0, limit - updatedCurrentCount) : null,
         message: `Generated ${variationsCount} variations with different approaches for maximum testing potential.`
       };
     } catch (error) {

@@ -17,8 +17,8 @@ export default function HomePage() {
   useRouteGuard(routeConfigs.landing);
 
   const handleTryDemo = () => {
-    // Navigate to generate page with demo mode
-    window.location.href = '/generate?demo=true&timer=300';
+    // Navigate to dedicated demo page
+    window.location.href = '/demo';
   };
 
   return (
@@ -32,13 +32,16 @@ export default function HomePage() {
               <Sparkles className="h-8 w-8 text-primary-600" />
               <span className="text-xl font-bold text-gray-900">Hookly</span>
             </div>
-            <div className="hidden sm:flex items-center space-x-4">
+            <div className="hidden sm:flex items-center space-x-6">
+              <Link href="/pricing" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+                Pricing
+              </Link>
               <button 
                 onClick={() => {
                   setAuthTrigger('login');
                   setShowAuthModal(true);
                 }}
-                className="text-gray-600 hover:text-gray-900 font-medium"
+                className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
               >
                 Login
               </button>
@@ -47,9 +50,9 @@ export default function HomePage() {
                   setAuthTrigger('nav_signup');
                   setShowAuthModal(true);
                 }}
-                className="btn-primary text-sm px-4 py-2"
+                className="btn-primary text-sm px-6 py-2"
               >
-                Sign Up Free
+                Start Free Trial
               </button>
             </div>
           </nav>
@@ -92,10 +95,10 @@ export default function HomePage() {
                 className="btn-primary text-lg px-8 py-4 flex items-center justify-center"
               >
                 <Play className="h-5 w-5 mr-2" />
-                Try Free Demo
+Try Demo Now
               </button>
               <Link href="/examples" className="btn-secondary text-lg px-8 py-4 flex items-center justify-center">
-                See Examples
+                Browse Templates
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Link>
             </div>
@@ -104,7 +107,7 @@ export default function HomePage() {
             <div className="flex flex-wrap justify-center items-center gap-6 text-sm text-gray-500">
               <div className="flex items-center">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                No signup required
+No signup required
               </div>
               <div className="flex items-center">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2" />

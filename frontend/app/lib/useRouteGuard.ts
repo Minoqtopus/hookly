@@ -46,11 +46,13 @@ export function useRouteGuard(config: RouteGuardConfig) {
 export const routeConfigs = {
   landing: { access: 'guest-only' as const, redirectTo: '/dashboard' },
   examples: { access: 'guest-only' as const, redirectTo: '/dashboard' },
+  demo: { access: 'guest-only' as const, redirectTo: '/generate' },
+  pricing: { access: 'public' as const },
   dashboard: { access: 'protected' as const, redirectTo: '/' },
   settings: { access: 'protected' as const, redirectTo: '/' },
   teams: { access: 'protected' as const, redirectTo: '/' },
   analytics: { access: 'protected' as const, redirectTo: '/' },
-  generate: { access: 'mixed' as const },
+  generate: { access: 'protected' as const, redirectTo: '/demo' },
   upgrade: { access: 'mixed' as const },
   auth: { access: 'guest-only' as const, redirectTo: '/dashboard' },
 };

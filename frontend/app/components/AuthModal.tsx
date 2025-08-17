@@ -137,13 +137,13 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
         return {
           title: '🚀 Start Creating Viral Ads',
           subtitle: 'Join the AI revolution in advertising',
-          urgency: 'Free plan: 3 generations per day',
-          buttonText: 'Sign Up with Google',
+          urgency: 'Free trial: 15 generations over 7 days',
+          buttonText: 'Start Free Trial with Google',
           benefits: [
-            '3 free generations daily',
+            '15 generations in your trial',
             'Access to all features',
             'Save your best work',
-            'Upgrade anytime'
+            'No credit card required'
           ],
           urgencyStyle: 'text-green-600'
         };
@@ -160,6 +160,48 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
             'Generate more content'
           ],
           urgencyStyle: 'text-blue-600'
+        };
+      case 'creator_plan_signup':
+        return {
+          title: '🚀 Start Your Creator Plan Trial',
+          subtitle: 'Try Creator Plan free for 7 days',
+          urgency: 'Free trial: 15 generations to test Creator features',
+          buttonText: 'Start Creator Trial with Google',
+          benefits: [
+            '15 generations during trial',
+            'Test all Creator plan features',
+            'No credit card required',
+            'Cancel anytime'
+          ],
+          urgencyStyle: 'text-green-600'
+        };
+      case 'agency_plan_signup':
+        return {
+          title: '🏢 Start Your Agency Plan Trial',
+          subtitle: 'Try Agency Plan free for 7 days',
+          urgency: 'Free trial: 15 generations to test Agency features',
+          buttonText: 'Start Agency Trial with Google',
+          benefits: [
+            '15 generations during trial',
+            'Test all Agency plan features',
+            'Team collaboration tools',
+            'No credit card required'
+          ],
+          urgencyStyle: 'text-purple-600'
+        };
+      case 'pricing_page':
+        return {
+          title: '🚀 Start Your Free Trial',
+          subtitle: 'Try Hookly free for 7 days',
+          urgency: 'Free trial: 15 generations over 7 days',
+          buttonText: 'Start Free Trial with Google',
+          benefits: [
+            '15 generations during trial',
+            'Access to all features',
+            'No credit card required',
+            'Upgrade to any plan after trial'
+          ],
+          urgencyStyle: 'text-green-600'
         };
       default:
         return {

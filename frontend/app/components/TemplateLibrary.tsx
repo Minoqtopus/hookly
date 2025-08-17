@@ -24,6 +24,7 @@ interface TemplateLibraryProps {
   onUseTemplate?: (template: Template) => void;
   showFilters?: boolean;
   compact?: boolean;
+  externalFilter?: string;
 }
 
 const templates: Template[] = [
@@ -257,14 +258,17 @@ Try this for one week and watch your grades transform.`,
   }
 ];
 
-export default function TemplateLibrary({ onUseTemplate, showFilters = true, compact = false }: TemplateLibraryProps) {
+export default function TemplateLibrary({ onUseTemplate, showFilters = true, compact = false, externalFilter }: TemplateLibraryProps) {
   const [selectedNiche, setSelectedNiche] = useState<string>('all');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   const niches = ['all', ...Array.from(new Set(templates.map(t => t.niche)))];
-  const filteredTemplates = selectedNiche === 'all' 
+  
+  // Use external filter if provided, otherwise use internal filter
+  const activeFilter = externalFilter || selectedNiche;
+  const filteredTemplates = activeFilter === 'all' 
     ? templates 
-    : templates.filter(t => t.niche === selectedNiche);
+    : templates.filter(t => t.niche.toLowerCase().includes(activeFilter.toLowerCase()));
 
   const toggleFavorite = (templateId: string) => {
     const newFavorites = new Set(favorites);
@@ -318,8 +322,8 @@ export default function TemplateLibrary({ onUseTemplate, showFilters = true, com
         </div>
       </div>
 
-      {/* Filters */}
-      {showFilters && (
+      {/* Filters - only show if no external filter and showFilters is true */}
+      {showFilters && !externalFilter && (
         <div className="flex items-center space-x-4">
           <Filter className="h-5 w-5 text-gray-400" />
           <select

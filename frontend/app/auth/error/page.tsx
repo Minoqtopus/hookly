@@ -100,7 +100,7 @@ function AuthErrorPageContent() {
               className="btn-secondary w-full flex items-center justify-center"
             >
               <Home className="h-4 w-4 mr-2" />
-              Try Free Demo Instead
+Start Free Trial Instead
             </button>
           </div>
 
@@ -130,13 +130,13 @@ function AuthErrorPageContent() {
         <div className="mt-6 p-4 bg-white/50 rounded-xl border border-white/20">
           <div className="text-center">
             <p className="text-sm text-gray-600 mb-3">
-              Want to try Hookly without signing in?
+              Want to try Hookly with your free trial?
             </p>
             <Link
               href="/"
               className="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700"
             >
-              Use the free demo instead →
+Start your free trial instead →
             </Link>
           </div>
         </div>

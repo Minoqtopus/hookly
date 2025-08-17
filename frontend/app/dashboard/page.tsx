@@ -102,7 +102,7 @@ export default function DashboardPage() {
   ];
 
   const displayStats = userStats || {
-    generationsToday: user?.plan === 'free' ? 2 : 15,
+    generationsToday: user?.plan === 'trial' ? 2 : 15,
     totalGenerations: 47,
     totalViews: 2340000,
     avgCTR: 4.2,

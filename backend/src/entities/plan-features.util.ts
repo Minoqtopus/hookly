@@ -12,7 +12,7 @@ export interface PlanFeatures {
 
 export function getPlanFeatures(plan: UserPlan): PlanFeatures {
   switch (plan) {
-    case UserPlan.FREE:
+    case UserPlan.TRIAL:
       return {
         has_batch_generation: false,
         has_advanced_analytics: false,
@@ -20,29 +20,18 @@ export function getPlanFeatures(plan: UserPlan): PlanFeatures {
         has_team_features: false,
         has_white_label: false,
         has_custom_integrations: false,
-        monthly_generation_limit: 3, // 3 per day
+        monthly_generation_limit: 3, // 3 during trial
       };
 
-    case UserPlan.STARTER:
+    case UserPlan.CREATOR:
       return {
         has_batch_generation: false,
-        has_advanced_analytics: false,
-        has_api_access: false,
-        has_team_features: false,
-        has_white_label: false,
-        has_custom_integrations: false,
-        monthly_generation_limit: 50,
-      };
-
-    case UserPlan.PRO:
-      return {
-        has_batch_generation: true,
         has_advanced_analytics: true,
-        has_api_access: true,
+        has_api_access: false,
         has_team_features: false,
         has_white_label: false,
         has_custom_integrations: false,
-        monthly_generation_limit: null, // unlimited
+        monthly_generation_limit: 150,
       };
 
     case UserPlan.AGENCY:
@@ -53,11 +42,11 @@ export function getPlanFeatures(plan: UserPlan): PlanFeatures {
         has_team_features: true,
         has_white_label: true,
         has_custom_integrations: true,
-        monthly_generation_limit: null, // unlimited
+        monthly_generation_limit: 500,
       };
 
     default:
-      return getPlanFeatures(UserPlan.FREE);
+      return getPlanFeatures(UserPlan.TRIAL);
   }
 }
 

@@ -1,7 +1,6 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './AppContext';
-import { useDemoTimer } from './useDemoTimer';
 
 interface NavigationState {
   isLoading: boolean;
@@ -40,7 +39,6 @@ export function useNavigationState(): NavigationState & NavigationActions {
 
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const demoTimer = useDemoTimer();
 
   // Initialize state from storage on mount
   useEffect(() => {
@@ -212,23 +210,7 @@ export function useNavigationState(): NavigationState & NavigationActions {
     return () => clearInterval(interval);
   }, [getTemplateSelection, getDemoData]);
 
-  // Handle demo expiry
-  useEffect(() => {
-    if (demoTimer.isExpired && !isAuthenticated) {
-      // Store current demo data before clearing
-      const currentDemoData = getDemoData();
-      if (currentDemoData) {
-        sessionStorage.setItem('pendingDemoData', JSON.stringify(currentDemoData));
-        clearDemoData();
-      }
-      
-      // Set pending action for post-auth flow
-      setPendingAction('demo_expired');
-      
-      // Trigger auth flow
-      handleAuthRequired('/generate');
-    }
-  }, [demoTimer.isExpired, isAuthenticated, getDemoData, clearDemoData, setPendingAction, handleAuthRequired]);
+  // Handle demo mode (no timer expiry needed anymore)
 
   return {
     ...state,

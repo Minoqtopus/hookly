@@ -4,11 +4,11 @@ import { AppProvider } from './lib/AppContext'
 
 export const metadata: Metadata = {
   title: 'Hookly - Create Viral TikTok Ads in 30 Seconds',
-  description: 'Generate high-converting UGC ad scripts, hooks, and visual prompts for TikTok with AI. Try free - no signup required!',
+  description: 'Generate high-converting UGC ad scripts, hooks, and visual prompts for TikTok with AI. Start your 7-day free trial today!',
   keywords: 'Hookly ads, TikTok ad generator, viral content, ad scripts, marketing automation, Hookly',
   openGraph: {
     title: 'Hookly - Create Viral TikTok Ads in 30 Seconds',
-    description: 'Generate high-converting UGC ad scripts with AI. Try free - no signup required!',
+    description: 'Generate high-converting UGC ad scripts with AI. Start your 7-day free trial today!',
     type: 'website',
   },
 }

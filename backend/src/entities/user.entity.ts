@@ -2,9 +2,8 @@ import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, Up
 import { Generation } from './generation.entity';
 
 export enum UserPlan {
-  FREE = 'free',
-  STARTER = 'starter',
-  PRO = 'pro',
+  TRIAL = 'trial',
+  CREATOR = 'creator', 
   AGENCY = 'agency'
 }
 
@@ -27,15 +26,25 @@ export class User {
   @Column({
     type: 'enum',
     enum: UserPlan,
-    default: UserPlan.FREE
+    default: UserPlan.TRIAL
   })
   plan: UserPlan;
 
   @Column({ type: 'int', default: 0 })
-  daily_count: number;
+  monthly_count: number;
 
   @Column({ type: 'date', default: () => 'CURRENT_DATE' })
   reset_date: Date;
+
+  // Trial management fields
+  @Column({ type: 'timestamp', nullable: true })
+  trial_started_at?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })  
+  trial_ends_at?: Date;
+
+  @Column({ type: 'int', default: 0 })
+  trial_generations_used: number;
 
   @Column({ nullable: true })
   google_id?: string;

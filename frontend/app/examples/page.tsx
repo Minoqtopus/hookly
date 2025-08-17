@@ -26,6 +26,16 @@ export default function ExamplesPage() {
   const [authTrigger, setAuthTrigger] = useState<'demo_save' | 'try_again' | 'nav_signup' | 'login'>('nav_signup');
   const router = useRouter();
   
+  const filters = [
+    { id: 'all', label: 'All Industries', count: 12 },
+    { id: 'beauty', label: 'Beauty & Skincare', count: 3 },
+    { id: 'fitness', label: 'Health & Fitness', count: 2 },
+    { id: 'tech', label: 'Tech & Gadgets', count: 2 },
+    { id: 'fashion', label: 'Fashion & Style', count: 2 },
+    { id: 'food', label: 'Food & Beverage', count: 2 },
+    { id: 'education', label: 'Education', count: 1 },
+  ];
+  
   const { user, isAuthenticated } = useAuth();
 
   // Apply route guard - redirect authenticated users to dashboard
@@ -66,15 +76,6 @@ export default function ExamplesPage() {
     { metric: "4.8/5", label: "Average Performance", icon: Star },
   ];
 
-  const filters = [
-    { id: 'all', label: 'All Industries', count: 12 },
-    { id: 'beauty', label: 'Beauty & Skincare', count: 3 },
-    { id: 'fitness', label: 'Health & Fitness', count: 2 },
-    { id: 'tech', label: 'Tech & Gadgets', count: 2 },
-    { id: 'fashion', label: 'Fashion & Style', count: 2 },
-    { id: 'food', label: 'Food & Beverage', count: 2 },
-    { id: 'education', label: 'Education', count: 1 },
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -88,7 +89,7 @@ export default function ExamplesPage() {
               </Link>
               <div className="flex items-center space-x-2">
                 <Sparkles className="h-6 w-6 text-primary-600" />
-                <span className="font-bold text-gray-900">Viral Ad Examples</span>
+                <span className="font-bold text-gray-900">Template Library</span>
               </div>
             </div>
             
@@ -110,13 +111,7 @@ export default function ExamplesPage() {
                 }}
                 className="btn-primary text-sm px-4 py-2"
               >
-                Sign Up Free
-              </button>
-              <button 
-                onClick={handleStartCreating}
-                className="btn-primary text-sm px-4 py-2"
-              >
-                Start Creating
+Start Free Trial
               </button>
             </div>
           </div>
@@ -136,12 +131,12 @@ export default function ExamplesPage() {
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
             Viral TikTok Ad{' '}
             <span className="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-              Examples
+              Templates
             </span>
           </h1>
           
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Browse our library of high-performing ad templates. Each example has generated 
+            Choose from our library of high-performing templates. Each template is based on ads that generated 
             thousands of views and proven conversion rates.
           </p>
 
@@ -154,7 +149,7 @@ export default function ExamplesPage() {
               <PlayCircle className="h-5 w-5 mr-2" />
               Create Your Own Ad
             </button>
-            <Link href="/" className="btn-secondary text-lg px-8 py-4 flex items-center justify-center">
+            <Link href="/demo" className="btn-secondary text-lg px-8 py-4 flex items-center justify-center">
               Try Free Demo
               <ArrowRight className="h-5 w-5 ml-2" />
             </Link>
@@ -203,11 +198,12 @@ export default function ExamplesPage() {
             onUseTemplate={handleUseTemplate} 
             showFilters={false}
             compact={false}
+            externalFilter={selectedFilter}
           />
         </div>
 
         {/* Pro Features Showcase */}
-        {(!isAuthenticated || user?.plan === 'free') && (
+        {(!isAuthenticated || user?.plan === 'trial') && (
           <div className="bg-gradient-to-r from-primary-600 to-secondary-600 rounded-2xl p-8 text-center text-white mb-16">
             <Crown className="h-12 w-12 mx-auto mb-4 text-yellow-300" />
             <h2 className="text-2xl font-bold mb-4">Want Even More Examples?</h2>
@@ -221,7 +217,7 @@ export default function ExamplesPage() {
                   onClick={() => setShowAuthModal(true)}
                   className="bg-white text-primary-600 font-semibold px-8 py-3 rounded-xl hover:shadow-lg transition-shadow"
                 >
-                  Sign Up Free
+  Start Free Trial
                 </button>
               ) : (
                 <button 
@@ -232,10 +228,10 @@ export default function ExamplesPage() {
                 </button>
               )}
               <Link 
-                href="/"
+                href="/demo"
                 className="border-2 border-white text-white font-semibold px-8 py-3 rounded-xl hover:bg-white hover:text-primary-600 transition-colors"
               >
-                Try Demo First
+                Try Free Demo
               </Link>
             </div>
           </div>

@@ -1,10 +1,13 @@
 export interface User {
   id: string;
   email: string;
-  plan: 'free' | 'starter' | 'pro' | 'agency';
+  plan: 'trial' | 'creator' | 'agency';
   auth_provider: 'email' | 'google';
   avatar_url?: string;
   is_verified: boolean;
+  trial_started_at?: string;
+  trial_ends_at?: string;
+  trial_generations_used?: number;
   // Feature flags
   has_batch_generation?: boolean;
   has_advanced_analytics?: boolean;

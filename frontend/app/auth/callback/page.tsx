@@ -32,7 +32,7 @@ function AuthCallbackPageContent() {
         const userData = {
           id: tokenPayload.sub,
           email: tokenPayload.email,
-          plan: 'free' as const,
+          plan: 'trial' as const,
           auth_provider: 'google' as const,
           is_verified: true
         };
