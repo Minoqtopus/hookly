@@ -1,7 +1,7 @@
 'use client';
 
 import { AuthService } from '@/app/lib/auth';
-import { Clock, Shield, Sparkles, X } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface AuthModalProps {
@@ -18,209 +18,10 @@ interface AuthModalProps {
 
 export default function AuthModal({ isOpen, onClose, demoData, triggerSource = 'demo_save' }: AuthModalProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
-  const [authMode, setAuthMode] = useState<'google' | 'email'>('google');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(true);
-
-  // Initialize timer from sessionStorage or set start time
-  useEffect(() => {
-    if (triggerSource !== 'demo_save') return;
-
-    const DEMO_TIMER_KEY = 'demo_timer_start';
-    const stored = sessionStorage.getItem(DEMO_TIMER_KEY);
-    
-    if (stored) {
-      // Calculate remaining time based on stored start time
-      const startTime = parseInt(stored);
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      const remaining = Math.max(0, 300 - elapsed);
-      setTimeLeft(remaining);
-    } else {
-      // First time - store start time
-      sessionStorage.setItem(DEMO_TIMER_KEY, Date.now().toString());
-      setTimeLeft(300);
-    }
-  }, [triggerSource]);
-
-  useEffect(() => {
-    if (!isOpen || triggerSource !== 'demo_save') return;
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isOpen, triggerSource]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleGoogleAuth = () => {
-    setIsLoading(true);
-    
-    // Store demo data to preserve it through auth flow
-    if (demoData) {
-      sessionStorage.setItem('pendingDemoData', JSON.stringify(demoData));
-    }
-    
-    AuthService.initiateGoogleAuth();
-  };
-
-  const handleEmailAuth = async () => {
-    if (!email || !password) return;
-    
-    setIsLoading(true);
-    
-    try {
-      // Store demo data to preserve it through auth flow
-      if (demoData) {
-        sessionStorage.setItem('pendingDemoData', JSON.stringify(demoData));
-      }
-      
-      // For now, just simulate success and close modal
-      // TODO: Implement actual email auth when backend is ready
-      setTimeout(() => {
-        setIsLoading(false);
-        onClose();
-        // Redirect to dashboard or continue flow
-        window.location.href = '/dashboard';
-      }, 1500);
-      
-    } catch (error) {
-      setIsLoading(false);
-      alert('Authentication failed. Please try again.');
-    }
-  };
-
-  const getModalContent = () => {
-    switch (triggerSource) {
-      case 'demo_save':
-        return {
-          title: '🎉 Love Your Ad?',
-          subtitle: 'Save it forever and create unlimited more!',
-          urgency: timeLeft > 60 ? 'Demo ending soon' : `Demo expires in ${formatTime(timeLeft)}`,
-          buttonText: 'Save My Ad with Google',
-          benefits: [
-            'Keep this amazing ad forever',
-            'Generate unlimited variations',
-            'Access advanced features',
-            'Track performance metrics'
-          ],
-          urgencyStyle: timeLeft <= 60 ? 'text-red-600 font-semibold' : 'text-blue-600'
-        };
-      case 'try_again':
-        return {
-          title: '🚀 Want More Like This?',
-          subtitle: 'Join thousands creating viral ads daily',
-          urgency: 'Limited time: Get 2 bonus generations',
-          buttonText: 'Continue with Google',
-          benefits: [
-            'Unlimited ad generations',
-            'Save and organize your ads',
-            'Track performance metrics',
-            'Access premium templates'
-          ],
-          urgencyStyle: 'text-blue-600'
-        };
-      case 'nav_signup':
-        return {
-          title: '🚀 Start Creating Viral Ads',
-          subtitle: 'Join the AI revolution in advertising',
-          urgency: 'Free trial: 15 generations over 7 days',
-          buttonText: 'Start Free Trial with Google',
-          benefits: [
-            '15 generations in your trial',
-            'Access to all features',
-            'Save your best work',
-            'No credit card required'
-          ],
-          urgencyStyle: 'text-green-600'
-        };
-      case 'login':
-        return {
-          title: 'Welcome Back!',
-          subtitle: 'Continue creating amazing ads',
-          urgency: 'Your work is waiting for you',
-          buttonText: 'Sign In with Google',
-          benefits: [
-            'Access your saved ads',
-            'Continue where you left off',
-            'Track your progress',
-            'Generate more content'
-          ],
-          urgencyStyle: 'text-blue-600'
-        };
-      case 'creator_plan_signup':
-        return {
-          title: '🚀 Start Your Creator Plan Trial',
-          subtitle: 'Try Creator Plan free for 7 days',
-          urgency: 'Free trial: 15 generations to test Creator features',
-          buttonText: 'Start Creator Trial with Google',
-          benefits: [
-            '15 generations during trial',
-            'Test all Creator plan features',
-            'No credit card required',
-            'Cancel anytime'
-          ],
-          urgencyStyle: 'text-green-600'
-        };
-      case 'agency_plan_signup':
-        return {
-          title: '🏢 Start Your Agency Plan Trial',
-          subtitle: 'Try Agency Plan free for 7 days',
-          urgency: 'Free trial: 15 generations to test Agency features',
-          buttonText: 'Start Agency Trial with Google',
-          benefits: [
-            '15 generations during trial',
-            'Test all Agency plan features',
-            'Team collaboration tools',
-            'No credit card required'
-          ],
-          urgencyStyle: 'text-purple-600'
-        };
-      case 'pricing_page':
-        return {
-          title: '🚀 Start Your Free Trial',
-          subtitle: 'Try Hookly free for 7 days',
-          urgency: 'Free trial: 15 generations over 7 days',
-          buttonText: 'Start Free Trial with Google',
-          benefits: [
-            '15 generations during trial',
-            'Access to all features',
-            'No credit card required',
-            'Upgrade to any plan after trial'
-          ],
-          urgencyStyle: 'text-green-600'
-        };
-      default:
-        return {
-          title: '🚀 Start Creating',
-          subtitle: 'Join thousands of marketers',
-          urgency: 'Free to start, upgrade anytime',
-          buttonText: 'Get Started with Google',
-          benefits: [
-            'Create viral ads instantly',
-            'Save and organize your work',
-            'Track performance metrics',
-            'Access premium features'
-          ],
-          urgencyStyle: 'text-blue-600'
-        };
-    }
-  };
-
-  const content = getModalContent();
+  const [error, setError] = useState('');
   
   // Set default auth mode based on trigger source
   useEffect(() => {
@@ -231,7 +32,66 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
     }
   }, [triggerSource]);
 
+  // Clear errors when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setError('');
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const handleEmailAuth = () => {
+    if (!email || !password) return;
+    
+    setIsLoading(true);
+    setError('');
+    
+    // Store demo data to preserve it through auth flow
+    if (demoData) {
+      sessionStorage.setItem('pendingDemoData', JSON.stringify(demoData));
+    }
+    
+    if (isSignUp) {
+      AuthService.registerWithEmail(email, password)
+        .then(() => {
+          setIsLoading(false);
+          onClose();
+          
+          // Redirect to dashboard or continue flow
+          const pendingDemo = sessionStorage.getItem('pendingDemoData');
+          if (pendingDemo) {
+            sessionStorage.removeItem('pendingDemoData');
+            window.location.href = '/generate?restored=true';
+          } else {
+            window.location.href = '/dashboard';
+          }
+        })
+        .catch(error => {
+          setIsLoading(false);
+          setError(error instanceof Error ? error.message : 'Authentication failed. Please try again.');
+        });
+    } else {
+      AuthService.loginWithEmail(email, password)
+        .then(() => {
+          setIsLoading(false);
+          onClose();
+          
+          // Redirect to dashboard or continue flow
+          const pendingDemo = sessionStorage.getItem('pendingDemoData');
+          if (pendingDemo) {
+            sessionStorage.removeItem('pendingDemoData');
+            window.location.href = '/generate?restored=true';
+          } else {
+            window.location.href = '/dashboard';
+          }
+        })
+        .catch(error => {
+          setIsLoading(false);
+          setError(error instanceof Error ? error.message : 'Authentication failed. Please try again.');
+        });
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -257,27 +117,12 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                 <Sparkles className="h-8 w-8 text-primary-600" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {content.title}
+                {isSignUp ? 'Get Started' : 'Welcome Back'}
               </h2>
               <p className="text-gray-600">
-                {content.subtitle}
+                {isSignUp ? 'Create an account to start building' : 'Sign in to continue creating'}
               </p>
-              
-              {/* Urgency Timer */}
-              {content.urgency && (
-                <div className="mt-4 inline-flex items-center bg-red-50 text-red-700 px-3 py-1 rounded-full text-sm font-medium">
-                  <Clock className="h-4 w-4 mr-1" />
-                  {content.urgency}
-                </div>
-              )}
             </div>
-
-            {/* Urgency message */}
-            {content.urgency && (
-              <div className={`text-center text-sm mb-4 ${content.urgencyStyle}`}>
-                {content.urgency}
-              </div>
-            )}
 
             {/* Demo Preview (if available) */}
             {demoData && triggerSource === 'demo_save' && (
@@ -292,87 +137,101 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
               </div>
             )}
 
-            {/* Login Stats (if in login mode) */}
-            {triggerSource === 'login' && (
-              <div className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-secondary-50 rounded-lg">
-                <div className="text-center">
-                  <p className="text-sm font-medium text-gray-900 mb-1">
-                    🔥 While you were away...
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    Our users generated <span className="font-semibold">2,847 new ads</span> and got <span className="font-semibold">15.2M views</span>
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Benefits */}
-            <div className="mb-8">
-              <ul className="space-y-3">
-                {content.benefits.map((benefit, index) => (
-                  <li key={index} className="flex items-center text-sm text-gray-700">
-                    <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                      <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    </div>
-                    {benefit}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
             {/* Auth Mode Toggle */}
             <div className="mb-6">
               <div className="flex bg-gray-100 rounded-lg p-1">
                 <button
-                  onClick={() => setAuthMode('google')}
+                  onClick={() => {
+                    setIsSignUp(false);
+                    setError('');
+                  }}
                   className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                    authMode === 'google'
+                    !isSignUp
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  Google
+                  Sign In
                 </button>
                 <button
-                  onClick={() => setAuthMode('email')}
+                  onClick={() => {
+                    setIsSignUp(true);
+                    setError('');
+                  }}
                   className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                    authMode === 'email'
+                    isSignUp
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  Email
+                  Sign Up
                 </button>
               </div>
             </div>
 
             {/* Auth Forms */}
-            {authMode === 'google' ? (
-              /* Google Auth Button */
-              <button
-                onClick={handleGoogleAuth}
-                disabled={isLoading}
-                className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-4 px-6 rounded-xl flex items-center justify-center transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400 mr-3"></div>
-                    Connecting...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                    {content.buttonText}
-                  </>
+            {isSignUp ? (
+              /* Email Auth Form for Sign Up */
+              <div className="space-y-4">
+                {error && (
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <strong className="font-bold">Error!</strong>
+                    <span className="block sm:inline"> {error}</span>
+                    <span className="absolute top-0 bottom-0 right-0 px-4 py-3">
+                      <button onClick={() => setError('')} className="text-red-700">
+                        <span className="text-2xl">&times;</span>
+                      </button>
+                    </span>
+                  </div>
                 )}
-              </button>
-            ) : (
-              /* Email Auth Form */
+                
+                {/* Google Sign Up */}
+                <button
+                  onClick={() => {
+                    setIsLoading(true);
+                    
+                    // Store demo data to preserve it through auth flow
+                    if (demoData) {
+                      sessionStorage.setItem('pendingDemoData', JSON.stringify(demoData));
+                    }
+                    
+                    AuthService.initiateGoogleAuth();
+                  }}
+                  disabled={isLoading}
+                  className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-4 px-6 rounded-xl flex items-center justify-center transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400 mr-3"></div>
+                      Connecting...
+                    </div>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      </svg>
+                      Continue with Google
+                    </>
+                  )}
+                </button>
+                
+                {/* Divider */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-gray-500">or</span>
+                  </div>
+                </div>
+                
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  handleEmailAuth();
+                }}>
               <div className="space-y-4">
                 <div>
                   <input
@@ -395,42 +254,147 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                   />
                 </div>
                 <button
-                  onClick={handleEmailAuth}
+                      type="submit"
                   disabled={isLoading || !email || !password}
                   className="w-full btn-primary py-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                      {isSignUp ? 'Creating Account...' : 'Signing In...'}
-                    </>
-                  ) : (
-                    isSignUp ? 'Create Account' : 'Sign In'
-                  )}
-                </button>
+                          Creating Account...
+                        </>
+                      ) : (
+                        'Create Account'
+                      )}
+                    </button>
+                  </div>
+                </form>
                 <div className="text-center">
                   <button
-                    onClick={() => setIsSignUp(!isSignUp)}
+                    onClick={() => {
+                      setIsSignUp(false);
+                      setError('');
+                    }}
                     className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                   >
-                    {isSignUp ? 'Already have an account? Sign in' : 'Need an account? Sign up'}
+                    Already have an account? Sign in
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Sign In Options - Both Email and Google */
+              <div className="space-y-4">
+                {error && (
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <strong className="font-bold">Error!</strong>
+                    <span className="block sm:inline"> {error}</span>
+                    <span className="absolute top-0 bottom-0 right-0 px-4 py-3">
+                      <button onClick={() => setError('')} className="text-red-700">
+                        <span className="text-2xl">&times;</span>
+                      </button>
+                    </span>
+                  </div>
+                )}
+                
+                {/* Google Sign In */}
+                <button
+                  onClick={() => {
+                    setIsLoading(true);
+                    
+                    // Store demo data to preserve it through auth flow
+                    if (demoData) {
+                      sessionStorage.setItem('pendingDemoData', JSON.stringify(demoData));
+                    }
+                    
+                    AuthService.initiateGoogleAuth();
+                  }}
+                  disabled={isLoading}
+                  className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-4 px-6 rounded-xl flex items-center justify-center transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400 mr-3"></div>
+                      Connecting...
+                    </div>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      </svg>
+                      Continue with Google
+                    </>
+                  )}
+                </button>
+                
+                {/* Divider */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-gray-500">or</span>
+                  </div>
+                </div>
+                
+                {/* Email Sign In */}
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  handleEmailAuth();
+                }}>
+                  <div className="space-y-4">
+                    <div>
+                      <input
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="password"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isLoading || !email || !password}
+                      className="w-full btn-primary py-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? (
+                        <div className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                          {isSignUp ? 'Creating Account...' : 'Signing In...'}
+                        </div>
+                      ) : (
+                        isSignUp ? 'Create Account' : 'Sign In'
+                      )}
+                    </button>
+                  </div>
+                </form>
+                
+                <div className="text-center">
+                  <button
+                    onClick={() => {
+                      setIsSignUp(true);
+                      setError('');
+                    }}
+                    className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                  >
+                    Need an account? Sign up
                   </button>
                 </div>
               </div>
             )}
-
-            {/* Trust Indicators */}
-            <div className="mt-6 flex items-center justify-center text-xs text-gray-500">
-              <Shield className="h-4 w-4 mr-1" />
-              <span>Secure signup • No spam • Cancel anytime</span>
-            </div>
-
-            {/* Social Proof */}
-            <div className="mt-4 text-center">
-              <p className="text-xs text-gray-500">
-                Trusted by <span className="font-medium text-gray-700">10,000+ creators</span>
-              </p>
-            </div>
           </div>
         </div>
       </div>

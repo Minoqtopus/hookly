@@ -147,6 +147,48 @@ export class AuthService {
     window.location.href = '/';
   }
 
+  static async loginWithEmail(email: string, password: string): Promise<AuthResponse> {
+    const response = await fetch(`${this.API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Login failed');
+    }
+
+    const authData: AuthResponse = await response.json();
+    this.storeTokens(authData.access_token, authData.refresh_token);
+    this.storeUser(authData.user);
+    
+    return authData;
+  }
+
+  static async registerWithEmail(email: string, password: string): Promise<AuthResponse> {
+    const response = await fetch(`${this.API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Registration failed');
+    }
+
+    const authData: AuthResponse = await response.json();
+    this.storeTokens(authData.access_token, authData.refresh_token);
+    this.storeUser(authData.user);
+    
+    return authData;
+  }
+
   // Check if token is about to expire (within 2 minutes)
   static isTokenExpiringSoon(): boolean {
     const tokens = this.getStoredTokens();
