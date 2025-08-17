@@ -2,7 +2,7 @@ export interface User {
   id: string;
   email: string;
   plan: 'free' | 'starter' | 'pro' | 'agency';
-  auth_provider: 'email' | 'google' | 'tiktok';
+  auth_provider: 'email' | 'google';
   avatar_url?: string;
   is_verified: boolean;
   // Feature flags

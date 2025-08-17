@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Generation } from './generation.entity';
 
 export enum UserPlan {
@@ -10,8 +10,7 @@ export enum UserPlan {
 
 export enum AuthProvider {
   EMAIL = 'email',
-  GOOGLE = 'google',
-  TIKTOK = 'tiktok'
+  GOOGLE = 'google'
 }
 
 @Entity('users')
@@ -40,9 +39,6 @@ export class User {
 
   @Column({ nullable: true })
   google_id?: string;
-
-  @Column({ nullable: true })
-  tiktok_id?: string;
 
   @Column({
     type: 'enum',

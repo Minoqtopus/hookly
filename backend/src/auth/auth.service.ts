@@ -1,14 +1,14 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { JwtService } from '@nestjs/jwt';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { User, AuthProvider } from '../entities/user.entity';
-import { RegisterDto } from './dto/register.dto';
+import { Repository } from 'typeorm';
+import { AuthProvider, User } from '../entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { OAuthUserDto } from './dto/oauth-user.dto';
+import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
@@ -105,7 +105,7 @@ export class AuthService {
   }
 
   async validateOAuthUser(oauthUser: OAuthUserDto) {
-    const { email, google_id, tiktok_id, avatar_url } = oauthUser;
+    const { email, google_id, avatar_url } = oauthUser;
 
     // Try to find existing user by email first
     let user = await this.userRepository.findOne({ where: { email } });
@@ -117,12 +117,6 @@ export class AuthService {
       if (google_id && !user.google_id) {
         user.google_id = google_id;
         user.auth_provider = AuthProvider.GOOGLE;
-        needsUpdate = true;
-      }
-
-      if (tiktok_id && !user.tiktok_id) {
-        user.tiktok_id = tiktok_id;
-        user.auth_provider = AuthProvider.TIKTOK;
         needsUpdate = true;
       }
 
@@ -141,13 +135,11 @@ export class AuthService {
       }
     } else {
       // Create new user
-      const authProvider = google_id ? AuthProvider.GOOGLE : 
-                          tiktok_id ? AuthProvider.TIKTOK : AuthProvider.EMAIL;
+      const authProvider = google_id ? AuthProvider.GOOGLE : AuthProvider.EMAIL;
 
       user = this.userRepository.create({
         email,
         google_id,
-        tiktok_id,
         avatar_url,
         auth_provider: authProvider,
         is_verified: true,
