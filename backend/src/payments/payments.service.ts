@@ -14,10 +14,8 @@ export class PaymentsService {
   // Map LemonSqueezy product IDs to user plans
   private readonly PRODUCT_PLAN_MAPPING = {
     // Replace these with your actual LemonSqueezy product IDs
-    'starter_monthly': UserPlan.STARTER,
-    'starter_yearly': UserPlan.STARTER,
-    'pro_monthly': UserPlan.PRO,
-    'pro_yearly': UserPlan.PRO,
+    'creator_monthly': UserPlan.CREATOR,
+    'creator_yearly': UserPlan.CREATOR,
     'agency_monthly': UserPlan.AGENCY,
     'agency_yearly': UserPlan.AGENCY,
   };
@@ -108,8 +106,8 @@ export class PaymentsService {
       await this.upgradeUserToPlan(user, targetPlan);
       this.logger.log(`User ${user.email} subscription updated to ${targetPlan}: ${data.attributes.status}`);
     } else if (['cancelled', 'expired', 'past_due'].includes(data.attributes.status)) {
-      await this.downgradeUserToFree(user);
-      this.logger.log(`User ${user.email} subscription ${data.attributes.status} - downgraded to FREE`);
+      await this.downgradeUserToTrial(user);
+      this.logger.log(`User ${user.email} subscription ${data.attributes.status} - downgraded to TRIAL`);
     }
   }
 
@@ -117,7 +115,7 @@ export class PaymentsService {
     const user = await this.findUserByEmailOrId(data.attributes.user_email, userId);
     if (!user) return;
 
-    await this.downgradeUserToFree(user);
+    await this.downgradeUserToTrial(user);
     this.logger.log(`User ${user.email} subscription cancelled ${data.id}`);
   }
 
@@ -125,7 +123,7 @@ export class PaymentsService {
     const user = await this.findUserByEmailOrId(data.attributes.user_email, userId);
     if (!user) return;
 
-    await this.downgradeUserToFree(user);
+    await this.downgradeUserToTrial(user);
     this.logger.log(`User ${user.email} subscription expired ${data.id}`);
   }
 
@@ -166,39 +164,37 @@ export class PaymentsService {
     
     if (fullName.includes('agency')) {
       return UserPlan.AGENCY;
-    } else if (fullName.includes('pro')) {
-      return UserPlan.PRO;
-    } else if (fullName.includes('starter')) {
-      return UserPlan.STARTER;
+    } else if (fullName.includes('creator')) {
+      return UserPlan.CREATOR;
     }
 
-    // Default to PRO for backwards compatibility
-    this.logger.warn(`Could not determine plan from product data. Defaulting to PRO. Product: ${productName}, Variant: ${variantName}`);
-    return UserPlan.PRO;
+    // Default to CREATOR for backwards compatibility
+    this.logger.warn(`Could not determine plan from product data. Defaulting to CREATOR. Product: ${productName}, Variant: ${variantName}`);
+    return UserPlan.CREATOR;
   }
 
   private async upgradeUserToPlan(user: User, plan: UserPlan): Promise<void> {
     updateUserPlanFeatures(user, plan);
-    user.daily_count = 0; // Reset daily count on upgrade
+    user.monthly_count = 0; // Reset monthly count on upgrade
     await this.userRepository.save(user);
     this.logger.log(`User ${user.email} upgraded to ${plan}`);
   }
 
-  // Legacy method - defaults to Pro for backwards compatibility
-  private async upgradeUserToPro(user: User): Promise<void> {
-    await this.upgradeUserToPlan(user, UserPlan.PRO);
+  // Legacy method - defaults to Creator for backwards compatibility
+  private async upgradeUserToCreator(user: User): Promise<void> {
+    await this.upgradeUserToPlan(user, UserPlan.CREATOR);
   }
 
-  private async downgradeUserToFree(user: User): Promise<void> {
-    updateUserPlanFeatures(user, UserPlan.FREE);
-    // Reset daily count to apply free tier limits immediately
+  private async downgradeUserToTrial(user: User): Promise<void> {
+    updateUserPlanFeatures(user, UserPlan.TRIAL);
+    // Reset monthly count to apply trial tier limits immediately
     const today = new Date().toISOString().split('T')[0];
     if (user.reset_date.toISOString().split('T')[0] !== today) {
-      user.daily_count = 0;
+      user.monthly_count = 0;
       user.reset_date = new Date();
     }
     await this.userRepository.save(user);
-    this.logger.log(`User ${user.email} downgraded to FREE`);
+    this.logger.log(`User ${user.email} downgraded to TRIAL`);
   }
 
   // Public method for manual plan changes (e.g., admin upgrades, promo codes)
@@ -218,7 +214,7 @@ export class PaymentsService {
 
   // Get plan hierarchy for validation
   private getPlanHierarchy(): UserPlan[] {
-    return [UserPlan.FREE, UserPlan.STARTER, UserPlan.PRO, UserPlan.AGENCY];
+    return [UserPlan.TRIAL, UserPlan.CREATOR, UserPlan.AGENCY];
   }
 
   // Check if plan transition is valid (can only upgrade, not downgrade via payments)
@@ -240,8 +236,8 @@ export class PaymentsService {
 
     // Define promo codes and their benefits
     const promoCodes = {
-      'LAUNCH50': { plan: UserPlan.STARTER, description: 'Launch Special - 50% off Starter' },
-      'BETA100': { plan: UserPlan.PRO, description: 'Beta Tester - Free Pro Access' },
+      'CREATOR50': { plan: UserPlan.CREATOR, description: 'Launch Special - 50% off Creator' },
+      'BETA_AGENCY': { plan: UserPlan.AGENCY, description: 'Beta Tester - Free Agency Access', isBeta: true },
       'AGENCY30': { plan: UserPlan.AGENCY, description: 'Agency Trial - 30 days free' },
     };
 
@@ -250,13 +246,20 @@ export class PaymentsService {
       return { success: false, message: 'Invalid promo code' };
     }
 
-    // Check if this is a valid upgrade
-    if (!this.isValidPlanTransition(user.plan, promo.plan)) {
-      return { success: false, message: 'Promo code not applicable to your current plan' };
-    }
+    // Special handling for beta users with BETA_AGENCY promo code
+    if (promo.isBeta && promoCode.toUpperCase() === 'BETA_AGENCY') {
+      user.is_beta_user = true;
+      await this.upgradeUserToPlan(user, promo.plan);
+      this.logger.log(`Beta promo code applied: User ${user.email} marked as beta user and upgraded to ${promo.plan}`);
+    } else {
+      // Check if this is a valid upgrade for regular promo codes
+      if (!this.isValidPlanTransition(user.plan, promo.plan)) {
+        return { success: false, message: 'Promo code not applicable to your current plan' };
+      }
 
-    await this.upgradeUserToPlan(user, promo.plan);
-    this.logger.log(`Promo code applied: User ${user.email} upgraded to ${promo.plan} with code ${promoCode}`);
+      await this.upgradeUserToPlan(user, promo.plan);
+      this.logger.log(`Promo code applied: User ${user.email} upgraded to ${promo.plan} with code ${promoCode}`);
+    }
 
     return { 
       success: true, 

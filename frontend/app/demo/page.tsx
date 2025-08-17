@@ -416,7 +416,7 @@ export default function DemoPage() {
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
-        triggerSource="demo_conversion"
+        triggerSource="nav_signup"
       />
     </div>
   );

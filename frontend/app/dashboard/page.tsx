@@ -1,6 +1,8 @@
 'use client';
 
 import LocalSavesViewer from '@/app/components/LocalSavesViewer';
+import BetaBadge from '@/app/components/BetaBadge';
+import TrialCountdown from '@/app/components/TrialCountdown';
 import TemplateLibrary from '@/app/components/TemplateLibrary';
 import UpgradeModal from '@/app/components/UpgradeModal';
 import { useApp, useAuth, useRecentGenerations, useUserStats } from '@/app/lib/AppContext';
@@ -141,6 +143,11 @@ export default function DashboardPage() {
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* Beta Badge */}
+              {user.is_beta_user && (
+                <BetaBadge size="small" />
+              )}
+              
               {/* Plan Badge */}
               <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                 user.plan === 'agency'
@@ -152,7 +159,7 @@ export default function DashboardPage() {
                 {user.plan === 'agency' ? (
                   <div className="flex items-center">
                     <Crown className="h-3 w-3 mr-1" />
-                    AGENCY
+                    {user.is_beta_user ? 'AGENCY (FREE)' : 'AGENCY'}
                   </div>
                 ) : user.plan === 'creator' ? (
                   <div className="flex items-center">
@@ -187,6 +194,17 @@ export default function DashboardPage() {
             Ready to create more viral content? You're on a {displayStats.streak}-day streak! 🔥
           </p>
         </div>
+
+        {/* Trial Countdown for Trial Users */}
+        {user.plan === 'trial' && (
+          <TrialCountdown
+            trialEndsAt={user.trial_ends_at}
+            generationsUsed={user.trial_generations_used || 0}
+            generationsLimit={15}
+            onUpgrade={() => setShowUpgradeModal(true)}
+            className="mb-8"
+          />
+        )}
 
         {/* Performance Overview */}
         {user && (user.plan === 'creator' || user.plan === 'agency') && (

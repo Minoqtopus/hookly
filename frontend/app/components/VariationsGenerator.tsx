@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/app/lib/AppContext';
 import { AuthService } from '@/app/lib/auth';
+import { toast } from '../lib/toast';
 import { ArrowRight, CheckCircle, Copy, Crown, Download, Heart, RefreshCw, Target, TrendingUp, Users } from 'lucide-react';
 import { useState } from 'react';
 
@@ -79,9 +80,9 @@ export default function VariationsGenerator({ formData, onUpgrade, onSave, onExp
   const handleCopyToClipboard = async (text: string, type: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      alert(`${type} copied to clipboard!`);
+      toast.success(`${type} copied to clipboard!`);
     } catch (error) {
-      alert('Failed to copy to clipboard');
+      toast.error('Failed to copy to clipboard');
     }
   };
 
@@ -111,13 +112,13 @@ export default function VariationsGenerator({ formData, onUpgrade, onSave, onExp
       });
 
       if (response.ok) {
-        alert('Variation saved successfully!');
+        toast.success('Variation saved successfully!');
       } else {
         const errorData = await response.json();
-        alert(errorData.message || 'Failed to save variation');
+        toast.error(errorData.message || 'Failed to save variation');
       }
     } catch (error) {
-      alert('Failed to save variation');
+      toast.error('Failed to save variation');
     }
   };
 

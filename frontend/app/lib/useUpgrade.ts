@@ -5,6 +5,8 @@ import { useApp } from './AppContext';
 interface UseUpgradeReturn {
   isUpgrading: boolean;
   error: string | null;
+  upgradeToCreatorMonthly: () => Promise<string | null>;
+  upgradeToAgencyMonthly: () => Promise<string | null>;
   upgradeToProMonthly: () => Promise<string | null>;
   upgradeToProYearly: () => Promise<string | null>;
   cancelSubscription: () => Promise<boolean>;
@@ -21,7 +23,7 @@ export function useUpgrade(): UseUpgradeReturn {
     setError(null);
   }, []);
 
-  const upgradeToProMonthly = useCallback(async (): Promise<string | null> => {
+  const upgradeToCreatorMonthly = useCallback(async (): Promise<string | null> => {
     if (!state.user) {
       setError('Please log in to upgrade your plan');
       return null;
@@ -31,7 +33,7 @@ export function useUpgrade(): UseUpgradeReturn {
     setError(null);
     
     try {
-      const result = await ApiClient.upgradeToPro({
+      const result = await ApiClient.upgradeToCreator({
         plan: 'monthly',
         user_id: state.user.id,
         email: state.user.email,
@@ -48,7 +50,7 @@ export function useUpgrade(): UseUpgradeReturn {
         
         switch (err.details.code) {
           case 'ALREADY_SUBSCRIBED':
-            errorMessage = 'You already have an active Pro subscription';
+            errorMessage = 'You already have an active subscription';
             break;
           case 'NETWORK_ERROR':
             errorMessage = 'Network error. Please check your connection and try again.';
@@ -67,6 +69,58 @@ export function useUpgrade(): UseUpgradeReturn {
       setIsUpgrading(false);
     }
   }, [state.user]);
+
+  const upgradeToAgencyMonthly = useCallback(async (): Promise<string | null> => {
+    if (!state.user) {
+      setError('Please log in to upgrade your plan');
+      return null;
+    }
+
+    setIsUpgrading(true);
+    setError(null);
+    
+    try {
+      const result = await ApiClient.upgradeToAgency({
+        plan: 'monthly',
+        user_id: state.user.id,
+        email: state.user.email,
+        success_url: `${window.location.origin}/dashboard?upgrade=success`,
+        cancel_url: `${window.location.origin}/dashboard?upgrade=cancelled`,
+      });
+      
+      return result.checkout_url;
+    } catch (err) {
+      let errorMessage = 'Failed to initiate upgrade';
+      
+      if (err instanceof ApiErrorClass) {
+        errorMessage = err.details.message;
+        
+        switch (err.details.code) {
+          case 'ALREADY_SUBSCRIBED':
+            errorMessage = 'You already have an active subscription';
+            break;
+          case 'NETWORK_ERROR':
+            errorMessage = 'Network error. Please check your connection and try again.';
+            break;
+          case 'SESSION_EXPIRED':
+            errorMessage = 'Your session has expired. Please log in again.';
+            break;
+        }
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
+      return null;
+    } finally {
+      setIsUpgrading(false);
+    }
+  }, [state.user]);
+
+  const upgradeToProMonthly = useCallback(async (): Promise<string | null> => {
+    // Legacy method - redirect to Creator plan
+    return upgradeToCreatorMonthly();
+  }, [upgradeToCreatorMonthly]);
 
   const upgradeToProYearly = useCallback(async (): Promise<string | null> => {
     if (!state.user) {
@@ -162,6 +216,8 @@ export function useUpgrade(): UseUpgradeReturn {
   return {
     isUpgrading,
     error,
+    upgradeToCreatorMonthly,
+    upgradeToAgencyMonthly,
     upgradeToProMonthly,
     upgradeToProYearly,
     cancelSubscription,

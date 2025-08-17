@@ -1,6 +1,7 @@
 'use client';
 
 import AuthModal from '@/app/components/AuthModal';
+import BetaBadge from '@/app/components/BetaBadge';
 import { useAuth } from '@/app/lib/AppContext';
 import { ArrowLeft, Check, Crown, Sparkles, Star, Zap } from 'lucide-react';
 import Link from 'next/link';
@@ -9,7 +10,7 @@ import { useState } from 'react';
 export default function PricingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'creator' | 'agency'>('creator');
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const plans = [
     {
@@ -69,7 +70,7 @@ export default function PricingPage() {
     },
     {
       question: 'What payment methods do you accept?',
-      answer: 'We accept all major credit cards (Visa, MasterCard, American Express) and PayPal. All payments are processed securely through Stripe.'
+      answer: 'We accept all major credit cards (Visa, MasterCard, American Express) and PayPal. All payments are processed securely through LemonSqueezy.'
     }
   ];
 
@@ -78,6 +79,12 @@ export default function PricingPage() {
     
     if (!isAuthenticated) {
       setShowAuthModal(true);
+      return;
+    }
+    
+    // Beta users already have Agency plan for free
+    if (user?.is_beta_user && planId === 'agency') {
+      window.location.href = '/dashboard?welcome=beta';
       return;
     }
     
@@ -127,6 +134,11 @@ export default function PricingPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        {/* Beta User Banner */}
+        {user?.is_beta_user && (
+          <BetaBadge variant="banner" className="max-w-4xl mx-auto" />
+        )}
+
         {/* Header Section */}
         <div className="text-center mb-20">
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
@@ -138,12 +150,14 @@ export default function PricingPage() {
           </p>
           
           {/* Trial CTA */}
-          <div className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-            <Zap className="h-5 w-5 text-blue-600 mr-2" />
-            <span className="text-blue-800 font-medium">
-              Start with a 7-day free trial • No credit card required
-            </span>
-          </div>
+          {!user?.is_beta_user && (
+            <div className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+              <Zap className="h-5 w-5 text-blue-600 mr-2" />
+              <span className="text-blue-800 font-medium">
+                Start with a 7-day free trial • No credit card required
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Pricing Cards */}
@@ -176,13 +190,29 @@ export default function PricingPage() {
 
               {/* Price */}
               <div className="text-center mb-8">
-                <div className="flex items-baseline justify-center">
-                  <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
-                  <span className="text-gray-500 ml-1">/month</span>
-                </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  ${(plan.price * 12 * 0.83).toFixed(0)}/month billed annually
-                </p>
+                {user?.is_beta_user && plan.id === 'agency' ? (
+                  <div>
+                    <div className="flex items-baseline justify-center">
+                      <span className="text-4xl font-bold text-green-600">FREE</span>
+                    </div>
+                    <p className="text-sm text-green-600 mt-1 font-medium">
+                      🎉 Beta Tester Exclusive
+                    </p>
+                    <p className="text-xs text-gray-500 line-through mt-1">
+                      Regular price: ${plan.price}/month
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-baseline justify-center">
+                      <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
+                      <span className="text-gray-500 ml-1">/month</span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">
+                      ${(plan.price * 12 * 0.83).toFixed(0)}/month billed annually
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Features */}
@@ -197,7 +227,7 @@ export default function PricingPage() {
 
               {/* CTA Button */}
               <button
-                onClick={() => handleSelectPlan(plan.id)}
+                onClick={() => handleSelectPlan(plan.id as 'creator' | 'agency')}
                 className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
                   plan.popular
                     ? 'bg-primary-600 text-white hover:bg-primary-700'

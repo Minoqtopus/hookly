@@ -3,6 +3,7 @@
 import AuthModal from '@/app/components/AuthModal';
 import { useAuth } from '@/app/lib/AppContext';
 import { AuthService } from '@/app/lib/auth';
+import { toast } from '../lib/toast';
 import {
   ArrowLeft,
   Crown,
@@ -218,12 +219,12 @@ export default function TeamsPage() {
         throw new Error(errorData.message || 'Failed to invite user');
       }
 
-      alert('Invitation sent successfully!');
+      toast.success('Invitation sent successfully!');
       setShowInviteModal(false);
       setInviteEmail('');
       setInviteRole('member');
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to invite user');
+      toast.error(error instanceof Error ? error.message : 'Failed to invite user');
     }
   };
 

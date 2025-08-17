@@ -34,6 +34,7 @@ export interface GuestGenerateRequest {
 
 export interface UserStats {
   generationsToday: number;
+  generationsThisMonth: number;
   totalGenerations: number;
   totalViews: number;
   avgCTR: number;
@@ -214,11 +215,23 @@ export class ApiClient {
   }
 
   // User plan endpoints
-  static async upgradeToPro(checkoutData: any): Promise<{ checkout_url: string }> {
-    return this.makeRequest<{ checkout_url: string }>('/user/upgrade', {
+  static async upgradeToCreator(checkoutData: any): Promise<{ checkout_url: string }> {
+    return this.makeRequest<{ checkout_url: string }>('/user/upgrade/creator', {
       method: 'POST',
       body: JSON.stringify(checkoutData),
     });
+  }
+
+  static async upgradeToAgency(checkoutData: any): Promise<{ checkout_url: string }> {
+    return this.makeRequest<{ checkout_url: string }>('/user/upgrade/agency', {
+      method: 'POST',
+      body: JSON.stringify(checkoutData),
+    });
+  }
+
+  // Legacy method for backward compatibility
+  static async upgradeToPro(checkoutData: any): Promise<{ checkout_url: string }> {
+    return this.upgradeToCreator(checkoutData);
   }
 
   static async cancelSubscription(): Promise<void> {

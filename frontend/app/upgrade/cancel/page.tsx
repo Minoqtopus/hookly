@@ -74,7 +74,7 @@ export default function CancelSubscriptionPage() {
     }
   };
 
-  if (!user || user.plan !== 'pro') {
+  if (!user || (user.plan !== 'creator' && user.plan !== 'agency')) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

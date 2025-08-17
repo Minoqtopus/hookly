@@ -12,8 +12,8 @@ interface UpgradeModalProps {
 }
 
 export default function UpgradeModal({ isOpen, onClose, source = 'dashboard' }: UpgradeModalProps) {
-  const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro' | 'agency'>('pro');
-  const { isUpgrading, error, upgradeToProMonthly, upgradeToProYearly, clearError } = useUpgrade();
+  const [selectedPlan, setSelectedPlan] = useState<'creator' | 'agency'>('creator');
+  const { isUpgrading, error, upgradeToCreatorMonthly, upgradeToAgencyMonthly, clearError } = useUpgrade();
 
   // Clear error when modal opens
   useEffect(() => {
@@ -23,8 +23,10 @@ export default function UpgradeModal({ isOpen, onClose, source = 'dashboard' }: 
   }, [isOpen, clearError]);
 
   const handleUpgrade = async () => {
-    // For now, all plans use the same checkout flow - will be updated when backend supports multiple tiers
-    const checkoutUrl = await upgradeToProMonthly();
+    // Use appropriate checkout flow based on selected plan
+    const checkoutUrl = selectedPlan === 'creator' 
+      ? await upgradeToCreatorMonthly() 
+      : await upgradeToAgencyMonthly();
     
     if (checkoutUrl) {
       // Redirect to LemonSqueezy checkout
@@ -68,31 +70,24 @@ export default function UpgradeModal({ isOpen, onClose, source = 'dashboard' }: 
   const content = getModalContent();
 
   const plans = {
-    starter: {
-      name: 'Starter',
-      price: 15,
-      dailyPrice: 0.50,
+    creator: {
+      name: 'Creator',
+      price: 29,
+      dailyPrice: 0.97,
       billing: 'per month',
       description: 'Perfect for individual creators'
     },
-    pro: {
-      name: 'Pro',
-      price: 39,
-      dailyPrice: 1.30,
-      billing: 'per month',
-      description: 'Most popular for growing brands'
-    },
     agency: {
       name: 'Agency',
-      price: 99,
-      dailyPrice: 3.30,
+      price: 79,
+      dailyPrice: 2.63,
       billing: 'per month',
-      description: 'For teams and agencies'
+      description: 'Built for agencies and teams'
     }
   };
 
   // Default to Pro for upgrade modals
-  const recommendedPlan = 'pro';
+  const recommendedPlan = 'creator';
 
   const features = [
     { icon: Zap, text: 'Unlimited ad generations', highlight: true },
@@ -142,7 +137,7 @@ export default function UpgradeModal({ isOpen, onClose, source = 'dashboard' }: 
                 {Object.entries(plans).map(([planKey, plan]) => (
                   <button
                     key={planKey}
-                    onClick={() => setSelectedPlan(planKey as 'starter' | 'pro' | 'agency')}
+                    onClick={() => setSelectedPlan(planKey as 'creator' | 'agency')}
                     className={`py-3 px-2 rounded-lg font-medium transition-all text-center ${
                       selectedPlan === planKey
                         ? 'bg-white text-gray-900 shadow-sm'

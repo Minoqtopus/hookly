@@ -24,7 +24,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
 function UpgradePageContent() {
-  const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro' | 'agency'>('pro'); // Default to pro for better value
+  const [selectedPlan, setSelectedPlan] = useState<'creator' | 'agency'>('creator'); // Default to creator for better value
   const [showTestimonials, setShowTestimonials] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   
@@ -32,7 +32,7 @@ function UpgradePageContent() {
   const searchParams = useSearchParams();
   const source = searchParams.get('source') || 'direct';
   const { user, isAuthenticated } = useAuth();
-  const { isUpgrading, error, upgradeToProMonthly, upgradeToProYearly, clearError } = useUpgrade();
+  const { isUpgrading, error, upgradeToCreatorMonthly, upgradeToAgencyMonthly, clearError } = useUpgrade();
 
   // Redirect non-authenticated users
   useEffect(() => {
@@ -53,8 +53,10 @@ function UpgradePageContent() {
   }, []);
 
   const handleUpgrade = async () => {
-    // For now, all plans use the same checkout flow - will be updated when backend supports multiple tiers
-    const checkoutUrl = await upgradeToProMonthly();
+    // Use appropriate checkout flow based on selected plan
+    const checkoutUrl = selectedPlan === 'creator' 
+      ? await upgradeToCreatorMonthly() 
+      : await upgradeToAgencyMonthly();
     
     if (checkoutUrl) {
       // Track conversion event
@@ -112,35 +114,25 @@ function UpgradePageContent() {
   const content = getSourceContent();
 
   const plans = {
-    starter: {
-      name: 'Starter',
-      price: 15,
-      dailyPrice: 0.50,
+    creator: {
+      name: 'Creator',
+      price: 29,
+      dailyPrice: 0.97,
       billing: 'per month',
       description: 'Perfect for individual creators',
-      generationsLimit: 50,
+      generationsLimit: 150,
       popular: false,
-      features: ['50 generations/month', 'Basic templates', 'Standard support', 'Export to text/PDF']
-    },
-    pro: {
-      name: 'Pro',
-      price: 39,
-      dailyPrice: 1.30,
-      billing: 'per month',
-      description: 'Most popular for growing brands',
-      generationsLimit: 'unlimited',
-      popular: true,
-      features: ['Unlimited generations', 'Advanced analytics', 'Batch generation', 'Priority support', 'No watermarks', 'API access']
+      features: ['150 generations/month', 'All viral ad templates', 'Performance analytics', 'Script & visual suggestions', 'Copy to clipboard tools']
     },
     agency: {
       name: 'Agency',
-      price: 99,
-      dailyPrice: 3.30,
+      price: 79,
+      dailyPrice: 2.63,
       billing: 'per month',
-      description: 'For teams and agencies',
-      generationsLimit: 'unlimited',
-      popular: false,
-      features: ['Everything in Pro', 'Team collaboration', 'White-label options', 'Custom integrations', 'Dedicated account manager', 'Advanced reporting']
+      description: 'Built for agencies and teams',
+      generationsLimit: 500,
+      popular: true,
+      features: ['500 generations/month', 'Everything in Creator plan', 'Team collaboration tools', 'Batch ad generation', 'Priority support']
     }
   };
 
@@ -300,7 +292,7 @@ function UpgradePageContent() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-8 mb-16">
+        <div className="grid lg:grid-cols-2 gap-8 mb-16 max-w-4xl mx-auto">
           {Object.entries(plans).map(([planKey, plan]) => (
             <div 
               key={planKey}
@@ -332,8 +324,7 @@ function UpgradePageContent() {
                   
                   <div className="mt-4">
                     <span className="text-lg font-semibold text-primary-600">
-                      {plan.generationsLimit === 'unlimited' ? 'Unlimited' : `${plan.generationsLimit}`} 
-                      {plan.generationsLimit !== 'unlimited' && ' generations'}
+                      {plan.generationsLimit} generations/month
                     </span>
                   </div>
                 </div>
@@ -349,7 +340,7 @@ function UpgradePageContent() {
                 </ul>
                 
                 <button
-                  onClick={() => setSelectedPlan(planKey as 'starter' | 'pro' | 'agency')}
+                  onClick={() => setSelectedPlan(planKey as 'creator' | 'agency')}
                   className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
                     selectedPlan === planKey
                       ? 'bg-primary-600 text-white shadow-lg'

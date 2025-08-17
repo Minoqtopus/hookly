@@ -90,6 +90,10 @@ export class User {
   @Column({ default: false })
   has_custom_integrations: boolean;
 
+  // Beta user flag for free Agency access
+  @Column({ type: 'boolean', default: false })
+  is_beta_user: boolean;
+
   // Plan-specific limits
   @Column({ type: 'int', nullable: true })
   monthly_generation_limit?: number; // null = unlimited

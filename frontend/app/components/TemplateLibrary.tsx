@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Copy, Star, TrendingUp, Sparkles, Filter, Heart } from 'lucide-react';
+import { toast } from '../lib/toast';
 
 interface Template {
   id: string;
@@ -282,7 +283,7 @@ export default function TemplateLibrary({ onUseTemplate, showFilters = true, com
 
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
-    alert(`${type} copied to clipboard!`);
+    toast.success(`${type} copied to clipboard!`);
   };
 
   if (compact) {

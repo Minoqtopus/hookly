@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, Download, Copy, FileText, Instagram, Youtube, Mail, CheckCircle } from 'lucide-react';
 import { ExportService, AdData } from '@/app/lib/exportUtils';
+import { toast } from '../lib/toast';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -105,7 +106,7 @@ export default function ExportModal({ isOpen, onClose, adData }: ExportModalProp
           setCopiedFormat(format.id);
           setTimeout(() => setCopiedFormat(null), 2000);
         } else {
-          alert('Failed to copy. Please try again.');
+          toast.error('Failed to copy. Please try again.');
         }
       } else if (format.action === 'download') {
         const filename = `${adData.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_script.txt`;
@@ -113,7 +114,7 @@ export default function ExportModal({ isOpen, onClose, adData }: ExportModalProp
       }
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Export failed. Please try again.');
+      toast.error('Export failed. Please try again.');
     }
     
     setIsLoading(false);

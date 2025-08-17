@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Heart, Trash2, Download, Copy, Calendar } from 'lucide-react';
 import { LocalSaveService, LocalSavedAd } from '@/app/lib/localSaves';
 import ExportModal from './ExportModal';
+import { toast } from '../lib/toast';
 
 export default function LocalSavesViewer() {
   const [savedAds, setSavedAds] = useState<LocalSavedAd[]>([]);
@@ -41,9 +42,9 @@ export default function LocalSavesViewer() {
   const handleCopyHook = async (hook: string) => {
     try {
       await navigator.clipboard.writeText(hook);
-      alert('Hook copied to clipboard!');
+      toast.success('Hook copied to clipboard!');
     } catch (error) {
-      alert('Failed to copy hook');
+      toast.error('Failed to copy hook');
     }
   };
 

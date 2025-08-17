@@ -5,6 +5,7 @@ export interface User {
   auth_provider: 'email' | 'google';
   avatar_url?: string;
   is_verified: boolean;
+  is_beta_user?: boolean;
   trial_started_at?: string;
   trial_ends_at?: string;
   trial_generations_used?: number;

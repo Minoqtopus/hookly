@@ -8,6 +8,7 @@ import TemplateLibrary from '@/app/components/TemplateLibrary';
 import UpgradeModal from '@/app/components/UpgradeModal';
 import VariationsGenerator from '@/app/components/VariationsGenerator';
 import { useAuth, useUserStats } from '@/app/lib/AppContext';
+import { toast } from '../lib/toast';
 import { AuthService } from '@/app/lib/auth';
 import { LocalSaveService } from '@/app/lib/localSaves';
 import { useDemoOptimization } from '@/app/lib/useDemoOptimization';
@@ -144,15 +145,7 @@ function GeneratePageContent() {
     }
   }, [showShareModal, user?.plan]);
 
-  const handleDemoExpiry = () => {
-    // Show auth modal for signup instead of upgrade
-    setShowAuthModal(true);
-  };
-
-  const handleDemoAlmostExpired = () => {
-    // Show gentle signup nudge when 1 minute left
-    setShowAuthModal(true);
-  };
+  // Demo handlers removed - no longer needed for trial-first model
 
   const handleGenerate = async () => {
     clearError();
@@ -210,7 +203,7 @@ function GeneratePageContent() {
   const handleCopyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
     // Show toast notification
-    alert(`${type} copied to clipboard!`);
+    toast.success(`${type} copied to clipboard!`);
     
     // Show upgrade modal after 3rd copy action for trial users (high engagement signal)
     if (user?.plan === 'trial') {
@@ -241,18 +234,18 @@ function GeneratePageContent() {
       });
 
       if (saveResult.success) {
-        alert('Saved locally! (3 saves max for guests)');
+        toast.success('Saved locally! (3 saves max for guests)');
       } else if (saveResult.limitReached) {
         // Show auth modal when limit reached
-        alert('You\'ve reached the 3-save limit for guests. Sign up for unlimited saves!');
+        toast.info('You\'ve reached the 3-save limit for guests. Sign up for unlimited saves!');
         setShowAuthModal(true);
       } else {
-        alert('Failed to save. Please try again.');
+        toast.error('Failed to save. Please try again.');
       }
       return;
     }
     // For authenticated users, save to account
-    alert('Saved to your account!');
+    toast.success('Saved to your account!');
   };
 
   const handleUseTemplate = (template: any) => {
@@ -311,16 +304,16 @@ function GeneratePageContent() {
       });
 
       if (response.ok) {
-        alert('Ad shared with team successfully!');
+        toast.success('Ad shared with team successfully!');
         setShowShareModal(false);
         setShareTitle('');
         setShareNotes('');
       } else {
         const errorData = await response.json();
-        alert(errorData.message || 'Failed to share with team');
+        toast.error(errorData.message || 'Failed to share with team');
       }
     } catch (error) {
-      alert('Failed to share with team');
+      toast.error('Failed to share with team');
     }
   };
 
@@ -356,7 +349,7 @@ function GeneratePageContent() {
                 <div className="w-16 bg-gray-200 rounded-full h-2">
                   <div 
                     className="bg-gradient-to-r from-primary-500 to-secondary-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${((dailyLimit! - remainingGenerations) / dailyLimit!) * 100}%` }}
+                    style={{ width: `${((monthlyLimit! - remainingGenerations!) / monthlyLimit!) * 100}%` }}
                   ></div>
                 </div>
               </div>
@@ -541,11 +534,11 @@ function GeneratePageContent() {
                   <VariationsGenerator
                     formData={formData}
                     onUpgrade={() => setShowUpgradeModal(true)}
-                    onSave={(variation) => {
+                    onSave={() => {
                       // Handle save variation
-                      alert('Variation saved!');
+                      toast.success('Variation saved!');
                     }}
-                    onExport={(variation) => {
+                    onExport={() => {
                       // Handle export variation
                       setShowExportModal(true);
                     }}

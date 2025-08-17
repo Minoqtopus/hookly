@@ -169,14 +169,14 @@ export function useDemoOptimization() {
       
       // Debug logging to track trigger behavior
       if (process.env.NODE_ENV === 'development') {
-        console.log('Demo Optimization Check:', {
-          timeSpent: behavior.timeSpent,
-          generationsCreated: behavior.generationsCreated,
-          demoTimeLeft: behavior.demoTimeLeft,
-          featuresExplored: behavior.featuresExplored.length,
-          shouldShowUpgrade: optimization.shouldShowSignup, // Changed from shouldShowUpgrade
-          reason: optimization.signupReason
-        });
+        // Demo Optimization Check: {
+        //   timeSpent: behavior.timeSpent,
+        //   generationsCreated: behavior.generationsCreated,  
+        //   demoTimeLeft: behavior.demoTimeLeft,
+        //   featuresExplored: behavior.featuresExplored.length,
+        //   shouldShowUpgrade: optimization.shouldShowSignup,
+        //   reason: optimization.signupReason
+        // }
       }
       
       setState(optimization);
