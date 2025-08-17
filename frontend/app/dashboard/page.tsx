@@ -166,6 +166,76 @@ export default function DashboardPage() {
           </p>
         </div>
 
+        {/* Performance Overview */}
+        {user && (user.plan === 'pro' || user.plan === 'agency') && (
+          <div className="card mb-8 bg-gradient-to-br from-primary-50 to-secondary-50 border-primary-200">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">📊 Performance Overview</h3>
+                <p className="text-gray-600 text-sm">Your ads are performing above industry average!</p>
+              </div>
+              <Link 
+                href="/analytics" 
+                className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
+              >
+                View Analytics
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center bg-white rounded-lg p-3">
+                <div className="text-lg font-bold text-blue-600">234K</div>
+                <div className="text-xs text-gray-600">Total Views</div>
+                <div className="text-xs text-green-600 font-medium">+12.5%</div>
+              </div>
+              <div className="text-center bg-white rounded-lg p-3">
+                <div className="text-lg font-bold text-green-600">4.2%</div>
+                <div className="text-xs text-gray-600">Avg CTR</div>
+                <div className="text-xs text-green-600 font-medium">+0.8%</div>
+              </div>
+              <div className="text-center bg-white rounded-lg p-3">
+                <div className="text-lg font-bold text-purple-600">8.7%</div>
+                <div className="text-xs text-gray-600">Engagement</div>
+                <div className="text-xs text-green-600 font-medium">+2.1%</div>
+              </div>
+              <div className="text-center bg-white rounded-lg p-3">
+                <div className="text-lg font-bold text-orange-600">7.9/10</div>
+                <div className="text-xs text-gray-600">Viral Score</div>
+                <div className="text-xs text-green-600 font-medium">+0.3</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Analytics Upsell for Free Users */}
+        {user && user.plan === 'free' && (
+          <div className="card mb-8 bg-gradient-to-br from-gray-50 to-blue-50 border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <BarChart3 className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">📊 Unlock Performance Analytics</h3>
+                  <p className="text-gray-600 text-sm mb-3">
+                    See detailed insights, track viral trends, and get AI-powered recommendations
+                  </p>
+                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                    <span>• Industry benchmarks</span>
+                    <span>• Competitor analysis</span>
+                    <span>• Optimization tips</span>
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowUpgradeModal(true)}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                Upgrade to Pro
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Usage Today */}
