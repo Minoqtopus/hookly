@@ -26,6 +26,7 @@ import AuthModal from '@/app/components/AuthModal';
 import SocialProofLoader from '@/app/components/SocialProofLoader';
 import ScarcityIndicator from '@/app/components/ScarcityIndicator';
 import TemplateLibrary from '@/app/components/TemplateLibrary';
+import ExportModal from '@/app/components/ExportModal';
 import { LocalSaveService } from '@/app/lib/localSaves';
 import Link from 'next/link';
 
@@ -33,6 +34,7 @@ export default function GeneratePage() {
   const [showResult, setShowResult] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [upgradeSource, setUpgradeSource] = useState<'limit_reached' | 'feature_gate' | 'generator'>('feature_gate');
   
   const { user, isAuthenticated } = useAuth();
@@ -500,7 +502,10 @@ export default function GeneratePage() {
                 <Share2 className="h-4 w-4 mr-2" />
                 Share
               </button>
-              <button className="btn-secondary flex items-center justify-center">
+              <button 
+                onClick={() => setShowExportModal(true)}
+                className="btn-secondary flex items-center justify-center"
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </button>
@@ -561,6 +566,20 @@ export default function GeneratePage() {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         triggerSource="try_again"
+      />
+
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        adData={{
+          title: `${formData.productName} Ad`,
+          hook: generatedAd?.hook || '',
+          script: generatedAd?.script || '',
+          visuals: generatedAd?.visuals || [],
+          niche: formData.niche,
+          targetAudience: formData.targetAudience,
+          performance: generatedAd?.performance
+        }}
       />
     </div>
   );

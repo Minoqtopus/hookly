@@ -22,6 +22,7 @@ import {
 import { useApp, useAuth, useUserStats, useRecentGenerations } from '@/app/lib/AppContext';
 import UpgradeModal from '@/app/components/UpgradeModal';
 import TemplateLibrary from '@/app/components/TemplateLibrary';
+import LocalSavesViewer from '@/app/components/LocalSavesViewer';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -318,6 +319,13 @@ export default function DashboardPage() {
         <div className="card mb-8">
           <TemplateLibrary onUseTemplate={handleUseTemplate} compact={true} showFilters={false} />
         </div>
+
+        {/* Local Saves (for unauthenticated users) */}
+        {!isAuthenticated && (
+          <div className="mb-8">
+            <LocalSavesViewer />
+          </div>
+        )}
 
         {/* Recent Generations */}
         <div className="card">
