@@ -1,9 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { User } from './auth';
-import { ApiClient, UserStats, Generation, ApiErrorClass } from './api';
-import { AuthService } from './auth';
+import React, { createContext, ReactNode, useContext, useEffect, useReducer } from 'react';
+import { ApiClient, Generation, UserStats } from './api';
+import { AuthService, User } from './auth';
 
 // State interfaces
 interface AppState {
@@ -125,29 +124,65 @@ export function AppProvider({ children }: AppProviderProps) {
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
+      // Ensure localStorage and cookies are synchronized
+      if (!AuthService.validateStorageSync()) {
+        console.warn('Storage synchronization issue detected, attempting to fix...');
+        AuthService.syncStorage();
+      }
+      
       // Check if user is authenticated
       const storedUser = AuthService.getStoredUser();
       const tokens = AuthService.getStoredTokens();
       
       if (storedUser && tokens) {
+        // Check if token is expired before proceeding
+        if (AuthService.isTokenExpiringSoon()) {
+          try {
+            // Try to refresh the token
+            const refreshResult = await AuthService.refreshToken();
+            if (!refreshResult) {
+              // Refresh failed, clear tokens
+              AuthService.clearTokens();
+              dispatch({ type: 'SET_USER', payload: null });
+              dispatch({ type: 'SET_LOADING', payload: false });
+              dispatch({ type: 'SET_INITIALIZED', payload: true });
+              return;
+            }
+          } catch (error) {
+            // Refresh failed, clear tokens
+            AuthService.clearTokens();
+            dispatch({ type: 'SET_USER', payload: null });
+            dispatch({ type: 'SET_LOADING', payload: false });
+            dispatch({ type: 'SET_INITIALIZED', payload: true });
+            return;
+          }
+        }
+        
+        // Set user immediately for better UX
         dispatch({ type: 'SET_USER', payload: storedUser });
         
-        // Validate token and refresh user data
+        // Validate token and refresh user data in background
         try {
           const userResponse = await ApiClient.getCurrentUser();
           dispatch({ type: 'SET_USER', payload: userResponse.user });
           AuthService.storeUser(userResponse.user);
           
-          // Load user data in parallel
+          // Load user data in parallel after successful validation
           await Promise.all([
             loadUserStats(),
             loadRecentGenerations(),
           ]);
         } catch (error) {
-          // Token validation failed
-          console.error('Token validation failed:', error);
-          AuthService.clearTokens();
-          dispatch({ type: 'SET_USER', payload: null });
+          // Token validation failed - check if it's a network error or auth error
+          if (error instanceof Error && error.message.includes('Session expired')) {
+            // Clear invalid tokens and redirect to login
+            AuthService.clearTokens();
+            dispatch({ type: 'SET_USER', payload: null });
+          } else {
+            // Network error - keep user logged in but show error
+            console.error('Token validation failed:', error);
+            dispatch({ type: 'SET_ERROR', payload: 'Failed to validate session. Please refresh the page.' });
+          }
         }
       }
     } catch (error) {
@@ -251,6 +286,18 @@ export function AppProvider({ children }: AppProviderProps) {
   // Initialize on mount
   useEffect(() => {
     initialize();
+    
+    // Set up periodic storage validation (every 5 minutes)
+    const storageValidationInterval = setInterval(() => {
+      if (!AuthService.validateStorageSync()) {
+        console.warn('Periodic storage validation failed, attempting to fix...');
+        AuthService.syncStorage();
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+    
+    return () => {
+      clearInterval(storageValidationInterval);
+    };
   }, []);
 
   return (

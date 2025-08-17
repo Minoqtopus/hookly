@@ -1,38 +1,37 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { 
-  Sparkles, 
-  ArrowLeft, 
-  Wand2, 
-  Copy, 
-  Share2, 
-  Heart, 
-  Download,
-  RefreshCw,
-  Crown,
-  Zap,
-  Target,
-  TrendingUp,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Users
-} from 'lucide-react';
-import { useAuth, useUserStats } from '@/app/lib/AppContext';
-import { useGeneration } from '@/app/lib/useGeneration';
-import UpgradeModal from '@/app/components/UpgradeModal';
 import AuthModal from '@/app/components/AuthModal';
-import SocialProofLoader from '@/app/components/SocialProofLoader';
-import ScarcityIndicator from '@/app/components/ScarcityIndicator';
-import TemplateLibrary from '@/app/components/TemplateLibrary';
-import ExportModal from '@/app/components/ExportModal';
-import VariationsGenerator from '@/app/components/VariationsGenerator';
 import DemoTimer from '@/app/components/DemoTimer';
+import ExportModal from '@/app/components/ExportModal';
+import ScarcityIndicator from '@/app/components/ScarcityIndicator';
+import SocialProofLoader from '@/app/components/SocialProofLoader';
+import TemplateLibrary from '@/app/components/TemplateLibrary';
+import UpgradeModal from '@/app/components/UpgradeModal';
+import VariationsGenerator from '@/app/components/VariationsGenerator';
+import { useAuth, useUserStats } from '@/app/lib/AppContext';
+import { AuthService } from '@/app/lib/auth';
 import { LocalSaveService } from '@/app/lib/localSaves';
 import { useDemoTimer } from '@/app/lib/useDemoTimer';
+import { useGeneration } from '@/app/lib/useGeneration';
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle,
+  Copy,
+  Crown,
+  Download,
+  Heart,
+  RefreshCw,
+  Share2,
+  Sparkles,
+  Target,
+  TrendingUp,
+  Users,
+  Wand2
+} from 'lucide-react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 
 function GeneratePageContent() {
   const [showResult, setShowResult] = useState(false);
@@ -252,9 +251,12 @@ function GeneratePageContent() {
     if (user?.plan !== 'agency') return;
     
     try {
+      const tokens = AuthService.getStoredTokens();
+      if (!tokens) return;
+
       const response = await fetch('/api/teams', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${tokens.accessToken}`,
         },
       });
       
@@ -274,11 +276,14 @@ function GeneratePageContent() {
     if (!selectedTeamId || !generatedAd) return;
     
     try {
+      const tokens = AuthService.getStoredTokens();
+      if (!tokens) return;
+
       const response = await fetch(`/api/teams/${selectedTeamId}/share`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${tokens.accessToken}`,
         },
         body: JSON.stringify({
           generationId: generatedAd.id, // We'll need to get this from the generation response

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Copy, Heart, Download, RefreshCw, Crown, Target, TrendingUp, Users, CheckCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/app/lib/AppContext';
+import { AuthService } from '@/app/lib/auth';
+import { ArrowRight, CheckCircle, Copy, Crown, Download, Heart, RefreshCw, Target, TrendingUp, Users } from 'lucide-react';
+import { useState } from 'react';
 
 interface Variation {
   id: string;
@@ -37,6 +38,7 @@ export default function VariationsGenerator({ formData, onUpgrade, onSave, onExp
   const [variations, setVariations] = useState<Variation[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedVariation, setSelectedVariation] = useState<number>(0);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   
   const { user } = useAuth();
 
@@ -80,6 +82,42 @@ export default function VariationsGenerator({ formData, onUpgrade, onSave, onExp
       alert(`${type} copied to clipboard!`);
     } catch (error) {
       alert('Failed to copy to clipboard');
+    }
+  };
+
+  const handleSaveVariation = async (variation: any) => {
+    try {
+      const tokens = AuthService.getStoredTokens();
+      if (!tokens) {
+        // User not authenticated, show auth modal
+        setShowAuthModal(true);
+        return;
+      }
+
+      const response = await fetch('/api/generation/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tokens.accessToken}`,
+        },
+        body: JSON.stringify({
+          title: variation.title,
+          hook: variation.hook,
+          script: variation.script,
+          visuals: variation.visuals,
+          niche: variation.niche,
+          target_audience: variation.targetAudience,
+        }),
+      });
+
+      if (response.ok) {
+        alert('Variation saved successfully!');
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Failed to save variation');
+      }
+    } catch (error) {
+      alert('Failed to save variation');
     }
   };
 
@@ -337,7 +375,7 @@ export default function VariationsGenerator({ formData, onUpgrade, onSave, onExp
               {/* Actions */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <button
-                  onClick={() => onSave(variations[selectedVariation])}
+                  onClick={() => handleSaveVariation(variations[selectedVariation])}
                   className="btn-secondary flex items-center justify-center"
                 >
                   <Heart className="h-4 w-4 mr-2" />

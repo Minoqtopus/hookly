@@ -67,6 +67,20 @@ export class ApiClient {
   ): Promise<T> {
     const tokens = AuthService.getStoredTokens();
     
+    // Check if token is expiring soon and refresh proactively
+    if (tokens && AuthService.isTokenExpiringSoon()) {
+      try {
+        const refreshResult = await AuthService.refreshToken();
+        if (refreshResult) {
+          // Update tokens for this request
+          tokens.accessToken = refreshResult.access_token;
+        }
+      } catch (error) {
+        console.error('Proactive token refresh failed:', error);
+        // Continue with current token, will handle 401 if it fails
+      }
+    }
+    
     const config: RequestInit = {
       ...options,
       headers: {
@@ -90,25 +104,35 @@ export class ApiClient {
 
     // Handle token refresh for 401 errors
     if (response.status === 401 && tokens?.refreshToken) {
-      const refreshResult = await AuthService.refreshToken();
-      
-      if (refreshResult) {
-        // Retry the request with new token
-        config.headers = {
-          ...config.headers,
-          Authorization: `Bearer ${refreshResult.access_token}`
-        };
+      try {
+        const refreshResult = await AuthService.refreshToken();
         
-        try {
-          response = await fetch(`${this.BASE_URL}${endpoint}`, config);
-        } catch (error) {
+        if (refreshResult) {
+          // Retry the request with new token
+          config.headers = {
+            ...config.headers,
+            Authorization: `Bearer ${refreshResult.access_token}`
+          };
+          
+          try {
+            response = await fetch(`${this.BASE_URL}${endpoint}`, config);
+          } catch (error) {
+            throw new ApiError({
+              message: 'Network error - please check your connection',
+              status: 0,
+              code: 'NETWORK_ERROR'
+            });
+          }
+        } else {
+          // Refresh failed, redirect to login
+          AuthService.logout();
           throw new ApiError({
-            message: 'Network error - please check your connection',
-            status: 0,
-            code: 'NETWORK_ERROR'
+            message: 'Session expired - please log in again',
+            status: 401,
+            code: 'SESSION_EXPIRED'
           });
         }
-      } else {
+      } catch (refreshError) {
         // Refresh failed, redirect to login
         AuthService.logout();
         throw new ApiError({

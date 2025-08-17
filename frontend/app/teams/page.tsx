@@ -2,6 +2,7 @@
 
 import AuthModal from '@/app/components/AuthModal';
 import { useAuth } from '@/app/lib/AppContext';
+import { AuthService } from '@/app/lib/auth';
 import {
   ArrowLeft,
   Crown,
@@ -88,9 +89,15 @@ export default function TeamsPage() {
 
   const loadTeams = async () => {
     try {
+      const tokens = AuthService.getStoredTokens();
+      if (!tokens) {
+        setError('No authentication tokens found');
+        return;
+      }
+
       const response = await fetch('/api/teams', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${tokens.accessToken}`,
         },
       });
 
@@ -113,9 +120,12 @@ export default function TeamsPage() {
 
   const loadTeamMembers = async (teamId: string) => {
     try {
+      const tokens = AuthService.getStoredTokens();
+      if (!tokens) return;
+
       const response = await fetch(`/api/teams/${teamId}/members`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${tokens.accessToken}`,
         },
       });
 
@@ -130,9 +140,12 @@ export default function TeamsPage() {
 
   const loadSharedGenerations = async (teamId: string) => {
     try {
+      const tokens = AuthService.getStoredTokens();
+      if (!tokens) return;
+
       const response = await fetch(`/api/teams/${teamId}/shared`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${tokens.accessToken}`,
         },
       });
 
@@ -147,11 +160,17 @@ export default function TeamsPage() {
 
   const createTeam = async () => {
     try {
+      const tokens = AuthService.getStoredTokens();
+      if (!tokens) {
+        setError('No authentication tokens found');
+        return;
+      }
+
       const response = await fetch('/api/teams', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${tokens.accessToken}`,
         },
         body: JSON.stringify({
           name: teamName,
@@ -169,21 +188,24 @@ export default function TeamsPage() {
       setTeamName('');
       setTeamDescription('');
       setShowCreateTeam(false);
-      alert('Team created successfully!');
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to create team');
+      setError(error instanceof Error ? error.message : 'Failed to create team');
     }
   };
 
   const inviteUser = async () => {
-    if (!selectedTeam) return;
-
     try {
+      const tokens = AuthService.getStoredTokens();
+      if (!tokens) {
+        setError('No authentication tokens found');
+        return;
+      }
+
       const response = await fetch(`/api/teams/${selectedTeam.id}/invite`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${tokens.accessToken}`,
         },
         body: JSON.stringify({
           email: inviteEmail,
@@ -191,18 +213,17 @@ export default function TeamsPage() {
         }),
       });
 
-      const data = await response.json();
-      
-      if (data.success) {
-        alert(data.message);
-        setInviteEmail('');
-        setShowInviteModal(false);
-        loadTeamMembers(selectedTeam.id);
-      } else {
-        alert(data.message);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to invite user');
       }
+
+      alert('Invitation sent successfully!');
+      setShowInviteModal(false);
+      setInviteEmail('');
+      setInviteRole('member');
     } catch (error) {
-      alert('Failed to invite user');
+      alert(error instanceof Error ? error.message : 'Failed to invite user');
     }
   };
 
