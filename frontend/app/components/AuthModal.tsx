@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Sparkles, Shield, Clock } from 'lucide-react';
 import { AuthService } from '@/app/lib/auth';
+import { Clock, Shield, Sparkles, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -13,7 +13,7 @@ interface AuthModalProps {
     targetAudience: string;
     generatedAd: any;
   };
-  triggerSource?: 'demo_save' | 'try_again' | 'nav_signup';
+  triggerSource?: 'demo_save' | 'try_again' | 'nav_signup' | 'login';
 }
 
 export default function AuthModal({ isOpen, onClose, demoData, triggerSource = 'demo_save' }: AuthModalProps) {
@@ -129,6 +129,19 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
             'Track performance metrics'
           ]
         };
+      case 'login':
+        return {
+          title: 'Welcome Back! 👋',
+          subtitle: 'Continue creating viral ads in seconds',
+          urgency: null,
+          buttonText: 'Continue with Google',
+          benefits: [
+            'All your saved ad campaigns',
+            'Generation history and analytics',
+            'Favorite ads collection',
+            'Custom templates (Pro)'
+          ]
+        };
       default:
         return {
           title: '✨ Join Hookly',
@@ -145,6 +158,15 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
   };
 
   const content = getModalContent();
+  
+  // Set default auth mode based on trigger source
+  useEffect(() => {
+    if (triggerSource === 'login') {
+      setIsSignUp(false);
+    } else {
+      setIsSignUp(true);
+    }
+  }, [triggerSource]);
 
   if (!isOpen) return null;
 
@@ -197,6 +219,20 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                 <p className="text-xs text-gray-500 mt-1">
                   For: {demoData.productName} • {demoData.niche}
                 </p>
+              </div>
+            )}
+
+            {/* Login Stats (if in login mode) */}
+            {triggerSource === 'login' && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-secondary-50 rounded-lg">
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-900 mb-1">
+                    🔥 While you were away...
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    Our users generated <span className="font-semibold">2,847 new ads</span> and got <span className="font-semibold">15.2M views</span>
+                  </p>
+                </div>
               </div>
             )}
 

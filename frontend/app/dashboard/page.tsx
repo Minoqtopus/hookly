@@ -1,33 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  Sparkles, 
-  Plus, 
-  Crown, 
-  TrendingUp, 
-  Heart, 
-  Copy, 
-  Share2, 
-  BarChart3,
-  Flame,
-  Target,
-  Zap,
-  Gift,
-  ArrowRight,
-  Settings,
-  LogOut,
-  Users
-} from 'lucide-react';
-import { useApp, useAuth, useUserStats, useRecentGenerations } from '@/app/lib/AppContext';
-import UpgradeModal from '@/app/components/UpgradeModal';
-import TemplateLibrary from '@/app/components/TemplateLibrary';
+import AuthModal from '@/app/components/AuthModal';
 import LocalSavesViewer from '@/app/components/LocalSavesViewer';
+import TemplateLibrary from '@/app/components/TemplateLibrary';
+import UpgradeModal from '@/app/components/UpgradeModal';
+import { useApp, useAuth, useRecentGenerations, useUserStats } from '@/app/lib/AppContext';
+import {
+  ArrowRight,
+  BarChart3,
+  Copy,
+  Crown,
+  Flame,
+  Gift,
+  Heart,
+  LogOut,
+  Plus,
+  Settings,
+  Share2,
+  Sparkles,
+  Target,
+  TrendingUp,
+  Users,
+  Zap
+} from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function DashboardPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const router = useRouter();
   
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -37,9 +39,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/auth/login');
+      setShowAuthModal(true);
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading]);
 
   const handleLogout = () => {
     actions.logout();
@@ -468,6 +470,12 @@ export default function DashboardPage() {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         source="dashboard"
+      />
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
       />
     </div>
   );

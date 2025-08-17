@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Sparkles, Play, ArrowRight, CheckCircle, Star, TrendingUp } from 'lucide-react';
-import { useGeneration } from '@/app/lib/useGeneration';
 import AuthModal from '@/app/components/AuthModal';
-import SocialProofLoader from '@/app/components/SocialProofLoader';
 import ScarcityIndicator from '@/app/components/ScarcityIndicator';
+import SocialProofLoader from '@/app/components/SocialProofLoader';
+import { useGeneration } from '@/app/lib/useGeneration';
+import { ArrowRight, CheckCircle, Play, Sparkles, Star, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export default function HomePage() {
   const [showDemo, setShowDemo] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authTrigger, setAuthTrigger] = useState<'demo_save' | 'try_again' | 'nav_signup'>('demo_save');
+  const [authTrigger, setAuthTrigger] = useState<'demo_save' | 'try_again' | 'nav_signup' | 'login'>('demo_save');
   const [demoData, setDemoData] = useState({
     productName: 'Fitness Protein Powder',
     niche: 'Health & Fitness',
@@ -64,9 +64,15 @@ export default function HomePage() {
               <span className="text-xl font-bold text-gray-900">Hookly</span>
             </div>
             <div className="hidden sm:flex items-center space-x-4">
-              <Link href="/auth/login" className="text-gray-600 hover:text-gray-900 font-medium">
+              <button 
+                onClick={() => {
+                  setAuthTrigger('login');
+                  setShowAuthModal(true);
+                }}
+                className="text-gray-600 hover:text-gray-900 font-medium"
+              >
                 Login
-              </Link>
+              </button>
               <button 
                 onClick={() => {
                   setAuthTrigger('nav_signup');

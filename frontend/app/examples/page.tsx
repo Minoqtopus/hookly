@@ -1,31 +1,28 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  Sparkles, 
-  ArrowLeft, 
-  Crown,
-  TrendingUp,
-  Target,
-  Zap,
-  Star,
-  PlayCircle,
-  ArrowRight,
-  Copy,
-  Heart
-} from 'lucide-react';
-import { useAuth } from '@/app/lib/AppContext';
-import TemplateLibrary from '@/app/components/TemplateLibrary';
 import AuthModal from '@/app/components/AuthModal';
-import UpgradeModal from '@/app/components/UpgradeModal';
 import ScarcityIndicator from '@/app/components/ScarcityIndicator';
+import TemplateLibrary from '@/app/components/TemplateLibrary';
+import UpgradeModal from '@/app/components/UpgradeModal';
+import { useAuth } from '@/app/lib/AppContext';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Crown,
+  PlayCircle,
+  Sparkles,
+  Star,
+  TrendingUp
+} from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function ExamplesPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [authTrigger, setAuthTrigger] = useState<'demo_save' | 'try_again' | 'nav_signup' | 'login'>('nav_signup');
   const router = useRouter();
   
   const { user, isAuthenticated } = useAuth();
@@ -93,15 +90,24 @@ export default function ExamplesPage() {
             
             {/* Navigation Actions */}
             <div className="flex items-center space-x-4">
-              {isAuthenticated ? (
-                <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 font-medium">
-                  Dashboard
-                </Link>
-              ) : (
-                <Link href="/auth/login" className="text-gray-600 hover:text-gray-900 font-medium">
-                  Login
-                </Link>
-              )}
+              <button 
+                onClick={() => {
+                  setAuthTrigger('login');
+                  setShowAuthModal(true);
+                }}
+                className="text-gray-600 hover:text-gray-900 font-medium"
+              >
+                Login
+              </button>
+              <button 
+                onClick={() => {
+                  setAuthTrigger('nav_signup');
+                  setShowAuthModal(true);
+                }}
+                className="btn-primary text-sm px-4 py-2"
+              >
+                Sign Up Free
+              </button>
               <button 
                 onClick={handleStartCreating}
                 className="btn-primary text-sm px-4 py-2"
@@ -184,7 +190,7 @@ export default function ExamplesPage() {
 
         {/* Scarcity Indicator */}
         <div className="flex justify-center mb-8">
-          <ScarcityIndicator type="templates_used" size="medium" />
+          <ScarcityIndicator type="trending" size="medium" />
         </div>
 
         {/* Templates Library */}
@@ -275,7 +281,7 @@ export default function ExamplesPage() {
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
-        triggerSource="nav_signup"
+        triggerSource={authTrigger}
       />
 
       <UpgradeModal

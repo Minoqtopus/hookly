@@ -1,22 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  Users, 
-  Crown, 
-  Plus, 
-  Settings, 
-  Share2, 
-  Trash2, 
-  UserPlus,
-  Shield,
-  Eye,
-  ChevronDown,
-  ArrowLeft
-} from 'lucide-react';
+import AuthModal from '@/app/components/AuthModal';
 import { useAuth } from '@/app/lib/AppContext';
+import {
+  ArrowLeft,
+  Crown,
+  Eye,
+  Plus,
+  Share2,
+  Shield,
+  Trash2,
+  UserPlus,
+  Users
+} from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 interface Team {
   id: string;
@@ -54,17 +53,18 @@ interface SharedGeneration {
 }
 
 export default function TeamsPage() {
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [sharedGenerations, setSharedGenerations] = useState<SharedGeneration[]>([]);
-  const [showCreateTeam, setShowCreateTeam] = useState(false);
-  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<any>(null);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [sharedGenerations, setSharedGenerations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const { user, isAuthenticated } = useAuth();
+  const [showCreateTeam, setShowCreateTeam] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const router = useRouter();
+  
+  const { user, isAuthenticated } = useAuth();
 
   // Form states
   const [teamName, setTeamName] = useState('');
@@ -74,7 +74,7 @@ export default function TeamsPage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/auth/login');
+      setShowAuthModal(true);
       return;
     }
 
@@ -497,6 +497,13 @@ export default function TeamsPage() {
           </div>
         </div>
       )}
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        triggerSource="login"
+      />
     </div>
   );
 }

@@ -1,30 +1,31 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { 
-  Crown, 
-  Check, 
-  X, 
-  Star, 
-  Zap, 
-  TrendingUp, 
-  Shield, 
-  Users,
-  Clock,
-  ArrowLeft,
-  CheckCircle,
-  AlertCircle,
-  Sparkles
-} from 'lucide-react';
+import AuthModal from '@/app/components/AuthModal';
+import ScarcityIndicator from '@/app/components/ScarcityIndicator';
 import { useAuth } from '@/app/lib/AppContext';
 import { useUpgrade } from '@/app/lib/useUpgrade';
-import ScarcityIndicator from '@/app/components/ScarcityIndicator';
+import {
+  AlertCircle,
+  ArrowLeft,
+  Check,
+  CheckCircle,
+  Clock,
+  Crown,
+  Shield,
+  Sparkles,
+  Star,
+  TrendingUp,
+  Users,
+  Zap
+} from 'lucide-react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 
 function UpgradePageContent() {
   const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro' | 'agency'>('pro'); // Default to pro for better value
   const [showTestimonials, setShowTestimonials] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -511,6 +512,13 @@ function UpgradePageContent() {
             Not satisfied? Get a full refund within 30 days, no questions asked.
           </p>
         </div>
+
+        {/* Auth Modal */}
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          triggerSource="login"
+        />
       </div>
     </div>
   );

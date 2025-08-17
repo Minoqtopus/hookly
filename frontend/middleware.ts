@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 // Define protected routes that require authentication
 const protectedRoutes = [
@@ -13,7 +13,6 @@ const protectedRoutes = [
 
 // Define routes that should redirect authenticated users away
 const authRoutes = [
-  '/auth/login',
   '/auth/register',
 ];
 
@@ -35,25 +34,19 @@ export function middleware(request: NextRequest) {
   // Handle protected routes
   if (protectedRoutes.some(route => pathname.startsWith(route))) {
     if (!isAuthenticated) {
-      // Store the intended destination for post-auth redirect
-      const redirectUrl = new URL('/auth/login', request.url);
-      redirectUrl.searchParams.set('redirect', pathname);
-      
-      return NextResponse.redirect(redirectUrl);
+      // Redirect to homepage where user can use the auth modal
+      return NextResponse.redirect(new URL('/', request.url));
     }
     
     // User is authenticated, allow access
     return NextResponse.next();
   }
   
-  // Handle auth routes (login, register)
+  // Handle auth routes (register only now)
   if (authRoutes.some(route => pathname.startsWith(route))) {
     if (isAuthenticated) {
       // User is already authenticated, redirect to dashboard
-      const redirectParam = request.nextUrl.searchParams.get('redirect');
-      const redirectUrl = redirectParam || '/dashboard';
-      
-      return NextResponse.redirect(new URL(redirectUrl, request.url));
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
     
     // User is not authenticated, allow access to auth pages

@@ -1,21 +1,24 @@
 'use client';
 
-import { useAuth } from '@/app/lib/AppContext';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import AuthModal from '@/app/components/AuthModal';
 import PerformanceDashboard from '@/app/components/PerformanceDashboard';
+import { useAuth } from '@/app/lib/AppContext';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function AnalyticsPage() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const router = useRouter();
+  
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/auth/login');
+      setShowAuthModal(true);
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading]);
 
   if (isLoading) {
     return (
@@ -59,6 +62,13 @@ export default function AnalyticsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <PerformanceDashboard />
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        triggerSource="login"
+      />
     </div>
   );
 }

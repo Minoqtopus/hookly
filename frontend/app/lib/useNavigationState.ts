@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDemoTimer } from './useDemoTimer';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './AppContext';
+import { useDemoTimer } from './useDemoTimer';
 
 interface NavigationState {
   isLoading: boolean;
@@ -9,6 +9,7 @@ interface NavigationState {
   pendingAction: string | null;
   templateSelection: any | null;
   demoData: any | null;
+  showAuthModal: boolean;
 }
 
 interface NavigationActions {
@@ -24,6 +25,7 @@ interface NavigationActions {
   clearDemoData: () => void;
   handleAuthRequired: (intendedPath?: string) => void;
   handlePostAuthRedirect: () => string;
+  closeAuthModal: () => void;
 }
 
 export function useNavigationState(): NavigationState & NavigationActions {
@@ -33,6 +35,7 @@ export function useNavigationState(): NavigationState & NavigationActions {
     pendingAction: null,
     templateSelection: null,
     demoData: null,
+    showAuthModal: false,
   });
 
   const router = useRouter();
@@ -148,14 +151,15 @@ export function useNavigationState(): NavigationState & NavigationActions {
     // Store current location or intended path for post-auth redirect
     const path = intendedPath || window.location.pathname + window.location.search;
     
-    if (path !== '/auth/login' && path !== '/') {
+    if (path !== '/' && path !== '/auth/login') {
       sessionStorage.setItem('post_auth_redirect', path);
       setState(prev => ({ ...prev, redirectPath: path }));
     }
 
-    // Navigate to login
-    router.push('/auth/login' + (path !== '/' ? `?redirect=${encodeURIComponent(path)}` : ''));
-  }, [router]);
+    // Instead of redirecting to login page, we'll trigger the auth modal
+    // The modal will be handled by the component that calls this hook
+    setState(prev => ({ ...prev, showAuthModal: true }));
+  }, []);
 
   const handlePostAuthRedirect = useCallback((): string => {
     // Check for stored redirect path
@@ -191,6 +195,10 @@ export function useNavigationState(): NavigationState & NavigationActions {
     // 4. Default to dashboard
     return '/dashboard';
   }, [clearPendingAction]);
+
+  const closeAuthModal = useCallback(() => {
+    setState(prev => ({ ...prev, showAuthModal: false }));
+  }, []);
 
   // Auto-cleanup expired data
   useEffect(() => {
@@ -236,5 +244,6 @@ export function useNavigationState(): NavigationState & NavigationActions {
     clearDemoData,
     handleAuthRequired,
     handlePostAuthRedirect,
+    closeAuthModal,
   };
 }

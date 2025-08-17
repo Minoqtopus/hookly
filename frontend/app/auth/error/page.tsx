@@ -1,25 +1,26 @@
 'use client';
 
-import { Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { AlertCircle, ArrowLeft, RefreshCw, Home } from 'lucide-react';
-import { AuthService } from '@/app/lib/auth';
+import AuthModal from '@/app/components/AuthModal';
+import { AlertCircle, ArrowLeft, Home, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 
-function AuthErrorPageContent() {
-  const searchParams = useSearchParams();
+export default function AuthErrorPage() {
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const router = useRouter();
-  const errorMessage = searchParams.get('message') || 'unknown';
+  const searchParams = useSearchParams();
+  const errorType = searchParams.get('error') || 'unknown';
 
   const getErrorContent = () => {
-    switch (errorMessage) {
+    switch (errorType) {
       case 'oauth_failed':
         return {
-          title: 'Authentication Failed',
-          message: 'We couldn\'t complete your Google sign-in. This usually happens due to a temporary issue.',
-          suggestion: 'Please try signing in again, or check your internet connection.',
-          actionText: 'Try Again',
-          action: () => AuthService.initiateGoogleAuth()
+          title: 'OAuth Sign-In Failed',
+          message: 'We couldn\'t complete your Google sign-in.',
+          suggestion: 'This usually happens due to network issues or browser settings.',
+          actionText: 'Try Signing In',
+          action: () => setShowAuthModal(true)
         };
       case 'session_expired':
         return {
@@ -27,7 +28,7 @@ function AuthErrorPageContent() {
           message: 'Your login session has expired for security reasons.',
           suggestion: 'Please sign in again to continue using Hookly.',
           actionText: 'Sign In',
-          action: () => router.push('/auth/login')
+          action: () => setShowAuthModal(true)
         };
       case 'access_denied':
         return {
@@ -35,7 +36,7 @@ function AuthErrorPageContent() {
           message: 'You cancelled the Google sign-in process.',
           suggestion: 'To use Hookly, we need you to sign in with Google to save your ads.',
           actionText: 'Try Signing In',
-          action: () => AuthService.initiateGoogleAuth()
+          action: () => setShowAuthModal(true)
         };
       default:
         return {
@@ -43,7 +44,7 @@ function AuthErrorPageContent() {
           message: 'We encountered an unexpected error during sign-in.',
           suggestion: 'Please try again, or contact support if the problem persists.',
           actionText: 'Try Again',
-          action: () => router.push('/')
+          action: () => setShowAuthModal(true)
         };
     }
   };
@@ -139,19 +140,14 @@ function AuthErrorPageContent() {
             </Link>
           </div>
         </div>
+
+        {/* Auth Modal */}
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          triggerSource="login"
+        />
       </div>
     </div>
-  );
-}
-
-export default function AuthErrorPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen gradient-bg flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    }>
-      <AuthErrorPageContent />
-    </Suspense>
   );
 }

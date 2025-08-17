@@ -63,17 +63,14 @@ describe('Middleware', () => {
       '/upgrade/success',
     ];
 
-    test.each(protectedPaths)('should redirect unauthenticated users from %s', (path) => {
-      const request = createRequest(path);
+    test('should redirect unauthenticated users to homepage', () => {
+      const request = createRequest('/dashboard');
       
       middleware(request);
       
       expect(mockRedirect).toHaveBeenCalledWith(
         expect.objectContaining({
-          pathname: '/auth/login',
-          searchParams: expect.objectContaining({
-            get: expect.any(Function)
-          })
+          pathname: '/'
         })
       );
     });
@@ -87,22 +84,21 @@ describe('Middleware', () => {
       expect(mockRedirect).not.toHaveBeenCalled();
     });
 
-    test('should store redirect path in URL parameters', () => {
+    test('should redirect to homepage without redirect parameters', () => {
       const request = createRequest('/dashboard');
       
       middleware(request);
       
       expect(mockRedirect).toHaveBeenCalledWith(
         expect.objectContaining({
-          pathname: '/auth/login',
-          search: '?redirect=%2Fdashboard'
+          pathname: '/'
         })
       );
     });
   });
 
   describe('Auth Routes', () => {
-    const authPaths = ['/auth/login', '/auth/register'];
+    const authPaths = ['/auth/register'];
 
     test.each(authPaths)('should allow unauthenticated users to access %s', (path) => {
       const request = createRequest(path);
@@ -121,18 +117,6 @@ describe('Middleware', () => {
       expect(mockRedirect).toHaveBeenCalledWith(
         expect.objectContaining({
           pathname: '/dashboard'
-        })
-      );
-    });
-
-    test('should handle redirect parameter for authenticated users', () => {
-      const request = createRequest('/auth/login?redirect=%2Fsettings', 'valid-token');
-      
-      middleware(request);
-      
-      expect(mockRedirect).toHaveBeenCalledWith(
-        expect.objectContaining({
-          pathname: '/settings'
         })
       );
     });
