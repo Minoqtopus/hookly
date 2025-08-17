@@ -41,26 +41,30 @@ function AuthCallbackPageContent() {
         setUser(userData);
         setStatus('success');
 
-        // Auto-redirect after success animation
+        // Give user time to see success message, then redirect with proper state sync
         setTimeout(() => {
           setRedirecting(true);
           
-          // Check for stored redirect path from middleware
-          const postAuthRedirect = sessionStorage.getItem('post_auth_redirect');
-          
-          // Check if there's pending demo data to restore
-          const pendingDemo = sessionStorage.getItem('pendingDemoData');
-          
-          if (pendingDemo) {
-            sessionStorage.removeItem('pendingDemoData');
-            router.push('/generate?restored=true');
-          } else if (postAuthRedirect) {
-            sessionStorage.removeItem('post_auth_redirect');
-            router.push(postAuthRedirect);
-          } else {
-            router.push('/dashboard');
-          }
-        }, 2000);
+          // Ensure user data is fully stored before redirect
+          // Small delay to let storage operations complete
+          setTimeout(() => {
+            // Check for stored redirect path from middleware
+            const postAuthRedirect = sessionStorage.getItem('post_auth_redirect');
+            
+            // Check if there's pending demo data to restore
+            const pendingDemo = sessionStorage.getItem('pendingDemoData');
+            
+            if (pendingDemo) {
+              sessionStorage.removeItem('pendingDemoData');
+              router.push('/generate?restored=true');
+            } else if (postAuthRedirect) {
+              sessionStorage.removeItem('post_auth_redirect');
+              router.push(postAuthRedirect);
+            } else {
+              router.push('/dashboard');
+            }
+          }, 100); // Small delay for state sync
+        }, 1500); // Reduced from 2000ms to 1500ms for better UX
         
       } catch (error) {
         console.error('Failed to process auth callback:', error);

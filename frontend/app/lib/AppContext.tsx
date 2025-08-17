@@ -161,28 +161,19 @@ export function AppProvider({ children }: AppProviderProps) {
         // Set user immediately for better UX
         dispatch({ type: 'SET_USER', payload: storedUser });
         
-        // Validate token and refresh user data in background
+        // User is stored locally for now - when backend is ready, add token validation here
+        // For production: validate token with backend API and refresh user data
+        
         try {
-          const userResponse = await ApiClient.getCurrentUser();
-          dispatch({ type: 'SET_USER', payload: userResponse.user });
-          AuthService.storeUser(userResponse.user);
-          
-          // Load user data in parallel after successful validation
+          // Load user data for authenticated user
           await Promise.all([
             loadUserStats(),
             loadRecentGenerations(),
           ]);
         } catch (error) {
-          // Token validation failed - check if it's a network error or auth error
-          if (error instanceof Error && error.message.includes('Session expired')) {
-            // Clear invalid tokens and redirect to login
-            AuthService.clearTokens();
-            dispatch({ type: 'SET_USER', payload: null });
-          } else {
-            // Network error - keep user logged in but show error
-            console.error('Token validation failed:', error);
-            dispatch({ type: 'SET_ERROR', payload: 'Failed to validate session. Please refresh the page.' });
-          }
+          console.error('Error loading user data:', error);
+          // For now, continue with cached user data
+          // In production: handle token validation failures properly
         }
       }
     } catch (error) {

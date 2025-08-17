@@ -197,8 +197,8 @@ function GeneratePageContent() {
     if (result) {
       setShowResult(true);
       
-      // Show upgrade modal after 2nd generation for free/starter users
-      if ((user?.plan === 'free' || user?.plan === 'starter') && userStats?.totalGenerations === 2) {
+      // Show upgrade modal after 2nd generation for trial users
+      if (user?.plan === 'trial' && userStats?.totalGenerations === 2) {
         setTimeout(() => {
           setUpgradeSource('feature_gate');
           setShowUpgradeModal(true);
@@ -212,8 +212,8 @@ function GeneratePageContent() {
     // Show toast notification
     alert(`${type} copied to clipboard!`);
     
-    // Show upgrade modal after 3rd copy action for free/starter users (high engagement signal)
-    if (user?.plan === 'free' || user?.plan === 'starter') {
+    // Show upgrade modal after 3rd copy action for trial users (high engagement signal)
+    if (user?.plan === 'trial') {
       const copyCount = parseInt(sessionStorage.getItem('copyCount') || '0') + 1;
       sessionStorage.setItem('copyCount', copyCount.toString());
       
@@ -348,10 +348,10 @@ function GeneratePageContent() {
             </div>
             
             {/* Usage Indicator */}
-            {user && (user.plan === 'free' || user.plan === 'starter') && remainingGenerations !== null && (
+            {user && user.plan === 'trial' && remainingGenerations !== null && (
               <div className="flex items-center space-x-2">
                 <div className="text-sm text-gray-600">
-                  {remainingGenerations}/{dailyLimit} left {user.plan === 'starter' ? 'this month' : 'today'}
+                  {remainingGenerations}/{monthlyLimit} left this trial
                 </div>
                 <div className="w-16 bg-gray-200 rounded-full h-2">
                   <div 
@@ -462,7 +462,7 @@ function GeneratePageContent() {
                 </div>
 
                 {/* Pro Features Teaser */}
-                {(user?.plan === 'free' || user?.plan === 'starter') && (
+                {user?.plan === 'trial' && (
                   <div className="bg-gradient-to-r from-primary-50 to-secondary-50 rounded-lg p-4 border border-primary-200">
                     <div className="flex items-start space-x-3">
                       <Crown className="h-5 w-5 text-primary-600 mt-0.5" />
@@ -507,13 +507,13 @@ function GeneratePageContent() {
                 )}
 
                 {/* Limit Warning */}
-                {(user?.plan === 'free' || user?.plan === 'starter') && remainingGenerations !== null && remainingGenerations <= 1 && (
+                {user?.plan === 'trial' && remainingGenerations !== null && remainingGenerations <= 1 && (
                   <div className="flex items-center space-x-2 text-amber-600 bg-amber-50 rounded-lg p-3">
                     <AlertCircle className="h-4 w-4" />
                     <span className="text-sm">
                       {remainingGenerations === 0 
-                        ? 'Daily limit reached! Upgrade for unlimited generations.'
-                        : `Only ${remainingGenerations} generation left today.`
+                        ? 'Trial limit reached! Upgrade for unlimited generations.'
+                        : `Only ${remainingGenerations} generation left in trial.`
                       }
                     </span>
                   </div>

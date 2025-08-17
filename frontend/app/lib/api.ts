@@ -172,10 +172,8 @@ export class ApiClient {
     }
   }
 
-  // Authentication endpoints
-  static async getCurrentUser() {
-    return this.makeRequest<{ user: import('./auth').User }>('/auth/me');
-  }
+  // Authentication endpoints will be implemented when backend is ready
+  // For now, user data is managed locally via AuthService
 
   // Generation endpoints
   static async generateAd(data: GenerateRequest): Promise<GenerateResponse> {

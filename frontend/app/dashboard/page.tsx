@@ -1,6 +1,5 @@
 'use client';
 
-import AuthModal from '@/app/components/AuthModal';
 import LocalSavesViewer from '@/app/components/LocalSavesViewer';
 import TemplateLibrary from '@/app/components/TemplateLibrary';
 import UpgradeModal from '@/app/components/UpgradeModal';
@@ -26,11 +25,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export default function DashboardPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const router = useRouter();
   
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -41,11 +39,7 @@ export default function DashboardPage() {
   // Apply route guard - redirect unauthenticated users to homepage
   useRouteGuard(routeConfigs.dashboard);
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      setShowAuthModal(true);
-    }
-  }, [isAuthenticated, isLoading]);
+  // Route guard handles authentication redirects - no need for modal
 
   const handleLogout = () => {
     actions.logout();
@@ -102,24 +96,38 @@ export default function DashboardPage() {
   ];
 
   const displayStats = userStats || {
-    generationsToday: user?.plan === 'trial' ? 2 : 15,
+    generationsToday: user?.plan === 'trial' ? 5 : 15,
     totalGenerations: 47,
     totalViews: 2340000,
     avgCTR: 4.2,
     streak: 7
   };
 
-  const dailyLimit = user?.plan === 'free' ? 3 : null;
+  // Trial users have 15 total generations over 7 days (not daily limit)
+  const trialLimit = user?.plan === 'trial' ? 15 : null;
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
 
-  if (!user) return null;
+  // If not loading and no user, redirect to login
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -135,16 +143,23 @@ export default function DashboardPage() {
             <div className="flex items-center space-x-4">
               {/* Plan Badge */}
               <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                user.plan === 'pro' 
-                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-white'
+                user.plan === 'agency'
+                  ? 'bg-gradient-to-r from-purple-500 to-purple-700 text-white'
+                  : user.plan === 'creator'
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-700 text-white'
                   : 'bg-gray-100 text-gray-700'
               }`}>
-                {user.plan === 'pro' ? (
+                {user.plan === 'agency' ? (
                   <div className="flex items-center">
                     <Crown className="h-3 w-3 mr-1" />
-                    PRO
+                    AGENCY
                   </div>
-                ) : 'FREE'}
+                ) : user.plan === 'creator' ? (
+                  <div className="flex items-center">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    CREATOR
+                  </div>
+                ) : 'TRIAL'}
               </div>
               
               <Link href="/settings" className="p-2 text-gray-400 hover:text-gray-600">
@@ -174,7 +189,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Performance Overview */}
-        {user && (user.plan === 'pro' || user.plan === 'agency') && (
+        {user && (user.plan === 'creator' || user.plan === 'agency') && (
           <div className="card mb-8 bg-gradient-to-br from-primary-50 to-secondary-50 border-primary-200">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -213,8 +228,8 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Analytics Upsell for Free Users */}
-        {user && user.plan === 'free' && (
+        {/* Analytics Upsell for Trial Users */}
+        {user && user.plan === 'trial' && (
           <div className="card mb-8 bg-gradient-to-br from-gray-50 to-blue-50 border-blue-200">
             <div className="flex items-center justify-between">
               <div className="flex items-start space-x-4">
@@ -224,7 +239,7 @@ export default function DashboardPage() {
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-1">📊 Unlock Performance Analytics</h3>
                   <p className="text-gray-600 text-sm mb-3">
-                    See detailed insights, track viral trends, and get AI-powered recommendations
+                    Upgrade to Creator plan for detailed insights, viral trends, and AI-powered recommendations
                   </p>
                   <div className="flex items-center space-x-4 text-xs text-gray-500">
                     <span>• Industry benchmarks</span>
@@ -254,24 +269,24 @@ export default function DashboardPage() {
             <div className="flex items-center">
               <div className="text-2xl font-bold text-gray-900">
                 {displayStats.generationsToday}
-                {dailyLimit && (
-                  <span className="text-lg text-gray-500">/{dailyLimit}</span>
+                {trialLimit && user?.plan === 'trial' && (
+                  <span className="text-lg text-gray-500">/{trialLimit}</span>
                 )}
               </div>
-              {dailyLimit && (
+              {trialLimit && user?.plan === 'trial' && (
                 <div className="ml-3 flex-1">
                   <div className="bg-gray-200 rounded-full h-2">
                     <div 
                       className="bg-gradient-to-r from-primary-500 to-secondary-500 h-2 rounded-full"
-                      style={{ width: `${(displayStats.generationsToday / dailyLimit) * 100}%` }}
+                      style={{ width: `${(displayStats.generationsToday / trialLimit) * 100}%` }}
                     ></div>
                   </div>
                 </div>
               )}
             </div>
-            {dailyLimit && displayStats.generationsToday >= dailyLimit && (
+            {trialLimit && user?.plan === 'trial' && displayStats.generationsToday >= trialLimit && (
               <p className="text-sm text-red-600 mt-2">
-                Daily limit reached! <span className="font-medium cursor-pointer" onClick={() => setShowUpgradeModal(true)}>Upgrade to Pro</span>
+                Trial limit reached! <span className="font-medium cursor-pointer" onClick={() => setShowUpgradeModal(true)}>Upgrade to Creator</span>
               </p>
             )}
           </div>
@@ -364,29 +379,29 @@ export default function DashboardPage() {
           </div>
 
           {/* Upgrade Card */}
-          {user.plan === 'free' && (
+          {user.plan === 'trial' && (
             <div className="card bg-gradient-to-br from-primary-50 to-secondary-50 border-primary-200">
               <div className="text-center">
                 <Crown className="h-12 w-12 text-primary-600 mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Upgrade to Pro</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Upgrade to Creator</h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  Unlimited generations, advanced analytics, and priority support
+                  150 generations/month, advanced analytics, and priority support
                 </p>
                 <button 
                   onClick={() => setShowUpgradeModal(true)}
                   className="btn-primary w-full text-sm"
                 >
-                  Upgrade Now - $19/mo
+                  Upgrade Now - $29/mo
                 </button>
                 <p className="text-xs text-gray-500 mt-2">
-                  Cancel anytime • 7-day free trial
+                  Cancel anytime • No credit card required for trial
                 </p>
               </div>
             </div>
           )}
 
-          {/* Pro Bonus */}
-          {user.plan === 'pro' && (
+          {/* Creator/Agency Bonus */}
+          {(user.plan === 'creator' || user.plan === 'agency') && (
             <div className="card bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200">
               <div className="text-center">
                 <Gift className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
@@ -476,11 +491,6 @@ export default function DashboardPage() {
         source="dashboard"
       />
 
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-      />
     </div>
   );
 }

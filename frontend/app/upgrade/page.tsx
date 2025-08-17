@@ -326,8 +326,7 @@ function UpgradePageContent() {
                     <span className="text-lg font-normal text-gray-600">/day</span>
                   </div>
                   <p className="text-gray-600 mb-1">
-                    {planKey === 'starter' ? 'Less than a snack 🍿' : 
-                     planKey === 'pro' ? 'Less than a coffee ☕' : 'Less than a lunch 🍕'}
+                    {planKey === 'creator' ? 'Less than a coffee ☕' : 'Less than a lunch 🍕'}
                   </p>
                   <p className="text-sm text-gray-500">(${plan.price}/month)</p>
                   
