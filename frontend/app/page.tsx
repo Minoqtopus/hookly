@@ -133,10 +133,10 @@ export default function HomePage() {
                   </>
                 )}
               </button>
-              <button className="btn-secondary text-lg px-8 py-4 flex items-center justify-center">
+              <Link href="/generate" className="btn-secondary text-lg px-8 py-4 flex items-center justify-center">
                 See Examples
                 <ArrowRight className="h-5 w-5 ml-2" />
-              </button>
+              </Link>
             </div>
 
             {/* Trust Indicators */}
