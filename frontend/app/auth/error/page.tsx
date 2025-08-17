@@ -24,7 +24,7 @@ export default function AuthErrorPage() {
         return {
           title: 'Session Expired',
           message: 'Your login session has expired for security reasons.',
-          suggestion: 'Please sign in again to continue using AI UGC.',
+          suggestion: 'Please sign in again to continue using Hookly.',
           actionText: 'Sign In',
           action: () => router.push('/auth/login')
         };
@@ -32,7 +32,7 @@ export default function AuthErrorPage() {
         return {
           title: 'Access Denied',
           message: 'You cancelled the Google sign-in process.',
-          suggestion: 'To use AI UGC, we need you to sign in with Google to save your ads.',
+          suggestion: 'To use Hookly, we need you to sign in with Google to save your ads.',
           actionText: 'Try Signing In',
           action: () => AuthService.initiateGoogleAuth()
         };
@@ -128,7 +128,7 @@ export default function AuthErrorPage() {
         <div className="mt-6 p-4 bg-white/50 rounded-xl border border-white/20">
           <div className="text-center">
             <p className="text-sm text-gray-600 mb-3">
-              Want to try AI UGC without signing in?
+              Want to try Hookly without signing in?
             </p>
             <Link
               href="/"

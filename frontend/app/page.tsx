@@ -65,7 +65,7 @@ export default function HomePage() {
           <nav className="flex items-center justify-between mb-12">
             <div className="flex items-center space-x-2">
               <Sparkles className="h-8 w-8 text-primary-600" />
-              <span className="text-xl font-bold text-gray-900">AI UGC</span>
+              <span className="text-xl font-bold text-gray-900">Hookly</span>
             </div>
             <div className="hidden sm:flex items-center space-x-4">
               <Link href="/auth/login" className="text-gray-600 hover:text-gray-900 font-medium">

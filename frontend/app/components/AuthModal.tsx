@@ -101,7 +101,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
         };
       default:
         return {
-          title: '✨ Join AI UGC',
+          title: '✨ Join Hookly',
           subtitle: 'Start creating viral ads in seconds',
           urgency: null,
           buttonText: 'Sign Up with Google',

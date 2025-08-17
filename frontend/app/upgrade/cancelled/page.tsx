@@ -146,7 +146,7 @@ export default function CancelledPage() {
               Thank You for Your Feedback
             </h2>
             <p className="text-gray-600 mb-6">
-              Your input helps us improve AI UGC for everyone. We'll use your feedback to make the product better.
+              Your input helps us improve Hookly for everyone. We'll use your feedback to make the product better.
             </p>
             
             <div className="bg-gray-50 rounded-lg p-4">

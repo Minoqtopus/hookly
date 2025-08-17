@@ -107,7 +107,7 @@ export default function LoginPage() {
           {/* Sign Up Link */}
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              New to AI UGC?{' '}
+              New to Hookly?{' '}
               <Link href="/" className="font-medium text-primary-600 hover:text-primary-700">
                 Try the free demo
               </Link>

@@ -121,7 +121,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Sparkles className="h-8 w-8 text-primary-600" />
-              <span className="text-xl font-bold text-gray-900">AI UGC</span>
+              <span className="text-xl font-bold text-gray-900">Hookly</span>
             </div>
             
             <div className="flex items-center space-x-4">

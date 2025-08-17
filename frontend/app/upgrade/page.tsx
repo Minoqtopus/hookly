@@ -62,7 +62,7 @@ export default function UpgradePage() {
           value: plans[selectedPlan].price,
           items: [{
             item_id: `${selectedPlan}_monthly`,
-            item_name: `AI UGC ${plans[selectedPlan].name}`,
+            item_name: `Hookly ${plans[selectedPlan].name}`,
             category: 'subscription',
             quantity: 1,
             price: plans[selectedPlan].price
@@ -176,7 +176,7 @@ export default function UpgradePage() {
     { 
       icon: CheckCircle, 
       title: 'No Watermarks', 
-      description: 'Clean, professional ads without AI UGC branding',
+      description: 'Clean, professional ads without Hookly branding',
       highlight: false 
     },
     { 
@@ -197,7 +197,7 @@ export default function UpgradePage() {
     {
       name: "Sarah Johnson",
       title: "E-commerce Brand Owner",
-      content: "Upgraded to Pro and 10x'd my ad performance in 30 days. Generated over $50K in revenue from AI UGC ads. Best investment ever!",
+      content: "Upgraded to Pro and 10x'd my ad performance in 30 days. Generated over $50K in revenue from Hookly ads. Best investment ever!",
       rating: 5,
       revenue: "$50K in 30 days"
     },
