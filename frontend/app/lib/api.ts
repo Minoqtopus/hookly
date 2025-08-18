@@ -39,6 +39,11 @@ export interface UserStats {
   totalViews: number;
   avgCTR: number;
   streak: number;
+  plan: string;
+  isTrialUser: boolean;
+  trialGenerationsUsed: number;
+  monthlyLimit: number | null;
+  remainingThisMonth: number;
 }
 
 export interface Generation {
@@ -192,14 +197,14 @@ export class ApiClient {
   }
 
   // User data endpoints
-  static async getUserStats(): Promise<UserStats> {
-    return this.makeRequest<UserStats>('/user/stats');
-  }
-
   static async getUserGenerations(limit = 10, offset = 0): Promise<{ generations: Generation[]; total: number }> {
     return this.makeRequest<{ generations: Generation[]; total: number }>(
       `/user/generations?limit=${limit}&offset=${offset}`
     );
+  }
+
+  static async getUserStats(): Promise<UserStats> {
+    return this.makeRequest<UserStats>('/user/stats');
   }
 
   static async toggleFavorite(generationId: string): Promise<{ is_favorite: boolean }> {

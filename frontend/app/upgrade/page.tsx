@@ -3,6 +3,7 @@
 import AuthModal from '@/app/components/AuthModal';
 import ScarcityIndicator from '@/app/components/ScarcityIndicator';
 import { useAuth } from '@/app/lib/AppContext';
+import { getPlanConfig } from '@/app/lib/plans';
 import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import { useUpgrade } from '@/app/lib/useUpgrade';
 import {
@@ -113,26 +114,30 @@ function UpgradePageContent() {
 
   const content = getSourceContent();
 
+  // Use centralized plan configuration - no hardcoded values
+  const creatorConfig = getPlanConfig('creator');
+  const agencyConfig = getPlanConfig('agency');
+  
   const plans = {
     creator: {
-      name: 'Creator',
-      price: 29,
-      dailyPrice: 0.97,
+      name: creatorConfig?.displayName || 'Creator Plan',
+      price: creatorConfig?.price.monthly || null,
+      dailyPrice: creatorConfig?.price.monthly ? (creatorConfig.price.monthly / 30).toFixed(2) : null,
       billing: 'per month',
       description: 'Perfect for individual creators',
-      generationsLimit: 150,
+      generationsLimit: creatorConfig?.generationsPerMonth || null,
       popular: false,
-      features: ['150 generations/month', 'All viral ad templates', 'Performance analytics', 'Script & visual suggestions', 'Copy to clipboard tools']
+      features: creatorConfig?.features || ['Plan features loading...']
     },
     agency: {
-      name: 'Agency',
-      price: 79,
-      dailyPrice: 2.63,
+      name: agencyConfig?.displayName || 'Agency Plan',
+      price: agencyConfig?.price.monthly || null,
+      dailyPrice: agencyConfig?.price.monthly ? (agencyConfig.price.monthly / 30).toFixed(2) : null,
       billing: 'per month',
       description: 'Built for agencies and teams',
-      generationsLimit: 500,
+      generationsLimit: agencyConfig?.generationsPerMonth || null,
       popular: true,
-      features: ['500 generations/month', 'Everything in Creator plan', 'Team collaboration tools', 'Batch ad generation', 'Priority support']
+      features: agencyConfig?.features || ['Plan features loading...']
     }
   };
 
@@ -314,17 +319,17 @@ function UpgradePageContent() {
                   <p className="text-gray-600 text-sm mb-4">{plan.description}</p>
                   
                   <div className="text-4xl font-bold text-gray-900 mb-2">
-                    ${plan.dailyPrice}
+                    {plan.dailyPrice ? `$${plan.dailyPrice}` : 'Loading...'}
                     <span className="text-lg font-normal text-gray-600">/day</span>
                   </div>
                   <p className="text-gray-600 mb-1">
-                    {planKey === 'creator' ? 'Less than a coffee ☕' : 'Less than a lunch 🍕'}
+                    {plan.price ? (planKey === 'creator' ? 'Less than a coffee ☕' : 'Less than a lunch 🍕') : 'Price loading...'}
                   </p>
-                  <p className="text-sm text-gray-500">(${plan.price}/month)</p>
+                  <p className="text-sm text-gray-500">({plan.price ? `$${plan.price}` : 'Loading...'}/month)</p>
                   
                   <div className="mt-4">
                     <span className="text-lg font-semibold text-primary-600">
-                      {plan.generationsLimit} generations/month
+                      {plan.generationsLimit ? `${plan.generationsLimit} generations/month` : 'Limit loading...'}
                     </span>
                   </div>
                 </div>
@@ -472,7 +477,7 @@ function UpgradePageContent() {
               </>
             ) : (
               <>
-                {content.cta} - Just ${plans[selectedPlan].dailyPrice}/day
+                {plans[selectedPlan].dailyPrice ? `${content.cta} - Just $${plans[selectedPlan].dailyPrice}/day` : content.cta}
               </>
             )}
           </button>

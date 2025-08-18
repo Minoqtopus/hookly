@@ -33,6 +33,7 @@ import {
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
+import { getPlanConfig, getTrialLimit } from '@/app/lib/plans';
 
 function GeneratePageContent() {
   const [showResult, setShowResult] = useState(false);
@@ -67,7 +68,14 @@ function GeneratePageContent() {
   const [shareNotes, setShareNotes] = useState('');
   const [selectedTeamId, setSelectedTeamId] = useState('');
 
-  const monthlyLimit = user?.plan === 'trial' ? 15 : (user?.plan === 'creator' ? 150 : 500);
+  // Get monthly limits from centralized configuration
+  const getMonthlyLimit = (planType: string) => {
+    if (planType === 'trial') return getTrialLimit();
+    const config = getPlanConfig(planType);
+    return config?.generationsPerMonth || null;
+  };
+  
+  const monthlyLimit = user?.plan ? getMonthlyLimit(user.plan) : null;
   const remainingGenerations = monthlyLimit ? Math.max(0, monthlyLimit - (userStats?.generationsThisMonth || 0)) : null;
 
   useEffect(() => {

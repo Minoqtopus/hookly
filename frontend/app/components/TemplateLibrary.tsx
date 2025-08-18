@@ -29,238 +29,6 @@ interface TemplateLibraryProps {
   externalFilter?: string;
 }
 
-// Fallback templates in case API fails
-const fallbackTemplates: Template[] = [
-  {
-    id: '1',
-    title: 'Skincare Transformation',
-    niche: 'Beauty',
-    targetAudience: 'Women aged 25-45 with skin concerns',
-    hook: 'I used to hide my acne with 5 layers of makeup until I found this one ingredient...',
-    script: `I used to hide my acne with 5 layers of makeup until I found this one ingredient...
-
-*holds up product*
-
-This serum changed everything. Look at my skin now - no filter, no makeup.
-
-*shows before/after photos*
-
-The secret? It has 2% salicylic acid that actually penetrates your pores, unlike those drugstore products that just sit on top.
-
-I've been using it for 3 months and people keep asking if I got professional treatments.
-
-*applies product to face*
-
-The best part? It's only $29 and lasts forever. Link in my bio - but hurry, they're doing 30% off this week only.
-
-Trust me, your future self will thank you.`,
-    visuals: [
-      'Close-up of applying makeup to cover acne',
-      'Holding the serum product with confident smile',
-      'Split-screen before/after transformation',
-      'Detailed product application on clean face',
-      'Final result - glowing, clear skin'
-    ],
-    performance: {
-      estimatedViews: 156000,
-      estimatedCTR: 4.8,
-      viralScore: 8.9
-    },
-    tags: ['skincare', 'transformation', 'before-after'],
-    isPopular: true
-  },
-  {
-    id: '2',
-    title: 'Protein Powder Results',
-    niche: 'Fitness',
-    targetAudience: 'Gym enthusiasts and athletes aged 20-40',
-    hook: 'My trainer said I\'d never build muscle as a vegetarian. Then I found this...',
-    script: `My trainer said I'd never build muscle as a vegetarian. Then I found this...
-
-*flexes in gym mirror*
-
-This plant-based protein has 30g per scoop - more than most whey proteins.
-
-*shows transformation photos*
-
-6 months ago I was 140lbs and weak. Now I'm 165lbs of lean muscle.
-
-*scoops protein powder*
-
-The difference? This has all 9 essential amino acids that your body can't make. Most plant proteins are incomplete.
-
-Plus it tastes like a vanilla milkshake - not like grass clippings.
-
-*drinks shake*
-
-I'm not saying ditch the gym, but having the right fuel makes all the difference.
-
-Use my code GAINS20 for 20% off your first order.`,
-    visuals: [
-      'Disappointed face talking to trainer',
-      'Flexing progress in gym mirror',
-      'Side-by-side transformation photos',
-      'Scooping protein powder into shaker',
-      'Enjoying the protein shake post-workout'
-    ],
-    performance: {
-      estimatedViews: 89000,
-      estimatedCTR: 3.6,
-      viralScore: 7.4
-    },
-    tags: ['fitness', 'transformation', 'plant-based']
-  },
-  {
-    id: '3',
-    title: 'Productivity App Secret',
-    niche: 'Tech/Productivity',
-    targetAudience: 'Busy professionals and students aged 22-35',
-    hook: 'I was working 70-hour weeks until I discovered this productivity hack...',
-    script: `I was working 70-hour weeks until I discovered this productivity hack...
-
-*shows chaotic desk with multiple screens*
-
-My life was complete chaos. Meetings, deadlines, constant stress.
-
-*opens phone app*
-
-Then I found this app that uses the Pomodoro Technique with AI optimization.
-
-*shows clean, organized workspace*
-
-It analyzes when you're most productive and schedules your hardest tasks for those peak hours.
-
-*demonstrates app features*
-
-Now I finish everything by 5 PM and actually have a life.
-
-The crazy part? It's free for basic features, and Pro is only $5/month.
-
-*relaxing at home in evening*
-
-Downloaded it 3 months ago and my productivity increased by 340%. Not kidding.
-
-Link in bio - your future self will thank you.`,
-    visuals: [
-      'Messy desk with stressed person working late',
-      'Phone screen showing the productivity app',
-      'Clean, organized workspace transformation',
-      'App interface with scheduling features',
-      'Person relaxing at home in evening light'
-    ],
-    performance: {
-      estimatedViews: 234000,
-      estimatedCTR: 5.2,
-      viralScore: 9.1
-    },
-    tags: ['productivity', 'app', 'work-life-balance'],
-    isPopular: true
-  },
-  {
-    id: '4',
-    title: 'Coffee Shop Marketing',
-    niche: 'Food & Beverage',
-    targetAudience: 'Coffee lovers and local business supporters aged 25-50',
-    hook: 'This local coffee shop was about to close until they tried one simple marketing trick...',
-    script: `This local coffee shop was about to close until they tried one simple marketing trick...
-
-*sad empty coffee shop*
-
-Sarah's Café was my favorite spot, but hardly anyone knew about it.
-
-*shows owner looking worried*
-
-The owner Sarah was about to shut down after 10 years.
-
-*lightbulb moment*
-
-Then I suggested she start posting her latte art on TikTok.
-
-*filming latte art creation process*
-
-She went from 50 followers to 10K in two months.
-
-*busy coffee shop with lines*
-
-Now there's a line out the door every morning.
-
-*happy customers with beautiful lattes*
-
-The secret? People don't just buy coffee - they buy the experience.
-
-*Sarah smiling behind counter*
-
-Sometimes the best marketing is just showing people what you're passionate about.
-
-Support your local businesses - they need us now more than ever.`,
-    visuals: [
-      'Empty coffee shop with sad atmosphere',
-      'Owner looking worried behind counter',
-      'Close-up of beautiful latte art being made',
-      'Phone filming the latte art process',
-      'Busy coffee shop with happy customers'
-    ],
-    performance: {
-      estimatedViews: 67000,
-      estimatedCTR: 2.8,
-      viralScore: 6.3
-    },
-    tags: ['local-business', 'coffee', 'marketing']
-  },
-  {
-    id: '5',
-    title: 'Study Technique Revolution',
-    niche: 'Education',
-    targetAudience: 'Students aged 16-25 struggling with academics',
-    hook: 'I went from failing to straight A\'s using this ancient study technique...',
-    script: `I went from failing to straight A's using this ancient study technique...
-
-*shows failed test papers*
-
-Last semester I was on academic probation. My GPA was 1.8.
-
-*stressed student cramming*
-
-I was pulling all-nighters, drinking energy drinks, memorizing everything.
-
-*discovers technique*
-
-Then my professor mentioned the Feynman Technique - used by Nobel Prize winners.
-
-*explains on whiteboard*
-
-Instead of memorizing, you explain concepts in simple terms like you're teaching a 5-year-old.
-
-*teaching to camera*
-
-If you can't explain it simply, you don't understand it.
-
-*shows improved grades*
-
-This semester? 3.9 GPA. No all-nighters. No stress.
-
-*confident student*
-
-The trick isn't studying harder - it's studying smarter.
-
-Try this for one week and watch your grades transform.`,
-    visuals: [
-      'Stack of failed tests with red marks',
-      'Stressed student surrounded by books at 3 AM',
-      'Writing the Feynman Technique on whiteboard',
-      'Teaching concept to camera enthusiastically',
-      'Showing straight A report card with pride'
-    ],
-    performance: {
-      estimatedViews: 312000,
-      estimatedCTR: 6.1,
-      viralScore: 8.7
-    },
-    tags: ['education', 'study-tips', 'academic-success'],
-    isPopular: true
-  }
-];
-
 export default function TemplateLibrary({ onUseTemplate, showFilters = true, compact = false, externalFilter }: TemplateLibraryProps) {
   const [selectedNiche, setSelectedNiche] = useState<string>('all');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -296,9 +64,9 @@ export default function TemplateLibrary({ onUseTemplate, showFilters = true, com
         }
       } catch (err) {
         console.error('Failed to fetch templates:', err);
-        setError('Failed to load templates. Using cached templates.');
-        // Fallback to hardcoded templates on error
-        setTemplates(fallbackTemplates);
+        setError('Failed to load templates from server.');
+        // No more hardcoded fallbacks - show empty state
+        setTemplates([]);
       } finally {
         setLoading(false);
       }
@@ -356,12 +124,21 @@ export default function TemplateLibrary({ onUseTemplate, showFilters = true, com
         )}
         
         {error && (
-          <div className="text-center py-2">
-            <p className="text-xs text-amber-600">{error}</p>
+          <div className="text-center py-4">
+            <p className="text-sm text-red-600 mb-2">{error}</p>
+            <p className="text-xs text-gray-500">Templates will be available once seeded.</p>
           </div>
         )}
         
-        {!loading && (
+        {!loading && templates.length === 0 && !error && (
+          <div className="text-center py-8">
+            <Sparkles className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+            <p className="text-sm text-gray-500">No templates available</p>
+            <p className="text-xs text-gray-400">Templates need to be seeded first</p>
+          </div>
+        )}
+        
+        {!loading && templates.length > 0 && (
           <div className="grid gap-3">
             {templates.slice(0, 3).map((template) => (
             <div key={template.id} className="border border-gray-200 rounded-lg p-4 hover:border-primary-300 transition-colors">
@@ -397,112 +174,144 @@ export default function TemplateLibrary({ onUseTemplate, showFilters = true, com
       </div>
 
       {/* Filters - only show if no external filter and showFilters is true */}
-      {showFilters && !externalFilter && (
+      {!externalFilter && showFilters && (
         <div className="flex items-center space-x-4">
-          <Filter className="h-5 w-5 text-gray-400" />
-          <select
-            value={selectedNiche}
-            onChange={(e) => setSelectedNiche(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          >
-            {niches.map(niche => (
-              <option key={niche} value={niche}>
-                {niche === 'all' ? 'All Niches' : niche}
-              </option>
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700">Filter by niche:</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {niches.map((niche) => (
+              <button
+                key={niche}
+                onClick={() => setSelectedNiche(niche)}
+                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                  selectedNiche === niche
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {niche === 'all' ? 'All' : niche}
+              </button>
             ))}
-          </select>
+          </div>
         </div>
       )}
 
       {/* Loading State */}
       {loading && (
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading templates...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading templates...</p>
         </div>
       )}
 
       {/* Error State */}
-      {error && !loading && (
-        <div className="text-center py-6">
-          <p className="text-amber-600 mb-2">{error}</p>
-          <p className="text-sm text-gray-500">Showing cached templates</p>
+      {error && (
+        <div className="text-center py-12">
+          <div className="text-red-600 mb-4">❌ {error}</div>
+          <p className="text-gray-500 text-sm">Templates need to be seeded in the database first.</p>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && templates.length === 0 && !error && (
+        <div className="text-center py-12">
+          <Sparkles className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No templates available</h3>
+          <p className="text-gray-600">Templates need to be seeded in the database first.</p>
         </div>
       )}
 
       {/* Templates Grid */}
-      {!loading && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {!loading && filteredTemplates.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTemplates.map((template) => (
-          <div key={template.id} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
-            {/* Header */}
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="flex items-center space-x-2 mb-1">
-                  <h3 className="font-semibold text-gray-900">{template.title}</h3>
-                  {template.isPopular && (
-                    <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Popular</span>
-                  )}
+            <div key={template.id} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-200 hover:border-primary-300">
+              {/* Template Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">{template.title}</h3>
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <span className="bg-gray-100 px-2 py-1 rounded-full">{template.niche}</span>
+                    {template.isPopular && (
+                      <div className="flex items-center text-orange-500">
+                        <Star className="h-3 w-3 mr-1" />
+                        <span className="text-xs">Popular</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600">{template.niche} • {template.targetAudience}</p>
+                <button
+                  onClick={() => toggleFavorite(template.id)}
+                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  <Heart className={`h-4 w-4 ${favorites.has(template.id) ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+                </button>
               </div>
-              <button
-                onClick={() => toggleFavorite(template.id)}
-                className={`p-1 rounded ${favorites.has(template.id) ? 'text-red-500' : 'text-gray-400'}`}
-              >
-                <Heart className={`h-4 w-4 ${favorites.has(template.id) ? 'fill-current' : ''}`} />
-              </button>
-            </div>
 
-            {/* Performance Metrics */}
-            <div className="grid grid-cols-3 gap-3 mb-4 text-center">
-              <div>
-                <div className="text-lg font-bold text-blue-600">{(template.performance.estimatedViews / 1000).toFixed(0)}K</div>
-                <div className="text-xs text-gray-500">Views</div>
+              {/* Hook Preview */}
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 italic line-clamp-2">"{template.hook}"</p>
               </div>
-              <div>
-                <div className="text-lg font-bold text-green-600">{template.performance.estimatedCTR}%</div>
-                <div className="text-xs text-gray-500">CTR</div>
+
+              {/* Performance Metrics */}
+              <div className="grid grid-cols-3 gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
+                <div className="text-center">
+                  <div className="text-sm font-bold text-green-600">{(template.performance.estimatedViews / 1000).toFixed(0)}K</div>
+                  <div className="text-xs text-gray-500">Views</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-sm font-bold text-blue-600">{template.performance.estimatedCTR}%</div>
+                  <div className="text-xs text-gray-500">CTR</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-sm font-bold text-purple-600">{template.performance.viralScore}</div>
+                  <div className="text-xs text-gray-500">Viral Score</div>
+                </div>
               </div>
-              <div>
-                <div className="text-lg font-bold text-purple-600">{template.performance.viralScore}/10</div>
-                <div className="text-xs text-gray-500">Viral Score</div>
+
+              {/* Tags */}
+              <div className="flex flex-wrap gap-1 mb-4">
+                {template.tags.slice(0, 3).map((tag) => (
+                  <span key={tag} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              {/* Actions */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => copyToClipboard(template.hook, 'Hook')}
+                  className="flex items-center justify-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm transition-colors"
+                >
+                  <Copy className="h-3 w-3 mr-1" />
+                  Copy Hook
+                </button>
+                <button
+                  onClick={() => handleUseTemplate(template)}
+                  className="flex items-center justify-center px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm transition-colors"
+                >
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  Use Template
+                </button>
               </div>
             </div>
+          ))}
+        </div>
+      )}
 
-            {/* Hook Preview */}
-            <div className="bg-gray-50 rounded-lg p-3 mb-4">
-              <h4 className="text-sm font-medium text-gray-900 mb-1">Hook</h4>
-              <p className="text-sm text-gray-700 italic">"{template.hook}"</p>
-            </div>
-
-            {/* Tags */}
-            <div className="flex flex-wrap gap-1 mb-4">
-              {template.tags.map(tag => (
-                <span key={tag} className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
-                  {tag}
-                </span>
-              ))}
-            </div>
-
-            {/* Actions */}
-            <div className="flex space-x-2">
-              <button
-                onClick={() => handleUseTemplate(template)}
-                className="flex-1 bg-primary-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-              >
-                <Sparkles className="h-4 w-4 inline mr-1" />
-                Use Template
-              </button>
-              <button
-                onClick={() => copyToClipboard(template.hook, 'Hook')}
-                className="p-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
-              >
-                <Copy className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        ))}
+      {/* Show message when filtered results are empty */}
+      {!loading && templates.length > 0 && filteredTemplates.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-gray-600">No templates found for "{activeFilter}" category.</p>
+          <button
+            onClick={() => setSelectedNiche('all')}
+            className="mt-2 text-primary-600 hover:text-primary-700 font-medium"
+          >
+            Show all templates
+          </button>
         </div>
       )}
     </div>

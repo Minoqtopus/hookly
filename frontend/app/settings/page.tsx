@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/app/lib/AppContext';
+import { getTrialLimit } from '@/app/lib/plans';
 import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import {
   AlertCircle,
@@ -187,7 +188,7 @@ export default function SettingsPage() {
                           </div>
                           <div>
                             <div className="text-xl font-bold text-gray-900">Trial Plan</div>
-                            <div className="text-gray-600">15 generations over 7 days, basic features</div>
+                            <div className="text-gray-600">{getTrialLimit()} generations over 7 days, basic features</div>
                           </div>
                         </>
                       )}

@@ -3,6 +3,7 @@
 import AuthModal from '@/app/components/AuthModal';
 import BetaBadge from '@/app/components/BetaBadge';
 import { useAuth } from '@/app/lib/AppContext';
+import { getPlanConfig, getTrialLimit } from '@/app/lib/plans';
 import { ArrowLeft, Check, Crown, Sparkles, Star, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -12,36 +13,28 @@ export default function PricingPage() {
   const [selectedPlan, setSelectedPlan] = useState<'creator' | 'agency'>('creator');
   const { isAuthenticated, user } = useAuth();
 
+  // Use centralized plan configuration - no hardcoded values
+  const creatorConfig = getPlanConfig('creator');
+  const agencyConfig = getPlanConfig('agency');
+  
   const plans = [
     {
       id: 'creator',
-      name: 'Creator',
-      price: 29,
+      name: creatorConfig?.displayName || 'Creator Plan',
+      price: creatorConfig?.price.monthly || null,
       description: 'Perfect for individual creators and small businesses',
-      features: [
-        '150 ad generations per month',
-        'All viral ad templates',
-        'Performance analytics',
-        'Script & visual suggestions',
-        'Copy to clipboard tools'
-      ],
-      popular: false,
+      features: creatorConfig?.features || ['Plan features loading...'],
+      popular: creatorConfig?.isPopular || false,
       cta: 'Start Creator Plan',
       icon: Star
     },
     {
       id: 'agency',
-      name: 'Agency',
-      price: 79,
+      name: agencyConfig?.displayName || 'Agency Plan',
+      price: agencyConfig?.price.monthly || null,
       description: 'Built for agencies and teams managing multiple clients',
-      features: [
-        '500 ad generations per month',
-        'Everything in Creator plan',
-        'Team collaboration tools',
-        'Batch ad generation',
-        'Priority support'
-      ],
-      popular: true,
+      features: agencyConfig?.features || ['Plan features loading...'],
+      popular: agencyConfig?.isPopular || true,
       cta: 'Start Agency Plan',
       icon: Crown
     }
@@ -50,7 +43,7 @@ export default function PricingPage() {
   const faqData = [
     {
       question: 'Can I try Hookly before committing to a paid plan?',
-      answer: 'Absolutely! You can try our free demo (1 generation per day) or start a 7-day free trial with 15 generations to test our platform with no credit card required.'
+      answer: `Absolutely! You can try our free demo (1 generation per day) or start a 7-day free trial with ${getTrialLimit()} generations to test our platform with no credit card required.`
     },
     {
       question: 'What happens if I exceed my monthly generation limit?',
@@ -198,19 +191,25 @@ export default function PricingPage() {
                     <p className="text-sm text-green-600 mt-1 font-medium">
                       🎉 Beta Tester Exclusive
                     </p>
-                    <p className="text-xs text-gray-500 line-through mt-1">
-                      Regular price: ${plan.price}/month
-                    </p>
+                    {plan.price && (
+                      <p className="text-xs text-gray-500 line-through mt-1">
+                        Regular price: ${plan.price}/month
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div>
                     <div className="flex items-baseline justify-center">
-                      <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
+                      <span className="text-4xl font-bold text-gray-900">
+                        {plan.price ? `$${plan.price}` : 'Loading...'}
+                      </span>
                       <span className="text-gray-500 ml-1">/month</span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                      ${(plan.price * 12 * 0.83).toFixed(0)}/month billed annually
-                    </p>
+                    {plan.price && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        ${(plan.price * 12 * 0.83).toFixed(0)}/month billed annually
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

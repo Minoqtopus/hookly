@@ -8,6 +8,7 @@ import UpgradeModal from '@/app/components/UpgradeModal';
 import { useApp, useAuth, useRecentGenerations, useUserStats } from '@/app/lib/AppContext';
 import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import { toast } from '@/app/lib/toast';
+import { getPlanConfig } from '@/app/lib/plans';
 import {
   ArrowRight,
   BarChart3,
@@ -90,56 +91,12 @@ export default function DashboardPage() {
     }
   };
 
-  // Use real data or fallback to mock data
-  const displayGenerations = recentGenerations.length > 0 ? recentGenerations : [
-    {
-      id: '1',
-      title: 'Fitness Protein Powder Ad',
-      hook: 'I was skeptical about protein powders until...',
-      niche: 'Health & Fitness',
-      created_at: '2 hours ago',
-      is_favorite: true,
-      performance_data: { views: 125000, ctr: 4.2 },
-      script: '',
-      visuals: [],
-      target_audience: ''
-    },
-    {
-      id: '2', 
-      title: 'Skincare Routine Transformation',
-      hook: 'This 3-step routine changed everything...',
-      niche: 'Beauty',
-      created_at: '1 day ago',
-      is_favorite: false,
-      performance_data: { views: 89000, ctr: 3.8 },
-      script: '',
-      visuals: [],
-      target_audience: ''
-    },
-    {
-      id: '3',
-      title: 'Gaming Setup Essential',
-      hook: 'Every gamer needs this secret weapon...',
-      niche: 'Gaming',
-      created_at: '3 days ago',
-      is_favorite: true,
-      performance_data: { views: 67000, ctr: 5.1 },
-      script: '',
-      visuals: [],
-      target_audience: ''
-    }
-  ];
+  // Use real data - no more hardcoded fallbacks
+  const displayGenerations = recentGenerations;
+  const displayStats = userStats;
 
-  const displayStats = userStats || {
-    generationsToday: user?.plan === 'trial' ? 5 : 15,
-    totalGenerations: 47,
-    totalViews: 2340000,
-    avgCTR: 4.2,
-    streak: 7
-  };
-
-  // Trial users have 15 total generations over 7 days (not daily limit)
-  const trialLimit = user?.plan === 'trial' ? 15 : null;
+  // Use correct trial limit from backend data
+  const trialLimit = displayStats?.isTrialUser ? displayStats.monthlyLimit : null;
 
   if (isLoading) {
     return (
@@ -224,28 +181,33 @@ export default function DashboardPage() {
             Welcome back, {user.email.split('@')[0]}! 👋
           </h1>
           <p className="text-gray-600">
-            Ready to create more viral content? You're on a {displayStats.streak}-day streak! 🔥
+            {displayStats?.streak ? 
+              `Ready to create more viral content? You're on a ${displayStats.streak}-day streak! 🔥` :
+              'Ready to start creating viral content? Let\'s build your streak! 💪'
+            }
           </p>
         </div>
 
         {/* Trial Countdown for Trial Users */}
-        {user.plan === 'trial' && (
+        {displayStats?.isTrialUser && (
           <TrialCountdown
             trialEndsAt={user.trial_ends_at}
-            generationsUsed={user.trial_generations_used || 0}
-            generationsLimit={15}
+            generationsUsed={displayStats.trialGenerationsUsed}
+            generationsLimit={displayStats.monthlyLimit || 15}
             onUpgrade={() => setShowUpgradeModal(true)}
             className="mb-8"
           />
         )}
 
-        {/* Performance Overview */}
-        {user && (user.plan === 'creator' || user.plan === 'agency') && (
+        {/* Performance Overview - Uses real data from backend */}
+        {user && (user.plan === 'creator' || user.plan === 'agency') && displayStats && (
           <div className="card mb-8 bg-gradient-to-br from-primary-50 to-secondary-50 border-primary-200">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">📊 Performance Overview</h3>
-                <p className="text-gray-600 text-sm">Your ads are performing above industry average!</p>
+                <p className="text-gray-600 text-sm">
+                  {displayStats.totalViews > 0 ? 'Your ads are gaining traction!' : 'Start generating content to see performance metrics'}
+                </p>
               </div>
               <Link 
                 href="/analytics" 
@@ -254,28 +216,44 @@ export default function DashboardPage() {
                 View Analytics
               </Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center bg-white rounded-lg p-3">
-                <div className="text-lg font-bold text-blue-600">234K</div>
-                <div className="text-xs text-gray-600">Total Views</div>
-                <div className="text-xs text-green-600 font-medium">+12.5%</div>
+            {displayStats.totalViews > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center bg-white rounded-lg p-3">
+                  <div className="text-lg font-bold text-blue-600">
+                    {displayStats.totalViews >= 1000000 
+                      ? (displayStats.totalViews / 1000000).toFixed(1) + 'M'
+                      : displayStats.totalViews >= 1000
+                      ? (displayStats.totalViews / 1000).toFixed(0) + 'K' 
+                      : displayStats.totalViews}
+                  </div>
+                  <div className="text-xs text-gray-600">Total Views</div>
+                </div>
+                <div className="text-center bg-white rounded-lg p-3">
+                  <div className="text-lg font-bold text-green-600">{displayStats.avgCTR}%</div>
+                  <div className="text-xs text-gray-600">Avg CTR</div>
+                </div>
+                <div className="text-center bg-white rounded-lg p-3">
+                  <div className="text-lg font-bold text-purple-600">-</div>
+                  <div className="text-xs text-gray-600">Engagement</div>
+                  <div className="text-xs text-gray-500">Coming soon</div>
+                </div>
+                <div className="text-center bg-white rounded-lg p-3">
+                  <div className="text-lg font-bold text-orange-600">-</div>
+                  <div className="text-xs text-gray-600">Viral Score</div>
+                  <div className="text-xs text-gray-500">Coming soon</div>
+                </div>
               </div>
-              <div className="text-center bg-white rounded-lg p-3">
-                <div className="text-lg font-bold text-green-600">4.2%</div>
-                <div className="text-xs text-gray-600">Avg CTR</div>
-                <div className="text-xs text-green-600 font-medium">+0.8%</div>
+            ) : (
+              <div className="text-center py-8 bg-white rounded-lg">
+                <p className="text-gray-500 mb-4">No performance data yet</p>
+                <Link 
+                  href="/generate" 
+                  className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                >
+                  Create Your First Ad
+                </Link>
               </div>
-              <div className="text-center bg-white rounded-lg p-3">
-                <div className="text-lg font-bold text-purple-600">8.7%</div>
-                <div className="text-xs text-gray-600">Engagement</div>
-                <div className="text-xs text-green-600 font-medium">+2.1%</div>
-              </div>
-              <div className="text-center bg-white rounded-lg p-3">
-                <div className="text-lg font-bold text-orange-600">7.9/10</div>
-                <div className="text-xs text-gray-600">Viral Score</div>
-                <div className="text-xs text-green-600 font-medium">+0.3</div>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -319,23 +297,23 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center">
               <div className="text-2xl font-bold text-gray-900">
-                {displayStats.generationsToday}
-                {trialLimit && user?.plan === 'trial' && (
+                {displayStats?.generationsToday ?? 0}
+                {trialLimit && displayStats?.isTrialUser && (
                   <span className="text-lg text-gray-500">/{trialLimit}</span>
                 )}
               </div>
-              {trialLimit && user?.plan === 'trial' && (
+              {trialLimit && displayStats?.isTrialUser && (
                 <div className="ml-3 flex-1">
                   <div className="bg-gray-200 rounded-full h-2">
                     <div 
                       className="bg-gradient-to-r from-primary-500 to-secondary-500 h-2 rounded-full"
-                      style={{ width: `${(displayStats.generationsToday / trialLimit) * 100}%` }}
+                      style={{ width: `${((displayStats?.generationsToday ?? 0) / trialLimit) * 100}%` }}
                     ></div>
                   </div>
                 </div>
               )}
             </div>
-            {trialLimit && user?.plan === 'trial' && displayStats.generationsToday >= trialLimit && (
+            {trialLimit && displayStats?.isTrialUser && (displayStats?.generationsToday ?? 0) >= trialLimit && (
               <p className="text-sm text-red-600 mt-2">
                 Trial limit reached! <span className="font-medium cursor-pointer" onClick={() => setShowUpgradeModal(true)}>Upgrade to Creator</span>
               </p>
@@ -349,10 +327,10 @@ export default function DashboardPage() {
               <Flame className="h-5 w-5 text-orange-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-2">
-              {displayStats.streak} days
+              {displayStats?.streak ?? 0} days
             </div>
             <p className="text-sm text-gray-600">
-              Keep it up! 🎯
+              {(displayStats?.streak ?? 0) > 0 ? 'Keep it up! 🎯' : 'Start your streak! 💪'}
             </p>
           </div>
 
@@ -363,10 +341,10 @@ export default function DashboardPage() {
               <TrendingUp className="h-5 w-5 text-green-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-2">
-              {(displayStats.totalViews / 1000000).toFixed(1)}M
+              {displayStats?.totalViews ? (displayStats.totalViews / 1000000).toFixed(1) + 'M' : '0'}
             </div>
-            <p className="text-sm text-green-600">
-              +12% this week 📈
+            <p className="text-sm text-gray-600">
+              {displayStats?.totalViews ? 'From your generations 📈' : 'Generate content to see views 💡'}
             </p>
           </div>
 
@@ -377,10 +355,10 @@ export default function DashboardPage() {
               <BarChart3 className="h-5 w-5 text-blue-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-2">
-              {displayStats.avgCTR}%
+              {displayStats?.avgCTR ?? 0}%
             </div>
-            <p className="text-sm text-blue-600">
-              Above industry avg! 🎉
+            <p className="text-sm text-gray-600">
+              {displayStats?.avgCTR ? 'Performance metric 🎯' : 'Generate content to track CTR 📊'}
             </p>
           </div>
         </div>
@@ -436,13 +414,16 @@ export default function DashboardPage() {
                 <Crown className="h-12 w-12 text-primary-600 mx-auto mb-4" />
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Upgrade to Creator</h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  150 generations/month, advanced analytics, and priority support
+                  {getPlanConfig('creator')?.features.slice(0, 3).join(', ') || 'Plan features loading...'}
                 </p>
                 <button 
                   onClick={() => setShowUpgradeModal(true)}
                   className="btn-primary w-full text-sm"
                 >
-                  Upgrade Now - $29/mo
+                  {getPlanConfig('creator')?.price.monthly ? 
+                    `Upgrade Now - $${getPlanConfig('creator')!.price.monthly}/mo` : 
+                    'Upgrade Now - Loading...'
+                  }
                 </button>
                 <p className="text-xs text-gray-500 mt-2">
                   Cancel anytime • No credit card required for trial
@@ -489,8 +470,24 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {displayGenerations.map((generation) => (
+          {displayGenerations.length === 0 ? (
+            <div className="text-center py-12">
+              <Sparkles className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No generations yet</h3>
+              <p className="text-gray-600 mb-6">
+                Start creating viral ad content to see your generations here!
+              </p>
+              <Link 
+                href="/generate" 
+                className="inline-flex items-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Generation
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {displayGenerations.map((generation) => (
               <div key={generation.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-medium text-gray-900 truncate">{generation.title}</h3>
@@ -539,8 +536,9 @@ export default function DashboardPage() {
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

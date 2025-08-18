@@ -23,73 +23,48 @@ export default function PerformanceDashboard() {
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d'>('30d');
   const [animationCompleted, setAnimationCompleted] = useState(false);
 
-  // Simulate realistic performance data based on timeframe
+  // Placeholder for real analytics data - needs backend connection
   const getMetrics = (): MetricData[] => {
-    const baseMultiplier = timeframe === '7d' ? 1 : timeframe === '30d' ? 4.3 : 12.8;
-    
     return [
       {
         label: 'Total Views',
-        value: `${(234 * baseMultiplier).toFixed(0)}K`,
-        change: '+12.5%',
-        trend: 'up',
+        value: 'No data',
+        change: '',
+        trend: 'neutral',
         icon: Eye,
         color: 'text-blue-600'
       },
       {
         label: 'Avg. CTR',
-        value: '4.2%',
-        change: '+0.8%',
-        trend: 'up',
+        value: 'No data',
+        change: '',
+        trend: 'neutral',
         icon: MousePointer,
         color: 'text-green-600'
       },
       {
         label: 'Engagement Rate',
-        value: '8.7%',
-        change: '+2.1%',
-        trend: 'up',
+        value: 'No data',
+        change: '',
+        trend: 'neutral',
         icon: Users,
         color: 'text-purple-600'
       },
       {
         label: 'Viral Score Avg',
-        value: '7.9/10',
-        change: '+0.3',
-        trend: 'up',
+        value: 'No data',
+        change: '',
+        trend: 'neutral',
         icon: TrendingUp,
         color: 'text-orange-600'
       }
     ];
   };
 
-  // Generate realistic chart data
+  // Placeholder for real chart data - needs backend analytics API
   const getChartData = (): ChartData[] => {
-    const days = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : 90;
-    const data: ChartData[] = [];
-    
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      
-      // Create realistic but fake performance curves
-      const baseViews = 15000 + Math.sin(i * 0.2) * 5000 + Math.random() * 3000;
-      const baseCTR = 3.8 + Math.sin(i * 0.15) * 0.8 + Math.random() * 0.4;
-      const baseConversions = baseViews * (baseCTR / 100) * (0.12 + Math.random() * 0.08);
-      
-      data.push({
-        period: timeframe === '7d' 
-          ? date.toLocaleDateString('en-US', { weekday: 'short' })
-          : timeframe === '30d'
-          ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-          : date.toLocaleDateString('en-US', { month: 'short' }),
-        views: Math.round(baseViews),
-        ctr: Number(baseCTR.toFixed(1)),
-        conversions: Math.round(baseConversions)
-      });
-    }
-    
-    return data;
+    // Return empty data - will be populated from backend
+    return [];
   };
 
   // Animation effect
@@ -182,96 +157,70 @@ export default function PerformanceDashboard() {
           </div>
         </div>
 
-        {/* Simple Chart */}
-        <div className="space-y-4">
-          {chartData.map((data, index) => (
-            <div key={data.period} className="flex items-center space-x-4">
-              <div className="w-16 text-xs text-gray-600 font-medium">
-                {data.period}
-              </div>
-              <div className="flex-1 flex items-center space-x-2">
-                {/* Views Bar */}
-                <div className="flex-1 bg-gray-100 rounded-full h-3 relative overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-1000 ease-out"
-                    style={{
-                      width: animationCompleted ? `${(data.views / maxViews) * 100}%` : '0%',
-                      transitionDelay: `${index * 50}ms`
-                    }}
-                  ></div>
-                </div>
-                
-                {/* CTR Indicator */}
-                <div className="w-12 text-right">
-                  <span className="text-xs font-medium text-green-600">
-                    {data.ctr}%
-                  </span>
-                </div>
-              </div>
-              <div className="w-20 text-right text-xs text-gray-600">
-                {(data.views / 1000).toFixed(1)}K
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Insights & Recommendations */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Top Performing Content */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">🏆 Top Performing Ads</h3>
+        {/* Chart Data Placeholder */}
+        {chartData.length === 0 ? (
+          <div className="text-center py-8">
+            <BarChart3 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 mb-2">No analytics data available</p>
+            <p className="text-sm text-gray-400">Generate content to see performance trends</p>
+          </div>
+        ) : (
           <div className="space-y-4">
-            {[
-              { hook: "I was skeptical about this fitness routine until...", views: "89K", ctr: "4.8%", niche: "Fitness" },
-              { hook: "This skincare hack changed everything...", views: "76K", ctr: "4.2%", niche: "Beauty" },
-              { hook: "My productivity went from 0 to 100 with...", views: "64K", ctr: "3.9%", niche: "Productivity" }
-            ].map((ad, index) => (
-              <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 text-sm font-bold">
-                  {index + 1}
+            {chartData.map((data, index) => (
+              <div key={data.period} className="flex items-center space-x-4">
+                <div className="w-16 text-xs text-gray-600 font-medium">
+                  {data.period}
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-900 italic">"{ad.hook}"</p>
-                  <div className="flex items-center mt-1 space-x-3 text-xs text-gray-600">
-                    <span className="bg-gray-200 px-2 py-1 rounded">{ad.niche}</span>
-                    <span>{ad.views} views</span>
-                    <span className="text-green-600 font-medium">{ad.ctr} CTR</span>
+                <div className="flex-1 flex items-center space-x-2">
+                  {/* Views Bar */}
+                  <div className="flex-1 bg-gray-100 rounded-full h-3 relative overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-1000 ease-out"
+                      style={{
+                        width: animationCompleted ? `${(data.views / maxViews) * 100}%` : '0%',
+                        transitionDelay: `${index * 50}ms`
+                      }}
+                    ></div>
                   </div>
+                  
+                  {/* CTR Indicator */}
+                  <div className="w-12 text-right">
+                    <span className="text-xs font-medium text-green-600">
+                      {data.ctr}%
+                    </span>
+                  </div>
+                </div>
+                <div className="w-20 text-right text-xs text-gray-600">
+                  {(data.views / 1000).toFixed(1)}K
                 </div>
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Insights & Recommendations */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Top Performing Content - Placeholder */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">🏆 Top Performing Ads</h3>
+          <div className="text-center py-8">
+            <Target className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 mb-2">No performance data yet</p>
+            <p className="text-sm text-gray-400">Generate ads to see top performers</p>
+          </div>
         </div>
 
-        {/* AI Insights */}
+        {/* AI Insights - Placeholder */}
         <div className="bg-gradient-to-br from-primary-50 to-secondary-50 rounded-xl border border-primary-200 p-6">
           <div className="flex items-center mb-4">
             <Zap className="h-6 w-6 text-primary-600 mr-2" />
             <h3 className="text-lg font-semibold text-gray-900">AI-Powered Insights</h3>
           </div>
-          <div className="space-y-4">
-            <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-              <div>
-                <p className="text-sm text-gray-900 font-medium">Peak Performance Days</p>
-                <p className="text-xs text-gray-600">Tuesdays and Thursdays show 23% higher engagement</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-              <div>
-                <p className="text-sm text-gray-900 font-medium">Hook Optimization</p>
-                <p className="text-xs text-gray-600">Question-based hooks perform 31% better than statements</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-              <div>
-                <p className="text-sm text-gray-900 font-medium">Audience Trend</p>
-                <p className="text-xs text-gray-600">25-34 age group shows highest conversion rates</p>
-              </div>
-            </div>
+          <div className="text-center py-8">
+            <Zap className="h-12 w-12 text-primary-300 mx-auto mb-4" />
+            <p className="text-gray-500 mb-2">No insights available yet</p>
+            <p className="text-sm text-gray-400">AI insights will appear after generating content</p>
           </div>
           
           {/* Pro Feature Tease */}
@@ -292,39 +241,13 @@ export default function PerformanceDashboard() {
         </div>
       </div>
 
-      {/* Industry Benchmarks */}
+      {/* Industry Benchmarks - Placeholder */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 Industry Benchmarks</h3>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { metric: "Average CTR", your: "4.2%", benchmark: "2.8%", better: true },
-            { metric: "Engagement Rate", your: "8.7%", benchmark: "6.1%", better: true },
-            { metric: "Conversion Rate", your: "2.1%", benchmark: "3.2%", better: false }
-          ].map((item, index) => (
-            <div key={index} className="text-center">
-              <div className="text-sm text-gray-600 mb-2">{item.metric}</div>
-              <div className="flex items-center justify-center space-x-4 mb-2">
-                <div className="text-center">
-                  <div className={`text-lg font-bold ${item.better ? 'text-green-600' : 'text-orange-600'}`}>
-                    {item.your}
-                  </div>
-                  <div className="text-xs text-gray-500">Your Performance</div>
-                </div>
-                <div className="text-gray-400">vs</div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-gray-600">{item.benchmark}</div>
-                  <div className="text-xs text-gray-500">Industry Avg</div>
-                </div>
-              </div>
-              <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                item.better 
-                  ? 'bg-green-100 text-green-700' 
-                  : 'bg-orange-100 text-orange-700'
-              }`}>
-                {item.better ? '↗ Above Average' : '↘ Below Average'}
-              </div>
-            </div>
-          ))}
+        <div className="text-center py-8">
+          <BarChart3 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-500 mb-2">Benchmarks coming soon</p>
+          <p className="text-sm text-gray-400">Industry comparison data will be available once you have performance metrics</p>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import AuthModal from '@/app/components/AuthModal';
+import { getTrialLimit } from '@/app/lib/plans';
 import {
   ArrowLeft,
   ArrowRight,
@@ -143,7 +144,7 @@ export default function DemoPage() {
                   <h3 className="font-semibold text-amber-900 mb-2">Demo Limitations</h3>
                   <p className="text-amber-800">
                     This demo is limited to 1 generation per day. 
-                    <Link href="/pricing" className="font-semibold underline ml-1 hover:text-amber-900">Start your free trial</Link> for 15 generations and full access to our platform.
+                    <Link href="/pricing" className="font-semibold underline ml-1 hover:text-amber-900">Start your free trial</Link> for {getTrialLimit()} generations and full access to our platform.
                   </p>
                 </div>
               </div>
