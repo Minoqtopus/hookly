@@ -1,7 +1,7 @@
-import { Controller, Get, Put, Body, UseGuards, Request, Query } from '@nestjs/common';
-import { UserService } from './user.service';
-import { UpdatePlanDto } from './dto/update-plan.dto';
+import { Body, Controller, Get, Post, Put, Query, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UpdatePlanDto } from './dto/update-plan.dto';
+import { UserService } from './user.service';
 
 @Controller('user')
 @UseGuards(JwtAuthGuard)
@@ -42,5 +42,20 @@ export class UserController {
     const limitNum = limit ? parseInt(limit, 10) : 10;
     const offsetNum = offset ? parseInt(offset, 10) : 0;
     return this.userService.getUserGenerations(req.user.userId, limitNum, offsetNum);
+  }
+
+  @Post('upgrade/creator')
+  async upgradeToCreator(@Request() req, @Body() body: any) {
+    return this.userService.upgradeToCreator(req.user.userId, body);
+  }
+
+  @Post('upgrade/agency')
+  async upgradeToAgency(@Request() req, @Body() body: any) {
+    return this.userService.upgradeToAgency(req.user.userId, body);
+  }
+
+  @Post('cancel-subscription')
+  async cancelSubscription(@Request() req) {
+    return this.userService.cancelSubscription(req.user.userId);
   }
 }

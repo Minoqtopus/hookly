@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual, LessThan, Between } from 'typeorm';
-import { User, UserPlan } from '../entities/user.entity';
+import { Between, MoreThanOrEqual, Repository } from 'typeorm';
 import { Generation } from '../entities/generation.entity';
+import { User, UserPlan } from '../entities/user.entity';
 import { UpdatePlanDto } from './dto/update-plan.dto';
 
 @Injectable()
@@ -202,6 +202,73 @@ export class UserService {
     const limit = this.getMonthlyLimit(plan);
     if (limit === null) return null;
     return Math.max(0, limit - usedThisMonth);
+  }
+
+  async upgradeToCreator(userId: string, checkoutData: any) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    
+    // Update user plan and reset limits
+    user.plan = UserPlan.CREATOR;
+    user.monthly_generation_count = 0;
+    user.monthly_reset_date = new Date();
+    user.has_batch_generation = true;
+    user.has_advanced_analytics = true;
+    
+    await this.userRepository.save(user);
+    
+    return {
+      success: true,
+      message: 'Successfully upgraded to Creator plan',
+      user: { id: user.id, plan: user.plan }
+    };
+  }
+
+  async upgradeToAgency(userId: string, checkoutData: any) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    
+    // Update user plan and enable team features
+    user.plan = UserPlan.AGENCY;
+    user.monthly_generation_count = 0;
+    user.monthly_reset_date = new Date();
+    user.has_batch_generation = true;
+    user.has_advanced_analytics = true;
+    user.has_team_features = true;
+    user.has_api_access = true;
+    
+    await this.userRepository.save(user);
+    
+    return {
+      success: true,
+      message: 'Successfully upgraded to Agency plan',
+      user: { id: user.id, plan: user.plan }
+    };
+  }
+
+  async cancelSubscription(userId: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    
+    // Downgrade to trial
+    user.plan = UserPlan.TRIAL;
+    user.trial_generations_used = 0;
+    user.trial_started_at = new Date();
+    user.trial_ends_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    
+    await this.userRepository.save(user);
+    
+    return {
+      success: true,
+      message: 'Subscription cancelled successfully',
+      user: { id: user.id, plan: user.plan }
+    };
   }
 
   async getUserGenerations(userId: string, limit: number = 10, offset: number = 0) {
