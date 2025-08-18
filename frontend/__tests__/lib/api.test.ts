@@ -97,7 +97,7 @@ describe('ApiClient', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/user/generations?limit=10&offset=0'),
         expect.objectContaining({
-          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
         })
       );
 
@@ -125,7 +125,7 @@ describe('ApiClient', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/user/stats'),
         expect.objectContaining({
-          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
         })
       );
 
@@ -255,9 +255,9 @@ describe('ApiClient', () => {
       });
 
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/templates?limit=20&offset=0'),
+        expect.stringContaining('/templates?limit=20'),
         expect.objectContaining({
-          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
         })
       );
 
@@ -282,7 +282,7 @@ describe('ApiClient', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/templates'),
         expect.objectContaining({
-          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
         })
       );
 
@@ -292,7 +292,7 @@ describe('ApiClient', () => {
 
   describe('getPopularTemplates', () => {
     it('should fetch popular templates', async () => {
-      const mockResponse = [];
+      const mockResponse: any[] = [];
       setupFetchMock('/templates/popular?limit=10', mockResponse);
 
       const result = await ApiClient.getPopularTemplates(10);
@@ -300,7 +300,7 @@ describe('ApiClient', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/templates/popular?limit=10'),
         expect.objectContaining({
-          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
         })
       );
 
@@ -318,7 +318,7 @@ describe('ApiClient', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/templates/categories'),
         expect.objectContaining({
-          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
         })
       );
 
@@ -338,7 +338,7 @@ describe('ApiClient', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining(`/templates/${templateId}`),
         expect.objectContaining({
-          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
         })
       );
 

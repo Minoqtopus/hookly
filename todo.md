@@ -79,9 +79,9 @@
 
 #### **5.1 Test Infrastructure Setup (1 hour)**
 - [x] **Remove outdated test files** - clean up previous version tests
-- [ ] **Update Jest configuration** - optimize for current codebase
+- [x] **Update Jest configuration** - optimize for current codebase
 - [x] **Setup test utilities** - create reusable test helpers
-- [ ] **Configure test coverage** - set meaningful coverage thresholds
+- [x] **Configure test coverage** - set meaningful coverage thresholds
 
 #### **5.2 Unit Testing (2 hours)**
 - [x] **API Client Tests** in `frontend/__tests__/lib/api.test.ts`:
