@@ -1,14 +1,15 @@
 'use client';
 
-import LocalSavesViewer from '@/app/components/LocalSavesViewer';
 import BetaBadge from '@/app/components/BetaBadge';
-import TrialCountdown from '@/app/components/TrialCountdown';
+import LocalSavesViewer from '@/app/components/LocalSavesViewer';
 import TemplateLibrary from '@/app/components/TemplateLibrary';
+import TrialCountdown from '@/app/components/TrialCountdown';
 import UpgradeModal from '@/app/components/UpgradeModal';
+import { ApiClient } from '@/app/lib/api';
 import { useApp, useAuth, useRecentGenerations, useUserStats } from '@/app/lib/AppContext';
-import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
-import { toast } from '@/app/lib/toast';
 import { getPlanConfig } from '@/app/lib/plans';
+import { toast } from '@/app/lib/toast';
+import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import {
   ArrowRight,
   BarChart3,
@@ -33,6 +34,8 @@ import { useState } from 'react';
 
 export default function DashboardPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [isQuickAILoading, setIsQuickAILoading] = useState(false);
+  const [isDuplicateLoading, setIsDuplicateLoading] = useState(false);
   const router = useRouter();
   
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -90,6 +93,77 @@ export default function DashboardPage() {
       toast.error('Failed to update favorite');
     }
   };
+
+  // Quick AI - Generate content with default parameters
+  const handleQuickAI = async () => {
+    if (isQuickAILoading) return;
+    
+    setIsQuickAILoading(true);
+    try {
+      // Use default parameters for quick generation
+      const quickData = {
+        productName: 'Your Amazing Product',
+        niche: 'lifestyle',
+        targetAudience: 'Young professionals',
+      };
+      
+      const result = await ApiClient.generateAd(quickData);
+      
+      // Store result in sessionStorage for the generate page
+      sessionStorage.setItem('quickAIResult', JSON.stringify(result));
+      
+      // Redirect to generate page to show result
+      router.push('/generate?mode=quick');
+      
+      toast.success('Quick AI generation complete!');
+    } catch (error) {
+      console.error('Quick AI error:', error);
+      toast.error('Quick AI generation failed. Please try again.');
+    } finally {
+      setIsQuickAILoading(false);
+    }
+  };
+
+  // Duplicate - Find best performing generation and pre-fill form
+  const handleDuplicate = async () => {
+    if (isDuplicateLoading || !recentGenerations?.length) return;
+    
+    setIsDuplicateLoading(true);
+    try {
+      // Find the best performing generation by views/CTR
+      const bestGeneration = recentGenerations.reduce((best, current) => {
+        const bestScore = (best.performance_data?.views || 0) * (best.performance_data?.ctr || 0);
+        const currentScore = (current.performance_data?.views || 0) * (current.performance_data?.ctr || 0);
+        return currentScore > bestScore ? current : best;
+      });
+      
+      if (bestGeneration) {
+        // Store the best generation data for the generate page
+        sessionStorage.setItem('duplicateData', JSON.stringify({
+          productName: bestGeneration.title || 'Amazing Product',
+          niche: bestGeneration.niche || 'lifestyle',
+          targetAudience: bestGeneration.target_audience || 'Young professionals',
+          hook: bestGeneration.hook,
+          script: bestGeneration.script,
+        }));
+        
+        // Redirect to generate page with pre-filled data
+        router.push('/generate?mode=duplicate');
+        
+        toast.success('Best generation loaded for duplication!');
+      } else {
+        toast.error('No generations found to duplicate');
+      }
+    } catch (error) {
+      console.error('Duplicate error:', error);
+      toast.error('Failed to duplicate generation. Please try again.');
+    } finally {
+      setIsDuplicateLoading(false);
+    }
+  };
+
+  // Check if user can duplicate (has generations)
+  const canDuplicate = recentGenerations && recentGenerations.length > 0;
 
   // Use real data - no more hardcoded fallbacks
   const displayGenerations = recentGenerations;
@@ -378,10 +452,20 @@ export default function DashboardPage() {
                   </div>
                 </Link>
                 
-                <button className="p-4 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary-500 hover:bg-primary-50 transition-all duration-200 group">
+                <button 
+                  onClick={handleQuickAI}
+                  disabled={isQuickAILoading}
+                  className="p-4 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary-500 hover:bg-primary-50 transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <div className="text-center">
-                    <Zap className="h-8 w-8 text-gray-400 group-hover:text-primary-600 mx-auto mb-2" />
-                    <p className="font-medium text-gray-700 group-hover:text-primary-700">Quick AI</p>
+                    {isQuickAILoading ? (
+                      <div className="animate-spin h-8 w-8 border-2 border-primary-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+                    ) : (
+                      <Zap className="h-8 w-8 text-gray-400 group-hover:text-primary-600 mx-auto mb-2" />
+                    )}
+                    <p className="font-medium text-gray-700 group-hover:text-primary-700">
+                      {isQuickAILoading ? 'Generating...' : 'Quick AI'}
+                    </p>
                     <p className="text-sm text-gray-500">One-click magic</p>
                   </div>
                 </button>
@@ -395,10 +479,20 @@ export default function DashboardPage() {
                     </div>
                   </Link>
                 ) : (
-                  <button className="p-4 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary-500 hover:bg-primary-50 transition-all duration-200 group">
+                  <button 
+                    onClick={handleDuplicate}
+                    disabled={!canDuplicate || isDuplicateLoading}
+                    className="p-4 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary-500 hover:bg-primary-50 transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <div className="text-center">
-                      <Copy className="h-8 w-8 text-gray-400 group-hover:text-primary-600 mx-auto mb-2" />
-                      <p className="font-medium text-gray-700 group-hover:text-primary-700">Duplicate</p>
+                      {isDuplicateLoading ? (
+                        <div className="animate-spin h-8 w-8 border-2 border-primary-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+                      ) : (
+                        <Copy className="h-8 w-8 text-gray-400 group-hover:text-primary-600 mx-auto mb-2" />
+                      )}
+                      <p className="font-medium text-gray-700 group-hover:text-primary-700">
+                        {isDuplicateLoading ? 'Duplicating...' : 'Duplicate'}
+                      </p>
                       <p className="text-sm text-gray-500">Best performer</p>
                     </div>
                   </button>

@@ -1,7 +1,16 @@
 'use client';
 
+import { Activity, Book, Code, Database, ExternalLink, Shield } from 'lucide-react';
 import { useState } from 'react';
-import { ExternalLink, Book, Code, Shield, Database, Activity } from 'lucide-react';
+
+interface ApiEndpoint {
+  method: string;
+  path: string;
+  description: string;
+  auth: boolean;
+  rateLimit: string;
+  admin?: boolean;
+}
 
 export default function ApiDocumentation() {
   const [activeSection, setActiveSection] = useState('overview');
@@ -14,7 +23,7 @@ export default function ApiDocumentation() {
     { id: 'backup', title: 'Backup Management', icon: Database },
   ];
 
-  const apiEndpoints = {
+  const apiEndpoints: Record<string, ApiEndpoint[]> = {
     generation: [
       {
         method: 'POST',
