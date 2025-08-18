@@ -379,6 +379,18 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                         isSignUp ? 'Create Account' : 'Sign In'
                       )}
                     </button>
+
+                    {/* Forgot Password Link for Sign In */}
+                    {!isSignUp && (
+                      <div className="text-center">
+                        <a
+                          href="/auth/forgot-password"
+                          className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                        >
+                          Forgot your password?
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </form>
                 

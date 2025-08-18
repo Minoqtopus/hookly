@@ -5,6 +5,8 @@ import { ConfigService } from '@nestjs/config';
 import { User, UserPlan } from '../entities/user.entity';
 import { LemonSqueezyWebhookDto } from './dto/webhook.dto';
 import { updateUserPlanFeatures } from '../entities/plan-features.util';
+import { AnalyticsService } from '../analytics/analytics.service';
+import { EventType } from '../entities/analytics-event.entity';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -24,6 +26,7 @@ export class PaymentsService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private configService: ConfigService,
+    private analyticsService: AnalyticsService,
   ) {}
 
   verifyWebhookSignature(payload: string, signature: string): boolean {
@@ -115,6 +118,21 @@ export class PaymentsService {
     const user = await this.findUserByEmailOrId(data.attributes.user_email, userId);
     if (!user) return;
 
+    // Track cancellation event before downgrade
+    try {
+      await this.analyticsService.trackEvent(
+        EventType.SUBSCRIPTION_CANCELLED,
+        user.id,
+        {
+          cancelled_plan: user.plan,
+          subscription_id: data.id,
+          cancellation_reason: data.attributes?.cancellation_reason || 'unknown',
+        }
+      );
+    } catch (error) {
+      this.logger.error('Failed to track cancellation analytics:', error);
+    }
+
     await this.downgradeUserToTrial(user);
     this.logger.log(`User ${user.email} subscription cancelled ${data.id}`);
   }
@@ -174,10 +192,35 @@ export class PaymentsService {
   }
 
   private async upgradeUserToPlan(user: User, plan: UserPlan): Promise<void> {
+    const previousPlan = user.plan;
     updateUserPlanFeatures(user, plan);
     user.monthly_count = 0; // Reset monthly count on upgrade
     await this.userRepository.save(user);
+    
+    // Track conversion event
+    try {
+      await this.analyticsService.trackConversion(
+        user.id,
+        previousPlan,
+        plan,
+        this.getPlanPrice(plan),
+        'lemon_squeezy'
+      );
+    } catch (error) {
+      this.logger.error('Failed to track conversion analytics:', error);
+    }
+    
     this.logger.log(`User ${user.email} upgraded to ${plan}`);
+  }
+
+  private getPlanPrice(plan: UserPlan): number {
+    // Map plans to their monthly equivalent prices
+    const prices = {
+      [UserPlan.TRIAL]: 0,
+      [UserPlan.CREATOR]: 29,
+      [UserPlan.AGENCY]: 99,
+    };
+    return prices[plan] || 0;
   }
 
   // Legacy method - defaults to Creator for backwards compatibility

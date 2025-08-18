@@ -172,7 +172,11 @@ export class TeamsService {
       shared_by_user_id: userId,
       title: title || `Ad by ${userMembership.user?.email || 'Team Member'}`,
       notes,
-      ad_data: generation.output
+      ad_data: {
+        hook: generation.hook,
+        script: generation.script,
+        visuals: generation.visuals
+      }
     });
 
     return this.sharedGenerationRepository.save(sharedGeneration);

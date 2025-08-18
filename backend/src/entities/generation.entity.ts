@@ -1,7 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('generations')
+@Index('idx_generation_user_created', ['user_id', 'created_at'])
+@Index('idx_generation_featured', ['is_featured'])
+@Index('idx_generation_guest', ['is_guest_generation', 'created_at'])
+@Index('idx_generation_favorite_user', ['user_id', 'is_favorite'])
 export class Generation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -21,12 +25,14 @@ export class Generation {
   @Column()
   target_audience: string;
 
-  @Column('jsonb')
-  output: {
-    script: string;
-    hook: string;
-    visuals: string[];
-  };
+  @Column('text')
+  hook: string;
+
+  @Column('text') 
+  script: string;
+
+  @Column('simple-array')
+  visuals: string[];
 
   @Column({ default: false })
   is_favorite: boolean;
@@ -43,6 +49,17 @@ export class Generation {
     clicks?: number;
     conversions?: number;
     ctr?: number;
+  };
+
+  @Column('jsonb', { nullable: true })
+  generation_metadata?: {
+    processing_time_ms?: number;
+    model_version?: string;
+    ai_provider?: string;
+    tokens_used?: number;
+    retry_count?: number;
+    error_count?: number;
+    generated_at?: string;
   };
 
   @Column({ type: 'int', default: 0 })

@@ -7,6 +7,7 @@ import TemplateLibrary from '@/app/components/TemplateLibrary';
 import UpgradeModal from '@/app/components/UpgradeModal';
 import { useApp, useAuth, useRecentGenerations, useUserStats } from '@/app/lib/AppContext';
 import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
+import { toast } from '@/app/lib/toast';
 import {
   ArrowRight,
   BarChart3,
@@ -55,6 +56,38 @@ export default function DashboardPage() {
       targetAudience: template.targetAudience,
     }));
     router.push('/generate');
+  };
+
+  const handleCopyGeneration = (generation: any) => {
+    const textToCopy = `${generation.hook}\n\n${generation.script}`;
+    navigator.clipboard.writeText(textToCopy);
+    toast.success('Ad content copied to clipboard!');
+  };
+
+  const handleShareGeneration = (generation: any) => {
+    const shareText = `Check out this viral ad hook: "${generation.hook}"`;
+    const shareUrl = `${window.location.origin}/shared/${generation.id}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: generation.title,
+        text: shareText,
+        url: shareUrl,
+      }).catch(console.error);
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
+      toast.success('Share link copied to clipboard!');
+    }
+  };
+
+  const handleToggleFavorite = async (generationId: string) => {
+    try {
+      await actions.toggleFavorite(generationId);
+      toast.success('Favorite updated!');
+    } catch (error) {
+      toast.error('Failed to update favorite');
+    }
   };
 
   // Use real data or fallback to mock data
@@ -461,7 +494,10 @@ export default function DashboardPage() {
               <div key={generation.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-medium text-gray-900 truncate">{generation.title}</h3>
-                  <button className="text-gray-400 hover:text-red-500">
+                  <button 
+                    onClick={() => handleToggleFavorite(generation.id)}
+                    className="text-gray-400 hover:text-red-500 transition-colors"
+                  >
                     <Heart className={`h-4 w-4 ${generation.is_favorite ? 'fill-red-500 text-red-500' : ''}`} />
                   </button>
                 </div>
@@ -487,11 +523,17 @@ export default function DashboardPage() {
                 )}
                 
                 <div className="flex items-center space-x-2">
-                  <button className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded text-sm flex items-center justify-center">
+                  <button 
+                    onClick={() => handleCopyGeneration(generation)}
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded text-sm flex items-center justify-center transition-colors"
+                  >
                     <Copy className="h-3 w-3 mr-1" />
                     Copy
                   </button>
-                  <button className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded text-sm flex items-center justify-center">
+                  <button 
+                    onClick={() => handleShareGeneration(generation)}
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded text-sm flex items-center justify-center transition-colors"
+                  >
                     <Share2 className="h-3 w-3 mr-1" />
                     Share
                   </button>

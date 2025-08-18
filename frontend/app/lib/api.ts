@@ -239,6 +239,51 @@ export class ApiClient {
       method: 'POST',
     });
   }
+
+  // Template endpoints
+  static async getTemplates(filters?: {
+    category?: string;
+    popular?: boolean;
+    featured?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<{
+    templates: any[];
+    total: number;
+    pagination: {
+      limit: number;
+      offset: number;
+      totalPages: number;
+    };
+  }> {
+    const params = new URLSearchParams();
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.popular) params.append('popular', 'true');
+    if (filters?.featured) params.append('featured', 'true');
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.offset) params.append('offset', filters.offset.toString());
+
+    const queryString = params.toString();
+    return this.makeRequest<any>(`/templates${queryString ? `?${queryString}` : ''}`);
+  }
+
+  static async getPopularTemplates(limit = 10): Promise<any[]> {
+    return this.makeRequest<any[]>(`/templates/popular?limit=${limit}`);
+  }
+
+  static async getTemplateCategories(): Promise<any[]> {
+    return this.makeRequest<any[]>('/templates/categories');
+  }
+
+  static async getTemplate(id: string): Promise<any> {
+    return this.makeRequest<any>(`/templates/${id}`);
+  }
+
+  static async trackTemplateUsage(id: string): Promise<{ success: boolean; message: string }> {
+    return this.makeRequest<{ success: boolean; message: string }>(`/templates/${id}/use`, {
+      method: 'GET',
+    });
+  }
 }
 
 // Custom error class for API errors

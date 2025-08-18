@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual, LessThan, Between } from 'typeorm';
 import { User, UserPlan } from '../entities/user.entity';
+import { Generation } from '../entities/generation.entity';
 import { UpdatePlanDto } from './dto/update-plan.dto';
 
 @Injectable()
@@ -9,6 +10,8 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Generation)
+    private generationRepository: Repository<Generation>,
   ) {}
 
   async getUserProfile(userId: string) {
@@ -17,11 +20,12 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    // Check if daily count needs reset
-    const today = new Date().toISOString().split('T')[0];
-    if (user.reset_date.toISOString().split('T')[0] !== today) {
-      user.daily_count = 0;
-      user.reset_date = new Date();
+    // Check if monthly count needs reset
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+    const resetMonth = user.monthly_reset_date.toISOString().slice(0, 7);
+    if (resetMonth !== currentMonth) {
+      user.monthly_generation_count = 0;
+      user.monthly_reset_date = new Date();
       await this.userRepository.save(user);
     }
 
@@ -29,9 +33,9 @@ export class UserService {
       id: user.id,
       email: user.email,
       plan: user.plan,
-      daily_count: user.daily_count,
-      remaining_generations: user.plan === UserPlan.FREE ? Math.max(0, 3 - user.daily_count) : null,
-      reset_date: user.reset_date,
+      monthly_generation_count: user.monthly_generation_count,
+      remaining_generations: this.getRemainingGenerations(user.plan, user.monthly_generation_count),
+      monthly_reset_date: user.monthly_reset_date,
     };
   }
 
@@ -43,9 +47,10 @@ export class UserService {
 
     user.plan = updatePlanDto.plan;
     
-    // Reset daily count when upgrading to Pro
-    if (updatePlanDto.plan === UserPlan.PRO) {
-      user.daily_count = 0;
+    // Reset monthly count when upgrading to paid plans
+    if (updatePlanDto.plan === UserPlan.CREATOR || updatePlanDto.plan === UserPlan.AGENCY) {
+      user.monthly_generation_count = 0;
+      user.monthly_reset_date = new Date();
     }
 
     await this.userRepository.save(user);
@@ -54,33 +59,196 @@ export class UserService {
       id: user.id,
       email: user.email,
       plan: user.plan,
-      daily_count: user.daily_count,
-      remaining_generations: user.plan === UserPlan.FREE ? Math.max(0, 3 - user.daily_count) : null,
+      monthly_generation_count: user.monthly_generation_count,
+      remaining_generations: this.getRemainingGenerations(user.plan, user.monthly_generation_count),
     };
   }
 
   async getUserStats(userId: string) {
     const user = await this.userRepository.findOne({ 
-      where: { id: userId },
-      relations: ['generations']
+      where: { id: userId }
     });
     
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const totalGenerations = user.generations.length;
-    const today = new Date().toISOString().split('T')[0];
-    const todayGenerations = user.generations.filter(
-      gen => gen.created_at.toISOString().split('T')[0] === today
-    ).length;
+    // Get date ranges for analytics
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const yesterdayStart = new Date(todayStart);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+
+    // Get generation counts for different time periods
+    const [
+      generationsToday,
+      generationsThisMonth,
+      totalGenerations,
+      generationsYesterday
+    ] = await Promise.all([
+      this.generationRepository.count({
+        where: {
+          user_id: userId,
+          created_at: MoreThanOrEqual(todayStart)
+        }
+      }),
+      this.generationRepository.count({
+        where: {
+          user_id: userId,
+          created_at: MoreThanOrEqual(monthStart)
+        }
+      }),
+      this.generationRepository.count({
+        where: { user_id: userId }
+      }),
+      this.generationRepository.count({
+        where: {
+          user_id: userId,
+          created_at: Between(yesterdayStart, todayStart)
+        }
+      })
+    ]);
+
+    // Get performance data from user generations
+    const performanceData = await this.generationRepository
+      .createQueryBuilder('generation')
+      .select([
+        'SUM(CAST(generation.performance_data->>\'views\' AS INTEGER)) as totalViews',
+        'AVG(CAST(generation.performance_data->>\'ctr\' AS DECIMAL)) as avgCTR',
+        'COUNT(*) as validGenerations'
+      ])
+      .where('generation.user_id = :userId', { userId })
+      .andWhere('generation.performance_data IS NOT NULL')
+      .getRawOne();
+
+    // Calculate streak (consecutive days with generations)
+    const streak = await this.calculateUserStreak(userId);
+
+    // Calculate total estimated views from generation performance data
+    const totalViews = parseInt(performanceData?.totalViews) || 0;
+    const avgCTR = parseFloat(performanceData?.avgCTR) || 0;
 
     return {
+      generationsToday,
+      generationsThisMonth,
+      totalGenerations,
+      totalViews,
+      avgCTR: Math.round(avgCTR * 100) / 100, // Round to 2 decimal places
+      streak,
+      // Additional helpful metrics
       plan: user.plan,
-      total_generations: totalGenerations,
-      today_generations: todayGenerations,
-      daily_limit: user.plan === UserPlan.FREE ? 3 : null,
-      remaining_today: user.plan === UserPlan.FREE ? Math.max(0, 3 - todayGenerations) : null,
+      isTrialUser: user.plan === UserPlan.TRIAL,
+      trialGenerationsUsed: user.trial_generations_used || 0,
+      monthlyLimit: this.getMonthlyLimit(user.plan),
+      remainingThisMonth: this.getRemainingGenerations(user.plan, generationsThisMonth)
+    };
+  }
+
+  private async calculateUserStreak(userId: string): Promise<number> {
+    // Get the last 30 days of generation activity
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const dailyActivity = await this.generationRepository
+      .createQueryBuilder('generation')
+      .select('DATE(generation.created_at) as date')
+      .addSelect('COUNT(*) as count')
+      .where('generation.user_id = :userId', { userId })
+      .andWhere('generation.created_at >= :thirtyDaysAgo', { thirtyDaysAgo })
+      .groupBy('DATE(generation.created_at)')
+      .orderBy('DATE(generation.created_at)', 'DESC')
+      .getRawMany();
+
+    // Calculate streak from most recent day backwards
+    let streak = 0;
+    const today = new Date().toISOString().split('T')[0];
+    let currentDate = new Date();
+
+    for (const activity of dailyActivity) {
+      const activityDate = activity.date;
+      const expectedDate = currentDate.toISOString().split('T')[0];
+      
+      if (activityDate === expectedDate) {
+        streak++;
+        currentDate.setDate(currentDate.getDate() - 1);
+      } else {
+        // If we're checking today and there's no activity, start from yesterday
+        if (activityDate !== today && streak === 0) {
+          currentDate.setDate(currentDate.getDate() - 1);
+          continue;
+        }
+        break;
+      }
+    }
+
+    return streak;
+  }
+
+  private getMonthlyLimit(plan: UserPlan): number | null {
+    switch (plan) {
+      case UserPlan.TRIAL:
+        return 15; // 15 total during 7-day trial period
+      case UserPlan.CREATOR:
+        return 150; // 150 per month
+      case UserPlan.AGENCY:
+        return 500; // 500 per month
+      default:
+        return null; // unlimited
+    }
+  }
+
+  private getRemainingGenerations(plan: UserPlan, usedThisMonth: number): number | null {
+    const limit = this.getMonthlyLimit(plan);
+    if (limit === null) return null;
+    return Math.max(0, limit - usedThisMonth);
+  }
+
+  async getUserGenerations(userId: string, limit: number = 10, offset: number = 0) {
+    const user = await this.userRepository.findOne({ 
+      where: { id: userId }
+    });
+    
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Get user's generations with pagination
+    const [generations, total] = await this.generationRepository.findAndCount({
+      where: { user_id: userId },
+      order: { created_at: 'DESC' },
+      take: limit,
+      skip: offset,
+    });
+
+    // Format generations for frontend
+    const formattedGenerations = generations.map(generation => ({
+      id: generation.id,
+      title: generation.title || `${generation.product_name} Ad`,
+      hook: generation.hook,
+      script: generation.script,
+      visuals: generation.visuals || [],
+      niche: generation.niche,
+      target_audience: generation.target_audience,
+      performance_data: generation.performance_data || {
+        views: 0,
+        clicks: 0,
+        conversions: 0,
+        ctr: 0
+      },
+      is_favorite: generation.is_favorite,
+      created_at: generation.created_at.toISOString(),
+    }));
+
+    return {
+      generations: formattedGenerations,
+      total,
+      pagination: {
+        limit,
+        offset,
+        hasMore: offset + limit < total,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 }

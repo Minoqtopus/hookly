@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Copy, Star, TrendingUp, Sparkles, Filter, Heart } from 'lucide-react';
 import { toast } from '../lib/toast';
+import { ApiClient } from '../lib/api';
 
 interface Template {
   id: string;
@@ -28,7 +29,8 @@ interface TemplateLibraryProps {
   externalFilter?: string;
 }
 
-const templates: Template[] = [
+// Fallback templates in case API fails
+const fallbackTemplates: Template[] = [
   {
     id: '1',
     title: 'Skincare Transformation',
@@ -262,8 +264,50 @@ Try this for one week and watch your grades transform.`,
 export default function TemplateLibrary({ onUseTemplate, showFilters = true, compact = false, externalFilter }: TemplateLibraryProps) {
   const [selectedNiche, setSelectedNiche] = useState<string>('all');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [categories, setCategories] = useState<string[]>(['all']);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const niches = ['all', ...Array.from(new Set(templates.map(t => t.niche)))];
+  // Fetch templates from API
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch templates based on component requirements
+        if (compact) {
+          // For compact view, get popular templates
+          const popularTemplates = await ApiClient.getPopularTemplates(3);
+          setTemplates(popularTemplates);
+        } else {
+          // For full view, get all templates with filtering
+          const response = await ApiClient.getTemplates({
+            limit: 20,
+            offset: 0
+          });
+          setTemplates(response.templates);
+          
+          // Fetch categories for filter dropdown
+          const categoriesData = await ApiClient.getTemplateCategories();
+          const categoryNames = categoriesData.map(cat => cat.category);
+          setCategories(['all', ...categoryNames]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch templates:', err);
+        setError('Failed to load templates. Using cached templates.');
+        // Fallback to hardcoded templates on error
+        setTemplates(fallbackTemplates);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTemplates();
+  }, [compact]);
+
+  const niches = categories.length > 1 ? categories : ['all', ...Array.from(new Set(templates.map(t => t.niche)))];
   
   // Use external filter if provided, otherwise use internal filter
   const activeFilter = externalFilter || selectedNiche;
@@ -286,12 +330,40 @@ export default function TemplateLibrary({ onUseTemplate, showFilters = true, com
     toast.success(`${type} copied to clipboard!`);
   };
 
+  const handleUseTemplate = async (template: Template) => {
+    try {
+      // Track template usage
+      await ApiClient.trackTemplateUsage(template.id);
+    } catch (err) {
+      console.error('Failed to track template usage:', err);
+      // Don't block the user flow if tracking fails
+    }
+    
+    // Call the original onUseTemplate callback
+    onUseTemplate?.(template);
+  };
+
   if (compact) {
     return (
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900">✨ Popular Templates</h3>
-        <div className="grid gap-3">
-          {templates.filter(t => t.isPopular).slice(0, 3).map((template) => (
+        
+        {loading && (
+          <div className="text-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto"></div>
+            <p className="text-sm text-gray-500 mt-2">Loading templates...</p>
+          </div>
+        )}
+        
+        {error && (
+          <div className="text-center py-2">
+            <p className="text-xs text-amber-600">{error}</p>
+          </div>
+        )}
+        
+        {!loading && (
+          <div className="grid gap-3">
+            {templates.slice(0, 3).map((template) => (
             <div key={template.id} className="border border-gray-200 rounded-lg p-4 hover:border-primary-300 transition-colors">
               <div className="flex items-start justify-between mb-2">
                 <div>
@@ -299,7 +371,7 @@ export default function TemplateLibrary({ onUseTemplate, showFilters = true, com
                   <p className="text-xs text-gray-500">{template.niche} • {template.performance.estimatedViews / 1000}K views</p>
                 </div>
                 <button
-                  onClick={() => onUseTemplate?.(template)}
+                  onClick={() => handleUseTemplate(template)}
                   className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded font-medium hover:bg-primary-200"
                 >
                   Use
@@ -308,7 +380,8 @@ export default function TemplateLibrary({ onUseTemplate, showFilters = true, com
               <p className="text-sm text-gray-600 italic">"{template.hook}"</p>
             </div>
           ))}
-        </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -341,9 +414,26 @@ export default function TemplateLibrary({ onUseTemplate, showFilters = true, com
         </div>
       )}
 
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading templates...</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="text-center py-6">
+          <p className="text-amber-600 mb-2">{error}</p>
+          <p className="text-sm text-gray-500">Showing cached templates</p>
+        </div>
+      )}
+
       {/* Templates Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredTemplates.map((template) => (
+      {!loading && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredTemplates.map((template) => (
           <div key={template.id} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
@@ -398,7 +488,7 @@ export default function TemplateLibrary({ onUseTemplate, showFilters = true, com
             {/* Actions */}
             <div className="flex space-x-2">
               <button
-                onClick={() => onUseTemplate?.(template)}
+                onClick={() => handleUseTemplate(template)}
                 className="flex-1 bg-primary-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
               >
                 <Sparkles className="h-4 w-4 inline mr-1" />
@@ -413,7 +503,8 @@ export default function TemplateLibrary({ onUseTemplate, showFilters = true, com
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn, Index } from 'typeorm';
 import { Generation } from './generation.entity';
 
 export enum UserPlan {
@@ -7,12 +7,23 @@ export enum UserPlan {
   AGENCY = 'agency'
 }
 
+export enum UserRole {
+  USER = 'user',
+  ADMIN = 'admin',
+  SUPER_ADMIN = 'super_admin'
+}
+
 export enum AuthProvider {
   EMAIL = 'email',
   GOOGLE = 'google'
 }
 
 @Entity('users')
+@Index('idx_user_email', ['email'])
+@Index('idx_user_plan', ['plan'])
+@Index('idx_user_google_id', ['google_id'])
+@Index('idx_user_referral_code', ['referral_code'])
+@Index('idx_user_trial_dates', ['trial_started_at', 'trial_ends_at'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -30,11 +41,24 @@ export class User {
   })
   plan: UserPlan;
 
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.USER
+  })
+  role: UserRole;
+
   @Column({ type: 'int', default: 0 })
   monthly_count: number;
 
   @Column({ type: 'date', default: () => 'CURRENT_DATE' })
   reset_date: Date;
+
+  @Column({ type: 'int', default: 0 })
+  monthly_generation_count: number;
+
+  @Column({ type: 'date', default: () => 'CURRENT_DATE' })
+  monthly_reset_date: Date;
 
   // Trial management fields
   @Column({ type: 'timestamp', nullable: true })
@@ -93,6 +117,16 @@ export class User {
   // Beta user flag for free Agency access
   @Column({ type: 'boolean', default: false })
   is_beta_user: boolean;
+
+  // Conversion tracking
+  @Column({ type: 'timestamp', nullable: true })
+  first_generation_at?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  first_paid_at?: Date;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  conversion_source?: string;
 
   // Plan-specific limits
   @Column({ type: 'int', nullable: true })

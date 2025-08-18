@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
 import { User } from './user.entity';
 
 export enum TeamRole {
@@ -9,6 +9,8 @@ export enum TeamRole {
 }
 
 @Entity('teams')
+@Index('idx_team_owner', ['owner_id'])
+@Index('idx_team_active', ['is_active'])
 export class Team {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -46,6 +48,9 @@ export class Team {
 }
 
 @Entity('team_members')
+@Index('idx_team_member_team_user', ['team_id', 'user_id'])
+@Index('idx_team_member_user', ['user_id'])
+@Index('idx_team_member_active', ['team_id', 'is_active'])
 export class TeamMember {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -84,6 +89,9 @@ export class TeamMember {
 }
 
 @Entity('shared_generations')
+@Index('idx_shared_generation_team', ['team_id', 'is_active'])
+@Index('idx_shared_generation_user', ['shared_by_user_id'])
+@Index('idx_shared_generation_created', ['team_id', 'created_at'])
 export class SharedGeneration {
   @PrimaryGeneratedColumn('uuid')
   id: string;

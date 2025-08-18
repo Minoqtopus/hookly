@@ -186,8 +186,8 @@ export default function SettingsPage() {
                             <User className="h-6 w-6 text-gray-600" />
                           </div>
                           <div>
-                            <div className="text-xl font-bold text-gray-900">Free Plan</div>
-                            <div className="text-gray-600">3 generations per day, basic features</div>
+                            <div className="text-xl font-bold text-gray-900">Trial Plan</div>
+                            <div className="text-gray-600">15 generations over 7 days, basic features</div>
                           </div>
                         </>
                       )}
