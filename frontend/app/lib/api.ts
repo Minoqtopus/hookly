@@ -183,14 +183,14 @@ export class ApiClient {
 
   // Generation endpoints
   static async generateAd(data: GenerateRequest): Promise<GenerateResponse> {
-    return this.makeRequest<GenerateResponse>('/generation/generate', {
+    return this.makeRequest<GenerateResponse>('/generate', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   static async generateGuestAd(data: GuestGenerateRequest): Promise<GenerateResponse> {
-    return this.makeRequest<GenerateResponse>('/generation/generate-guest', {
+    return this.makeRequest<GenerateResponse>('/generate/guest', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -208,13 +208,13 @@ export class ApiClient {
   }
 
   static async toggleFavorite(generationId: string): Promise<{ is_favorite: boolean }> {
-    return this.makeRequest<{ is_favorite: boolean }>(`/generation/${generationId}/favorite`, {
+    return this.makeRequest<{ is_favorite: boolean }>(`/generate/${generationId}/favorite`, {
       method: 'POST',
     });
   }
 
   static async deleteGeneration(generationId: string): Promise<void> {
-    return this.makeRequest<void>(`/generation/${generationId}`, {
+    return this.makeRequest<void>(`/generate/${generationId}`, {
       method: 'DELETE',
     });
   }
