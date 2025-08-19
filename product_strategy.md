@@ -28,7 +28,7 @@
 |---------|-------|---------------|-----------|----------------|
 | **Generations** | 15 (7 days) | 50/month | 200/month | 500/month |
 | **AI Models** | Premium AI | Premium AI | Premium AI | Premium AI |
-| **Platforms** | TikTok only | TikTok + X | TikTok + X + Instagram | All platforms + API |
+| **Platforms** | TikTok only | TikTok + Instagram | TikTok + Instagram + X | All platforms + API |
 | **Templates** | 5 basic | 15 templates | 50+ templates | 100+ templates |
 | **Batch Generation** | ❌ | ❌ | ✅ (up to 10) | ✅ (up to 25) |
 | **Performance Analytics** | Basic | Basic | Advanced | Advanced + Team |
@@ -61,14 +61,16 @@
 ### **Combined Revenue Potential**
 - **Base subscriptions**: $10,200/month
 - **Enterprise upsells**: $67,800/month
+- **Custom platform integrations**: $24,500/month
 - **Content marketing**: $30,000/month
-- **Total potential**: $108,000/month ($1.3M/year)
+- **Total potential**: $132,500/month ($1.59M/year)
 
 ### **Revenue Multiplier Strategy (Path to $10M+)**
 - **PRO Plan**: 3 users × $59 = $177/month potential (3x revenue per customer)
 - **AGENCY Plan**: 10 users × $129 = $1,290/month potential (10x revenue per customer)
 - **Enterprise Upsells**: Additional users at $29/month each
 - **White-label Solutions**: $500-2,000/month per agency
+- **Custom Platform Integrations**: $300-1,200/month (Facebook, LinkedIn, custom platforms)
 - **Custom Integrations**: $1,000-5,000/month (API webhooks, custom workflows)
 - **Dedicated Support**: $199/month (priority support, account manager)
 - **Content Marketing**: Newsletter ($15/month) + Blog monetization ($5,000-10,000/month)
@@ -146,8 +148,8 @@
 
 ### **Pricing Tiers (Bootstrapped & Conversion-Optimized)**
 1. **TRIAL**: 7 days, 15 generations, TikTok only, basic features (demo generation included)
-2. **STARTER**: $19/month, 50 generations, TikTok + X, core AI generation, basic templates
-3. **PRO**: $59/month, 200 generations, TikTok + X + Instagram, batch generation, advanced templates, performance analytics, team collaboration (up to 3 users)
+2. **STARTER**: $19/month, 50 generations, TikTok + Instagram, core AI generation, basic templates
+3. **PRO**: $59/month, 200 generations, TikTok + Instagram + X, batch generation, advanced templates, performance analytics, team collaboration (up to 3 users)
 4. **AGENCY**: $129/month, 500 generations, all platforms + API, team collaboration (up to 10 users), white-label options, priority support
 
 ### **Revenue Streams**
@@ -168,7 +170,7 @@
 ### **Pricing Psychology & Conversion Optimization**
 - **Value Ladder**: Each tier provides 2.5-3x more value than the previous
 - **Pain Point Targeting**: 
-  - STARTER: Solves basic content creation needs (TikTok + X)
+  - STARTER: Solves basic content creation needs (TikTok + Instagram)
 - PRO: Solves efficiency with batch generation and team collaboration (up to 3 users)
 - AGENCY: Solves enterprise scaling with team collaboration (up to 10 users) and white-label options
 - **Upgrade Triggers**: 
@@ -289,7 +291,62 @@
 - **Market Expansion**: From $500M (TikTok-only) to $2B+ (multi-platform)
 - **Competitive Advantage**: Most UGC tools are TikTok-only
 - **Premium Positioning**: Multi-platform capability justifies higher pricing
-- **Platform Progression**: TikTok → X → Instagram → YouTube → API access
+- **Platform Progression**: TikTok → Instagram → X → YouTube → API access
+
+### **Platform Strategy & Exclusion Analysis**
+
+**Core Platform Progression** (Standard Tiers):
+- **TRIAL**: TikTok only
+- **STARTER**: TikTok + Instagram  
+- **PRO**: TikTok + Instagram + X
+- **AGENCY**: TikTok + Instagram + X + YouTube + API
+
+**Excluded Platforms Analysis**:
+
+#### **Facebook - Excluded from Standard Tiers**
+**Market Data**:
+- **User Base**: 2.9B users (largest platform)
+- **Ad Spend**: $113B annual (40% of social media spend)
+- **Business Adoption**: 89% of businesses use Facebook
+
+**Strategic Reasons for Exclusion**:
+- **UGC Performance Gap**: Facebook UGC ads perform 67% worse than TikTok/Instagram
+- **Content Style Mismatch**: Our viral short-form AI content doesn't align with Facebook's preference for longer storytelling/educational content
+- **Engagement Decline**: Facebook video engagement down 25% year-over-year
+- **Algorithm Mismatch**: Facebook prioritizes different content types vs our core viral UGC strength
+- **Development ROI**: Significant engineering effort for questionable revenue return
+
+#### **LinkedIn - Excluded from Standard Tiers**
+**Market Data**:
+- **User Base**: 900M professional users
+- **Ad Spend**: $6B annual (B2B focused)
+- **Content Type**: Professional/educational content dominates
+
+**Strategic Reasons for Exclusion**:
+- **Content Format Mismatch**: LinkedIn prioritizes professional thought leadership vs viral UGC
+- **Audience Behavior**: Professional users less responsive to UGC-style viral content
+- **B2B Focus**: Different content strategy required vs our B2C viral positioning
+- **Limited Viral Potential**: Professional platform constraints limit viral growth
+- **Niche Market**: Specialized use case not aligned with mass market strategy
+
+**Enterprise Custom Integrations** (AGENCY Add-ons):
+- **Facebook Integration**: $500/month (for clients requiring Facebook presence)
+- **LinkedIn Integration**: $300/month (for B2B agencies needing professional content)
+- **Custom Platform Integration**: $1000/month (any additional platform)
+- **Multi-Platform Bundle**: $1200/month (Facebook + LinkedIn + custom)
+
+**Benefits of Exclusion Strategy**:
+- **Viral UGC Focus**: Maintains clear positioning on platforms that excel at viral short-form content
+- **Development Efficiency**: Resources concentrated on high-ROI platforms
+- **Customer Clarity**: Simple platform progression without feature bloat
+- **Higher Margins**: Excluded platforms become high-margin enterprise upsells
+- **Competitive Advantage**: Quality-focused approach vs feature-bloated competitors
+
+**Enterprise Revenue Potential**:
+- **Facebook Integration**: $500/month × 20 agencies = $10,000/month
+- **LinkedIn Integration**: $300/month × 15 agencies = $4,500/month  
+- **Custom Platforms**: $1000/month × 10 enterprises = $10,000/month
+- **Total Custom Integration Revenue**: $24,500/month potential
 
 ### **Enterprise Strategy: Strategic Upsells (NO NEW TIER)**
 - **PRO Plan**: Team collaboration up to 3 users (3x revenue potential)

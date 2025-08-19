@@ -109,7 +109,7 @@
 - **Test Coverage**: >90% for critical components
 - **Test Quality**: Comprehensive test suite with meaningful assertions
 - **Business Metrics**: 70% profit margin, quality-first strategy, no fake statistics
-- **Multi-Platform Strategy**: TikTok + X + Instagram + YouTube positioning
+- **Multi-Platform Strategy**: TikTok + Instagram + X + YouTube positioning (Instagram at STARTER for maximum conversion)
 - **Beta Testing**: 50-100 strategic beta testers maximum
 - **Team Collaboration**: Path to $10M+ revenue (3-10x multiplier per customer)
 - **Viral Growth**: Share feature for organic user acquisition (no referral costs)
@@ -142,7 +142,7 @@
 - **API version concealment** - hide technical details, focus on results and value
 - **Authentic performance data** - no fake statistics, build trust through real value and transparency
 - **UI feature promises** - never promise features in UI until they're built and tested
-- **Multi-platform positioning** - TikTok + X + Instagram + YouTube = $2B+ market opportunity
+- **Multi-platform positioning** - TikTok + Instagram + X + YouTube = $2B+ market opportunity (Instagram prioritized at STARTER for immediate ROI)
 - **Strategic beta testing** - 50-100 users maximum, prevent viral growth before readiness
 - **Team collaboration strategy** - 3-10x revenue multiplier per customer, path to $10M+
 - **Viral growth mechanism** - Share feature creates organic user acquisition loops
@@ -158,7 +158,7 @@
 - **User Style Learning System**: Content samples, guided questionnaire, interactive style builder
 - **Advanced Prompt Engineering**: Context-aware, user-style-injected prompts with brand voice extraction
 - **Quality Validation**: Uniqueness scoring, relevance checking, human-like assessment
-- **Platform Optimization**: TikTok, X, Instagram, YouTube best practices for each platform
+- **Platform Optimization**: TikTok, Instagram, X, YouTube best practices for each platform (Instagram prioritized for STARTER conversion)
 - **Export System**: Multiple formats, copy-paste ready, no API dependencies required
 - **Performance Feedback**: Continuous improvement based on user results and engagement
 - **Brand Voice Extraction**: Learn unique writing style, personality, and industry terminology
@@ -268,7 +268,7 @@
 2. **Fix Backend Tests** - align with current UserPlan enums and DTOs
 3. **Create History Page** - complete core user flow
 4. **End-to-End Testing** - ensure production readiness
-5. **Implement Multi-Platform Strategy** - leverage TikTok + X + Instagram + YouTube advantage
+5. **Implement Multi-Platform Strategy** - leverage TikTok + Instagram + X + YouTube advantage (Instagram at STARTER level)
 6. **Strategic Beta Testing** - onboard 50-100 strategic users maximum
 7. **Team Collaboration Foundation** - build scalable architecture for enterprise growth
 8. **Viral Share Feature** - implement organic growth mechanism

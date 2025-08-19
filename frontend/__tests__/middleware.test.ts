@@ -3,25 +3,30 @@
  * Tests route protection and navigation logic
  */
 
-// Mock NextResponse and NextRequest with hoisted mocks
-jest.mock('next/server', () => ({
-  NextResponse: {
-    redirect: jest.fn(),
-    next: jest.fn(),
-  },
-  NextRequest: jest.fn().mockImplementation((url) => ({
-    url,
-    nextUrl: {
-      pathname: new URL(url).pathname,
+// Mock NextResponse and NextRequest with proper hoisting
+jest.mock('next/server', () => {
+  const mockRedirect = jest.fn().mockReturnValue('redirected');
+  const mockNext = jest.fn().mockReturnValue('next');
+  
+  return {
+    NextResponse: {
+      redirect: mockRedirect,
+      next: mockNext,
     },
-    cookies: {
-      get: jest.fn(),
-    },
-    headers: {
-      get: jest.fn(),
-    },
-  })),
-}));
+    NextRequest: jest.fn().mockImplementation((url) => ({
+      url,
+      nextUrl: {
+        pathname: new URL(url).pathname,
+      },
+      cookies: {
+        get: jest.fn(),
+      },
+      headers: {
+        get: jest.fn(),
+      },
+    })),
+  };
+});
 
 import { NextRequest } from 'next/server';
 import { middleware } from '../middleware';
@@ -149,8 +154,10 @@ describe('Middleware', () => {
     test('should allow authenticated users to access /generate', () => {
       const request = createRequest('/generate', 'valid-token');
       
-      middleware(request);
+      const result = middleware(request);
       
+      // Demo routes should allow access to all users
+      expect(result).toBe('next');
       expect(mockNext).toHaveBeenCalled();
       expect(mockRedirect).not.toHaveBeenCalled();
     });
@@ -165,24 +172,48 @@ describe('Middleware', () => {
   });
 
   describe('Public Routes', () => {
-    const publicPaths = ['/', '/examples', '/upgrade'];
+    describe('Guest-only routes (/, /examples)', () => {
+      const guestOnlyPaths = ['/', '/examples'];
 
-    test.each(publicPaths)('should allow all users to access %s', (path) => {
-      const request = createRequest(path);
-      
-      middleware(request);
-      
-      expect(mockNext).toHaveBeenCalled();
-      expect(mockRedirect).not.toHaveBeenCalled();
+      test.each(guestOnlyPaths)('should allow unauthenticated users to access %s', (path) => {
+        const request = createRequest(path);
+        
+        middleware(request);
+        
+        expect(mockNext).toHaveBeenCalled();
+        expect(mockRedirect).not.toHaveBeenCalled();
+      });
+
+      test.each(guestOnlyPaths)('should redirect authenticated users away from %s', (path) => {
+        const request = createRequest(path, 'valid-token');
+        
+        middleware(request);
+        
+        expect(mockRedirect).toHaveBeenCalled();
+        expect(mockNext).not.toHaveBeenCalled();
+      });
     });
 
-    test.each(publicPaths)('should allow authenticated users to access %s', (path) => {
-      const request = createRequest(path, 'valid-token');
-      
-      middleware(request);
-      
-      expect(mockNext).toHaveBeenCalled();
-      expect(mockRedirect).not.toHaveBeenCalled();
+    describe('Mixed routes (/upgrade)', () => {
+      test('should allow unauthenticated users to access /upgrade', () => {
+        const request = createRequest('/upgrade');
+        
+        middleware(request);
+        
+        expect(mockNext).toHaveBeenCalled();
+        expect(mockRedirect).not.toHaveBeenCalled();
+      });
+
+      test('should allow authenticated users to access /upgrade', () => {
+        const request = createRequest('/upgrade', 'valid-token');
+        
+        const result = middleware(request);
+        
+        // The middleware should call NextResponse.next() for mixed routes
+        expect(result).toBe('next');
+        expect(mockNext).toHaveBeenCalled();
+        expect(mockRedirect).not.toHaveBeenCalled();
+      });
     });
   });
 

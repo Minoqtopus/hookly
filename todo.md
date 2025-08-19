@@ -91,9 +91,9 @@ Complete **Tier 0: Critical Codebase Alignment (11 hours)** before proceeding wi
   - [x] Add `has_instagram_access` boolean flag
   - [x] Add `has_youtube_access` boolean flag
 - [x] **Update plan features utility** in `backend/src/entities/plan-features.util.ts`:
-  - [x] Map platform access to plan tiers (TRIAL: TikTok only, STARTER: TikTok+X, etc.)
+  - [x] Map platform access to plan tiers (TRIAL: TikTok only, STARTER: TikTok+Instagram, PRO: TikTok+Instagram+X, etc.)
   - [x] Ensure feature flags align with multi-platform strategy
-  - [x] Platform progression: TikTok → X → Instagram → YouTube
+  - [x] Platform progression: TikTok → Instagram → X → YouTube
 
 ### **TIER 1: FOUNDATION FIXES (Critical Path - Start Here)**
 
@@ -183,7 +183,7 @@ Complete **Tier 0: Critical Codebase Alignment (11 hours)** before proceeding wi
   - [x] Review every page, component, and error message
   - [x] Fix pricing inconsistencies (old vs. new pricing)
   - [x] Ensure feature descriptions match actual implementation
-  - [x] Standardize platform names (TikTok, X, Instagram, YouTube)
+  - [x] Standardize platform names (TikTok, Instagram, X, YouTube)
 - [x] **Implement copy components** for reusable text elements
 
 #### **1.7 Implement Legal Compliance Foundation (2 hours)**
@@ -211,10 +211,10 @@ Complete **Tier 0: Critical Codebase Alignment (11 hours)** before proceeding wi
 - [ ] **Implement advanced prompt engineering** in `backend/src/openai/prompt.service.ts`:
   - [ ] Context-aware prompt generation with user style injection
   - [ ] Brand voice extraction and personality matching
-  - [ ] Platform-specific optimization (TikTok, X, Instagram, YouTube)
+  - [ ] Platform-specific optimization (TikTok, Instagram, X, YouTube)
   - [ ] Quality validation system for uniqueness and relevance
 - [ ] **Create platform-independent export system** in `frontend/app/components/ExportModal.tsx`:
-  - [ ] Multiple platform formats (TikTok, X, Instagram, YouTube)
+  - [ ] Multiple platform formats (TikTok, Instagram, X, YouTube)
   - [ ] Copy-paste ready content with platform best practices
   - [ ] No API integrations required - users handle distribution
   - [ ] Export analytics and performance tracking
@@ -392,7 +392,7 @@ Complete **Tier 0: Critical Codebase Alignment (11 hours)** before proceeding wi
 
 #### **3.4 Multi-Platform Strategy Implementation (1.5 hours)**
 - [ ] **Enhance export capabilities** in `frontend/app/components/ExportModal.tsx`:
-  - [ ] Highlight multi-platform advantage (TikTok + X + Instagram + YouTube)
+  - [ ] Highlight multi-platform advantage (TikTok + Instagram + X + YouTube)
   - [ ] Platform-specific optimization for each export format
   - [ ] Premium positioning for multi-platform capability
 - [ ] **Update marketing copy** across the application:
@@ -400,7 +400,7 @@ Complete **Tier 0: Critical Codebase Alignment (11 hours)** before proceeding wi
   - [ ] Emphasize $2B+ market opportunity vs $500M TikTok-only
   - [ ] Highlight competitive advantage over TikTok-only tools
 - [ ] **Platform progression messaging** in pricing and features:
-  - [ ] TikTok (Trial) → X (Starter) → Instagram (Pro) → YouTube (Agency)
+  - [ ] TikTok (Trial) → Instagram (Starter) → X (Pro) → YouTube (Agency)
   - [ ] Clear value ladder for platform expansion
 
 #### **3.5 Implement Viral Growth Features (1 hour)**

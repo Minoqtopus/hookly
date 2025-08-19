@@ -16,9 +16,11 @@ const protectedRoutes = [
 
 // Routes that should redirect authenticated users away (guest-only routes)
 const guestOnlyRoutes = [
-  '/', // Landing page - should redirect authenticated users to dashboard
   '/examples', // Examples page - should redirect authenticated users to dashboard
 ];
+
+// Special handling for root route to avoid matching all paths
+const isRootRoute = (pathname: string) => pathname === '/';
 
 // Routes that should redirect authenticated users away (auth pages)
 const authRoutes = [
@@ -59,6 +61,17 @@ export function middleware(request: NextRequest) {
     }
     
     // User is authenticated, allow access
+    return NextResponse.next();
+  }
+  
+  // Handle root route specially (redirect authenticated users to dashboard)
+  if (isRootRoute(pathname)) {
+    if (isAuthenticated) {
+      // User is authenticated, redirect to dashboard
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+    
+    // User is not authenticated, allow access to landing page
     return NextResponse.next();
   }
   
