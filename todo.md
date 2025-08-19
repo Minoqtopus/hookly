@@ -10,9 +10,9 @@
   - ✅ Exclusive Signup Control System (Viral Protection + Exclusive Positioning)
   - ✅ Core Monitoring Foundation (Performance tracking + Health checks + Log rotation)
   - ✅ Performance Optimization Foundation (Redis caching + Database indexing)
-  - 🔧 Enforce Clean Architecture & SOLID principles
+  - ✅ Enforce Clean Architecture & SOLID principles
   - 🔧 Implement History page (MVP) with tests
-- Current Priority: Tier 1.12 - Enforce Clean Architecture & SOLID
+- Current Priority: Tier 1.13 - Multi-Provider AI Infrastructure
 
 ## 🎯 Sprint Backlog (2 Weeks)
 
@@ -366,26 +366,26 @@ Complete **Tier 0: Critical Codebase Alignment (11 hours)** before proceeding wi
   - [x] Index on generation created_at (analytics queries)
   - [x] Composite index on user_id + created_at (user timeline)
 
-#### **1.12 Enforce Clean Architecture & SOLID (2 hours)**
-- [ ] Document Clean Architecture layering for this codebase (Domain, Application, Infrastructure)
-- [ ] Introduce ports (interfaces) where missing in services:
-  - [ ] ContentGeneratorPort (AI) used by `GenerationService`
-  - [ ] PaymentProviderPort used by `PaymentsService`
-  - [ ] CachePort used by services that need caching (signup availability, plan features)
-  - [ ] MonitoringPort for logging/metrics
-- [ ] Refactor controllers to be thin; move any logic to services
-- [ ] Enforce rule: never import a repository into another repository; use services instead
-- [ ] Add ESLint rule/note in `CONTRIBUTING.md` to preserve SOLID and modularity
+#### **1.12 Enforce Clean Architecture & SOLID (2 hours)** ✅ **COMPLETED**
+- [x] Document Clean Architecture layering for this codebase (Domain, Application, Infrastructure)
+- [x] Introduce ports (interfaces) where missing in services:
+  - [x] ContentGeneratorPort (AI) used by `GenerationService`
+  - [x] PaymentProviderPort used by `PaymentsService`
+  - [x] CachePort used by services that need caching (signup availability, plan features)
+  - [x] MonitoringPort for logging/metrics
+- [x] Refactor controllers to be thin; move any logic to services
+- [x] Enforce rule: never import a repository into another repository; use services instead
+- [x] Add ESLint rule/note in `CONTRIBUTING.md` to preserve SOLID and modularity
 
   ##### Targeted refactors (actionable):
-  - [ ] PaymentsService: extract `PlanDeterminationPolicy` (maps products→plans) and `PricingPolicy` (plan prices) to Domain layer
-  - [ ] PaymentsService: introduce `PaymentProviderPort` adapter for LemonSqueezy-specific logic (keep service framework-agnostic)
-  - [ ] PaymentsService: move analytics calls behind `AnalyticsPort` used by Application layer
-  - [ ] GenerationService: define `ContentGeneratorPort` and inject (OpenAI adapter) + move retry/timeout into a `GenerationPolicy`
-  - [ ] GenerationService: isolate trial/limit checks into `PlanLimitPolicy` (pure domain), service orchestrates only
-  - [ ] UserService: keep repository access minimal; move plan feature calculation to domain policy (`updateUserPlanFeatures` wrapper)
-  - [ ] Create `backend/src/core/ports/` for interfaces and `backend/src/infrastructure/adapters/` for implementations
-  - [ ] Ensure no service directly calls another module's repository—use exported services instead
+  - [x] PaymentsService: extract `PlanDeterminationPolicy` (maps products→plans) and `PricingPolicy` (plan prices) to Domain layer
+  - [x] PaymentsService: introduce `PaymentProviderPort` adapter for LemonSqueezy-specific logic (keep service framework-agnostic)
+  - [x] PaymentsService: move analytics calls behind `AnalyticsPort` used by Application layer
+  - [x] GenerationService: define `ContentGeneratorPort` and inject (OpenAI adapter) + move retry/timeout into a `GenerationPolicy`
+  - [x] GenerationService: isolate trial/limit checks into `PlanLimitPolicy` (pure domain), service orchestrates only
+  - [x] UserService: keep repository access minimal; move plan feature calculation to domain policy (`updateUserPlanFeatures` wrapper)
+  - [x] Create `backend/src/core/ports/` for interfaces and `backend/src/infrastructure/adapters/` for implementations
+  - [x] Ensure no service directly calls another module's repository—use exported services instead
 
 #### **1.13 Implement Multi-Provider AI Infrastructure (4 hours)**
 - [ ] **Create AI Provider Ports** in `backend/src/core/ports/`:
