@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { StrategicCacheService } from '../cache/strategic-cache.service';
 import { SignupControl } from '../entities/signup-control.entity';
 
 export interface SignupAvailability {
@@ -33,6 +34,7 @@ export class SignupControlService {
   constructor(
     @InjectRepository(SignupControl)
     private signupControlRepository: Repository<SignupControl>,
+    private readonly cacheService: StrategicCacheService,
   ) {}
 
   /**
@@ -41,9 +43,16 @@ export class SignupControlService {
    */
   async getSignupAvailability(): Promise<SignupAvailability> {
     try {
-      let signupControl = await this.getOrCreateSignupControl();
+      // Try to get from cache first
+      const cachedAvailability = await this.cacheService.getCachedSignupAvailability();
+      if (cachedAvailability) {
+        this.logger.debug('Signup availability retrieved from cache');
+        return cachedAvailability;
+      }
 
-      return {
+      // If not in cache, get from database
+      let signupControl = await this.getOrCreateSignupControl();
+      const availability = {
         canSignup: signupControl.canSignup(),
         canBetaSignup: signupControl.canBetaSignup(),
         remainingSignups: signupControl.getRemainingSignups(),
@@ -54,6 +63,12 @@ export class SignupControlService {
         betaSignupMessage: signupControl.beta_signup_message,
         lastUpdated: signupControl.last_updated || signupControl.updated_at,
       };
+
+      // Cache the result for future requests
+      await this.cacheService.cacheSignupAvailability(availability);
+      this.logger.debug('Signup availability cached for future requests');
+
+      return availability;
     } catch (error) {
       this.logger.error('Failed to get signup availability:', error);
       // Return default availability in case of error
@@ -112,6 +127,9 @@ export class SignupControlService {
       signupControl.incrementSignup();
       await this.signupControlRepository.save(signupControl);
       
+      // Invalidate cache since signup data has changed
+      await this.cacheService.invalidateSignupAvailabilityCache();
+      
       this.logger.log(`Signup count incremented. New total: ${signupControl.total_signups_completed}`);
     } catch (error) {
       this.logger.error('Failed to increment signup count:', error);
@@ -133,6 +151,9 @@ export class SignupControlService {
 
       signupControl.incrementBetaSignup();
       await this.signupControlRepository.save(signupControl);
+      
+      // Invalidate cache since signup data has changed
+      await this.cacheService.invalidateSignupAvailabilityCache();
       
       this.logger.log(`Beta signup count incremented. New total: ${signupControl.beta_signups_completed}`);
     } catch (error) {
@@ -195,6 +216,9 @@ export class SignupControlService {
 
       signupControl.last_updated = new Date();
       const updated = await this.signupControlRepository.save(signupControl);
+      
+      // Invalidate cache since signup control settings have changed
+      await this.cacheService.invalidateSignupAvailabilityCache();
       
       this.logger.log('Signup control updated successfully', {
         totalAllowed: updated.total_signups_allowed,

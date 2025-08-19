@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AnalyticsModule } from '../analytics/analytics.module';
+import { AnalyticsService } from '../analytics/analytics.service';
+import { PlanDeterminationPolicy } from '../core/domain/policies/plan-determination.policy';
 import { User } from '../entities/user.entity';
+import { LemonSqueezyAdapter } from '../infrastructure/adapters/lemon-squeezy.adapter';
 import { BetaManagementService } from './beta-management.service';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
@@ -12,7 +15,19 @@ import { PaymentsService } from './payments.service';
     AnalyticsModule,
   ],
   controllers: [PaymentsController],
-  providers: [PaymentsService, BetaManagementService],
+  providers: [
+    PaymentsService, 
+    BetaManagementService,
+    {
+      provide: 'PaymentProviderPort',
+      useClass: LemonSqueezyAdapter,
+    },
+    {
+      provide: 'AnalyticsPort',
+      useExisting: AnalyticsService,
+    },
+    PlanDeterminationPolicy,
+  ],
   exports: [PaymentsService, BetaManagementService],
 })
 export class PaymentsModule {}

@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Generation } from '../entities/generation.entity';
+import { User } from '../entities/user.entity';
+import { OpenAIModule } from '../openai/openai.module';
 import { GenerationController } from './generation.controller';
 import { GenerationService } from './generation.service';
-import { User } from '../entities/user.entity';
-import { Generation } from '../entities/generation.entity';
-import { OpenAIModule } from '../openai/openai.module';
 
 @Module({
   imports: [
@@ -12,6 +12,14 @@ import { OpenAIModule } from '../openai/openai.module';
     OpenAIModule,
   ],
   controllers: [GenerationController],
-  providers: [GenerationService],
+  providers: [
+    GenerationService,
+    PlanLimitPolicy,
+    GenerationPolicy,
+    {
+      provide: 'ContentGeneratorPort',
+      useExisting: OpenAIService,
+    },
+  ],
 })
 export class GenerationModule {}

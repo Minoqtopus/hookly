@@ -2,6 +2,8 @@ import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { GenerationPolicy } from '../src/core/domain/policies/generation.policy';
+import { PlanLimitPolicy } from '../src/core/domain/policies/plan-limit.policy';
 import { Generation } from '../src/entities/generation.entity';
 import { User, UserPlan } from '../src/entities/user.entity';
 import { GenerationService } from '../src/generation/generation.service';
@@ -57,7 +59,37 @@ describe('GenerationService', () => {
     generateUGCVariations: jest.fn(),
   };
 
+  const mockContentGenerator = {
+    generateUGCContent: jest.fn(),
+    generateUGCVariations: jest.fn(),
+  };
+
+  const mockPlanLimitPolicy = {
+    canUserGenerate: jest.fn(),
+  };
+
+  const mockGenerationPolicy = {
+    getGenerationConfig: jest.fn(),
+    calculateRetryDelay: jest.fn(),
+  };
+
   beforeEach(async () => {
+    // Setup default mock behaviors
+    mockPlanLimitPolicy.canUserGenerate.mockReturnValue({
+      canGenerate: true,
+      remainingGenerations: 50,
+      limitType: 'monthly',
+      resetDate: new Date(),
+    });
+
+    mockGenerationPolicy.getGenerationConfig.mockReturnValue({
+      maxRetries: 3,
+      timeout: 30000,
+      retryDelay: 1000,
+    });
+
+    mockGenerationPolicy.calculateRetryDelay.mockReturnValue(1000);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GenerationService,
@@ -72,6 +104,18 @@ describe('GenerationService', () => {
         {
           provide: OpenAIService,
           useValue: mockOpenAIService,
+        },
+        {
+          provide: 'ContentGeneratorPort',
+          useValue: mockContentGenerator,
+        },
+        {
+          provide: PlanLimitPolicy,
+          useValue: mockPlanLimitPolicy,
+        },
+        {
+          provide: GenerationPolicy,
+          useValue: mockGenerationPolicy,
         },
       ],
     }).compile();
@@ -97,7 +141,20 @@ describe('GenerationService', () => {
       mockUserRepository.save.mockResolvedValue(trialUser);
       mockGenerationRepository.create.mockReturnValue(mockGeneration);
       mockGenerationRepository.save.mockResolvedValue(mockGeneration);
-      mockOpenAIService.generateUGCContent.mockResolvedValue(mockGeneratedContent);
+      mockContentGenerator.generateUGCContent.mockResolvedValue(mockGeneratedContent);
+      
+      // Mock the policy to allow generation
+      mockPlanLimitPolicy.canUserGenerate.mockReturnValue({
+        canGenerate: true,
+        remainingGenerations: 0, // After generation, remaining should be 0
+        limitType: 'trial',
+        resetDate: new Date(),
+        trialStatus: {
+          isActive: true,
+          daysRemaining: 3,
+          generationsRemaining: 0,
+        },
+      });
 
       const result = await service.generateContent('user-1', {
         productName: 'Test Product',
@@ -105,7 +162,7 @@ describe('GenerationService', () => {
         targetAudience: 'Test Audience',
       });
 
-      expect(result.remaining_generations).toBe(0); // 15 - (14 + 1) = 0
+      expect(result.remaining_generations).toBe(0);
       expect(mockUserRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({ trial_generations_used: 15 })
       );
@@ -114,6 +171,20 @@ describe('GenerationService', () => {
     test('should reject generation for trial user over limit', async () => {
       const trialUser = { ...mockUser, plan: UserPlan.TRIAL, trial_generations_used: 15 };
       mockUserRepository.findOne.mockResolvedValue(trialUser);
+      
+      // Mock the policy to reject generation
+      mockPlanLimitPolicy.canUserGenerate.mockReturnValue({
+        canGenerate: false,
+        remainingGenerations: 0,
+        limitType: 'trial',
+        resetDate: new Date(),
+        upgradeMessage: 'Trial generation limit of 15 reached. Upgrade to Starter plan for 50 generations/month.',
+        trialStatus: {
+          isActive: true,
+          daysRemaining: 3,
+          generationsRemaining: 0,
+        },
+      });
 
       await expect(
         service.generateContent('user-1', {
@@ -130,7 +201,15 @@ describe('GenerationService', () => {
       mockUserRepository.save.mockResolvedValue(proUser);
       mockGenerationRepository.create.mockReturnValue(mockGeneration);
       mockGenerationRepository.save.mockResolvedValue(mockGeneration);
-      mockOpenAIService.generateUGCContent.mockResolvedValue(mockGeneratedContent);
+      mockContentGenerator.generateUGCContent.mockResolvedValue(mockGeneratedContent);
+      
+      // Mock the policy to allow generation and return correct remaining count
+      mockPlanLimitPolicy.canUserGenerate.mockReturnValue({
+        canGenerate: true,
+        remainingGenerations: 99, // 200 - (100 + 1) = 99
+        limitType: 'monthly',
+        resetDate: new Date(),
+      });
 
       const result = await service.generateContent('user-1', {
         productName: 'Test Product',
@@ -138,7 +217,7 @@ describe('GenerationService', () => {
         targetAudience: 'Test Audience',
       });
 
-      expect(result.remaining_generations).toBe(99); // 200 - (100 + 1)
+      expect(result.remaining_generations).toBe(99);
       expect(mockUserRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({ monthly_count: 101 })
       );
@@ -150,7 +229,15 @@ describe('GenerationService', () => {
       mockUserRepository.save.mockResolvedValue(starterUser);
       mockGenerationRepository.create.mockReturnValue(mockGeneration);
       mockGenerationRepository.save.mockResolvedValue(mockGeneration);
-      mockOpenAIService.generateUGCContent.mockResolvedValue(mockGeneratedContent);
+      mockContentGenerator.generateUGCContent.mockResolvedValue(mockGeneratedContent);
+      
+      // Mock the policy to allow generation and return correct remaining count
+      mockPlanLimitPolicy.canUserGenerate.mockReturnValue({
+        canGenerate: true,
+        remainingGenerations: 0, // 50 - (49 + 1) = 0
+        limitType: 'monthly',
+        resetDate: new Date(),
+      });
 
       const result = await service.generateContent('user-1', {
         productName: 'Test Product',
@@ -158,7 +245,7 @@ describe('GenerationService', () => {
         targetAudience: 'Test Audience',
       });
 
-      expect(result.remaining_generations).toBe(0); // 50 - (49 + 1) = 0
+      expect(result.remaining_generations).toBe(0);
     });
   });
 
@@ -219,7 +306,15 @@ describe('GenerationService', () => {
       const userWithOldMonth = { ...mockUser, plan: UserPlan.STARTER, monthly_count: 5, reset_date: lastMonth };
       mockUserRepository.findOne.mockResolvedValue(userWithOldMonth);
       mockUserRepository.save.mockResolvedValue(userWithOldMonth);
-      mockOpenAIService.generateUGCContent.mockResolvedValue(mockGeneratedContent);
+      mockContentGenerator.generateUGCContent.mockResolvedValue(mockGeneratedContent);
+      
+      // Mock the policy to allow generation and return correct remaining count
+      mockPlanLimitPolicy.canUserGenerate.mockReturnValue({
+        canGenerate: true,
+        remainingGenerations: 49, // 50 - 1 = 49
+        limitType: 'monthly',
+        resetDate: new Date(),
+      });
 
       await service.generateContent('user-1', {
         productName: 'Test Product',
@@ -229,7 +324,7 @@ describe('GenerationService', () => {
 
       expect(mockUserRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({ 
-          monthly_count: 1,
+          monthly_count: 6, // 5 + 1
           reset_date: expect.any(Date)
         })
       );
@@ -297,7 +392,11 @@ describe('GenerationService', () => {
       mockUserRepository.save.mockResolvedValue(proUser);
       mockGenerationRepository.create.mockReturnValue(mockGeneration);
       mockGenerationRepository.save.mockResolvedValue(mockGeneration);
-      mockOpenAIService.generateUGCVariations.mockResolvedValue(mockVariationsData);
+      mockContentGenerator.generateUGCVariations.mockResolvedValue([
+        { hook: 'Hook 1', script: 'Script 1', visuals: ['Visual 1'], performance: { estimatedViews: 50000, estimatedCTR: 4.2, viralScore: 8 } },
+        { hook: 'Hook 2', script: 'Script 2', visuals: ['Visual 2'], performance: { estimatedViews: 45000, estimatedCTR: 3.9, viralScore: 7.5 } },
+        { hook: 'Hook 3', script: 'Script 3', visuals: ['Visual 3'], performance: { estimatedViews: 55000, estimatedCTR: 4.5, viralScore: 8.2 } },
+      ]);
 
       const result = await service.generateVariations('user-1', {
         productName: 'Test Product',
@@ -334,18 +433,11 @@ describe('GenerationService', () => {
       };
       
       mockUserRepository.findOne.mockResolvedValue(proUser);
-      mockOpenAIService.generateUGCVariations.mockResolvedValue({
-        variations: [
-          { hook: 'Hook 1', script: 'Script 1', visuals: ['Visual 1'] },
-          { hook: 'Hook 2', script: 'Script 2', visuals: ['Visual 2'] },
-          { hook: 'Hook 3', script: 'Script 3', visuals: ['Visual 3'] },
-        ],
-        performance: [
-          { estimatedViews: 50000, estimatedCTR: 4.2, viralScore: 8 },
-          { estimatedViews: 45000, estimatedCTR: 3.9, viralScore: 7.5 },
-          { estimatedViews: 55000, estimatedCTR: 4.5, viralScore: 8.2 },
-        ],
-      });
+      mockContentGenerator.generateUGCVariations.mockResolvedValue([
+        { hook: 'Hook 1', script: 'Script 1', visuals: ['Visual 1'], performance: { estimatedViews: 50000, estimatedCTR: 4.2, viralScore: 8 } },
+        { hook: 'Hook 2', script: 'Script 2', visuals: ['Visual 2'], performance: { estimatedViews: 45000, estimatedCTR: 3.9, viralScore: 7.5 } },
+        { hook: 'Hook 3', script: 'Script 3', visuals: ['Visual 3'], performance: { estimatedViews: 55000, estimatedCTR: 4.5, viralScore: 8.2 } },
+      ]);
 
       const result = await service.generateVariations('user-1', {
         productName: 'Test Product',
@@ -363,7 +455,7 @@ describe('GenerationService', () => {
       const trialUser = { ...mockUser, plan: UserPlan.TRIAL, trial_generations_used: 0 };
       mockUserRepository.findOne.mockResolvedValue(trialUser);
       mockUserRepository.save.mockResolvedValue(trialUser);
-      mockOpenAIService.generateUGCContent.mockRejectedValue(new Error('API Error'));
+      mockContentGenerator.generateUGCContent.mockRejectedValue(new Error('API Error'));
 
       await expect(
         service.generateContent('user-1', {

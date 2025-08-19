@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
+import { ContentGenerationRequest, ContentGenerationResponse, ContentGeneratorPort } from '../core/ports/content-generator.port';
 
 export interface UGCGenerationInput {
   productName: string;
@@ -24,7 +25,7 @@ export interface UGCVariationsOutput {
 }
 
 @Injectable()
-export class OpenAIService {
+export class OpenAIService implements ContentGeneratorPort {
   private openai: OpenAI;
 
   constructor(private configService: ConfigService) {
@@ -89,10 +90,10 @@ Make it sound authentic, relatable, and focused on solving a problem or showing 
     }
   }
 
-  async generateUGCVariations(input: UGCGenerationInput): Promise<UGCVariationsOutput> {
-    const { productName, niche, targetAudience } = input;
+  async generateUGCVariations(request: ContentGenerationRequest, count: number): Promise<ContentGenerationResponse[]> {
+    const { productName, niche, targetAudience } = request;
 
-    const prompt = `Create 3 distinct TikTok UGC ad variations for the following product. Each variation should have a different approach and angle:
+    const prompt = `Create ${count} distinct TikTok UGC ad variations for the following product. Each variation should have a different approach and angle:
 
 Product: ${productName}
 Niche: ${niche}
@@ -166,13 +167,48 @@ Make each variation feel authentic, relatable, and focused on solving a problem 
         };
       };
 
-      return {
-        variations: parsedResponse.variations || [],
-        performance: parsedResponse.variations.map((_, index) => generatePerformanceMetrics(index))
-      };
+      // Convert to ContentGenerationResponse array
+      return (parsedResponse.variations || []).map((variation: any, index: number) => ({
+        hook: variation.hook,
+        script: variation.script,
+        visuals: variation.visuals || [],
+        performance: generatePerformanceMetrics(index)
+      }));
     } catch (error) {
       console.error('OpenAI API Error:', error);
       throw new Error('Failed to generate UGC variations');
     }
+  }
+
+  async validateContent(content: string, context: ContentGenerationRequest): Promise<{
+    quality: number;
+    uniqueness: number;
+    relevance: number;
+    suggestions: string[];
+  }> {
+    // Mock implementation for now
+    return {
+      quality: 0.85,
+      uniqueness: 0.78,
+      relevance: 0.92,
+      suggestions: ['Consider adding more specific details', 'Make the hook more attention-grabbing']
+    };
+  }
+
+  async getProviderHealth(): Promise<{
+    status: 'healthy' | 'degraded' | 'unhealthy';
+    responseTime: number;
+    errorRate: number;
+    uptime: number;
+    costPerGeneration: number;
+  }> {
+    // Mock implementation for now
+    return {
+      status: 'healthy',
+      responseTime: 2500,
+      errorRate: 0.02,
+      uptime: 0.998,
+      costPerGeneration: 0.015
+    };
   }
 }

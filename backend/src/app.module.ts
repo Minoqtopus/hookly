@@ -10,6 +10,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { RateLimitGuard } from './common/guards/rate-limit.guard';
 import { ErrorLoggingInterceptor } from './common/interceptors/error-logging.interceptor';
 import { RateLimitInterceptor } from './common/interceptors/rate-limit.interceptor';
+import { CoreModule } from './core/core.module';
 import { AnalyticsEvent } from './entities/analytics-event.entity';
 import { ApiKey } from './entities/api-key.entity';
 import { EmailVerification } from './entities/email-verification.entity';
@@ -22,6 +23,7 @@ import { UserSettings } from './entities/user-settings.entity';
 import { User } from './entities/user.entity';
 import { GenerationModule } from './generation/generation.module';
 import { HealthModule } from './health/health.module';
+import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { MonitoringModule } from './monitoring/monitoring.module';
 import { PaymentsModule } from './payments/payments.module';
 import { TeamsModule } from './teams/teams.module';
@@ -69,6 +71,8 @@ import { UserModule } from './user/user.module';
     AnalyticsModule,
     HealthModule,
     MonitoringModule,
+    CoreModule,
+    InfrastructureModule,
     BackupModule,
   ],
   providers: [

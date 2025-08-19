@@ -1,9 +1,11 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import * as crypto from 'crypto';
 import { Repository } from 'typeorm';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { PlanDeterminationPolicy } from '../core/domain/policies/plan-determination.policy';
+import { AnalyticsPort } from '../core/ports/analytics.port';
+import { PaymentProviderPort } from '../core/ports/payment-provider.port';
 import { EventType } from '../entities/analytics-event.entity';
 import { updateUserPlanFeatures } from '../entities/plan-features.util';
 import { User, UserPlan } from '../entities/user.entity';
@@ -13,39 +15,22 @@ import { LemonSqueezyWebhookDto } from './dto/webhook.dto';
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
 
-  // Map LemonSqueezy product IDs to user plans
-  private readonly PRODUCT_PLAN_MAPPING = {
-    // Replace these with your actual LemonSqueezy product IDs
-    'starter_monthly': UserPlan.STARTER,
-    'starter_yearly': UserPlan.STARTER,
-    'pro_monthly': UserPlan.PRO,
-    'pro_yearly': UserPlan.PRO,
-    'agency_monthly': UserPlan.AGENCY,
-    'agency_yearly': UserPlan.AGENCY,
-  };
+
 
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private configService: ConfigService,
     private analyticsService: AnalyticsService,
+    @Inject('PaymentProviderPort')
+    private paymentProvider: PaymentProviderPort,
+    @Inject('AnalyticsPort')
+    private analyticsPort: AnalyticsPort,
+    private planDeterminationPolicy: PlanDeterminationPolicy,
   ) {}
 
-  verifyWebhookSignature(payload: string, signature: string): boolean {
-    const secret = this.configService.get<string>('LEMONSQUEEZY_WEBHOOK_SECRET');
-    if (!secret) {
-      this.logger.warn('LemonSqueezy webhook secret not configured');
-      return false;
-    }
-
-    const hmac = crypto.createHmac('sha256', secret);
-    hmac.update(payload);
-    const expectedSignature = hmac.digest('hex');
-
-    return crypto.timingSafeEqual(
-      Buffer.from(signature, 'hex'),
-      Buffer.from(expectedSignature, 'hex')
-    );
+  verifyWebhookSignature(payload: string, signature: string): Promise<boolean> {
+    return this.paymentProvider.verifyWebhookSignature(payload, signature);
   }
 
   async handleWebhook(payload: LemonSqueezyWebhookDto): Promise<void> {
@@ -166,33 +151,7 @@ export class PaymentsService {
   }
 
   private determinePlanFromProductData(data: any): UserPlan {
-    // Try to determine plan from product variant name or custom data
-    const productName = data.attributes?.product_name?.toLowerCase() || '';
-    const variantName = data.attributes?.variant_name?.toLowerCase() || '';
-    const customData = data.attributes?.custom_data || {};
-    
-    // Check custom plan data first
-    if (customData.plan) {
-      const customPlan = customData.plan.toLowerCase();
-      if (Object.values(UserPlan).includes(customPlan as UserPlan)) {
-        return customPlan as UserPlan;
-      }
-    }
-
-    // Check product/variant names for plan indicators
-    const fullName = `${productName} ${variantName}`.toLowerCase();
-    
-    if (fullName.includes('agency')) {
-      return UserPlan.AGENCY;
-    } else if (fullName.includes('pro')) {
-      return UserPlan.PRO;
-    } else if (fullName.includes('starter')) {
-      return UserPlan.STARTER;
-    }
-
-    // Default to PRO when uncertain to avoid under-provisioning features
-    this.logger.warn(`Could not determine plan from product data. Defaulting to PRO. Product: ${productName}, Variant: ${variantName}`);
-    return UserPlan.PRO;
+    return this.planDeterminationPolicy.determinePlanFromProductData(data);
   }
 
   private async upgradeUserToPlan(user: User, plan: UserPlan): Promise<void> {
@@ -203,13 +162,13 @@ export class PaymentsService {
     
     // Track conversion event
     try {
-      await this.analyticsService.trackConversion(
-        user.id,
-        previousPlan,
-        plan,
-        this.getPlanPrice(plan),
-        'lemon_squeezy'
-      );
+      await this.analyticsPort.trackConversion({
+        userId: user.id,
+        fromPlan: previousPlan,
+        toPlan: plan,
+        amount: this.getPlanPrice(plan),
+        source: 'lemon_squeezy',
+      });
     } catch (error) {
       this.logger.error('Failed to track conversion analytics:', error);
     }
@@ -218,14 +177,7 @@ export class PaymentsService {
   }
 
   private getPlanPrice(plan: UserPlan): number {
-    // Map plans to their monthly equivalent prices
-    const prices = {
-      [UserPlan.TRIAL]: 0,
-      [UserPlan.STARTER]: 19,
-      [UserPlan.PRO]: 59,
-      [UserPlan.AGENCY]: 129,
-    };
-    return prices[plan] || 0;
+    return this.planDeterminationPolicy.getPlanPrice(plan);
   }
 
 
@@ -260,19 +212,9 @@ export class PaymentsService {
     return user;
   }
 
-  // Get plan hierarchy for validation
-  private getPlanHierarchy(): UserPlan[] {
-    return [UserPlan.TRIAL, UserPlan.STARTER, UserPlan.PRO, UserPlan.AGENCY];
-  }
-
   // Check if plan transition is valid (can only upgrade, not downgrade via payments)
   private isValidPlanTransition(fromPlan: UserPlan, toPlan: UserPlan): boolean {
-    const hierarchy = this.getPlanHierarchy();
-    const fromIndex = hierarchy.indexOf(fromPlan);
-    const toIndex = hierarchy.indexOf(toPlan);
-    
-    // Allow upgrades and lateral moves (e.g., Pro monthly to Pro yearly)
-    return toIndex >= fromIndex;
+    return this.planDeterminationPolicy.isValidPlanTransition(fromPlan, toPlan);
   }
 
   // Method to handle promo codes or special offers
@@ -282,39 +224,28 @@ export class PaymentsService {
       throw new NotFoundException('User not found');
     }
 
-    // Define promo codes and their benefits
-    const promoCodes = {
-      'STARTER50': { plan: UserPlan.STARTER, description: 'Launch Special - 50% off Starter' },
-      'LAUNCH50': { plan: UserPlan.STARTER, description: 'Launch Special - 50% off Starter' },
-      'BETA_PRO': { plan: UserPlan.PRO, description: 'Beta Tester - 30 Days Free PRO Access', isBeta: true, duration: 30 },
-      'AGENCY30': { plan: UserPlan.AGENCY, description: 'Agency Trial - 30 days free' },
-    } as const;
-
-    const promo = promoCodes[promoCode.toUpperCase() as keyof typeof promoCodes];
-    if (!promo) {
-      return { success: false, message: 'Invalid promo code' };
+    const validation = this.planDeterminationPolicy.validatePromoCode(user.plan, promoCode);
+    
+    if (!validation.isValid) {
+      return { success: false, message: validation.message };
     }
 
-    // Special handling for beta users with BETA_PRO promo code
-    if ((promo as any).isBeta && promoCode.toUpperCase() === 'BETA_PRO') {
+    if (validation.isBeta) {
+      // Special handling for beta users
       (user as any).is_beta_user = true;
-      (user as any).beta_expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
-      await this.upgradeUserToPlan(user, promo.plan);
-      this.logger.log(`Beta promo code applied: User ${user.email} marked as beta user and upgraded to ${promo.plan} for 30 days`);
+      (user as any).beta_expires_at = new Date(Date.now() + (validation.duration || 30) * 24 * 60 * 60 * 1000);
+      await this.upgradeUserToPlan(user, validation.targetPlan!);
+      this.logger.log(`Beta promo code applied: User ${user.email} marked as beta user and upgraded to ${validation.targetPlan} for ${validation.duration || 30} days`);
     } else {
-      // Check if this is a valid upgrade for regular promo codes
-      if (!this.isValidPlanTransition(user.plan, promo.plan)) {
-        return { success: false, message: 'Promo code not applicable to your current plan' };
-      }
-
-      await this.upgradeUserToPlan(user, promo.plan);
-      this.logger.log(`Promo code applied: User ${user.email} upgraded to ${promo.plan} with code ${promoCode}`);
+      // Regular promo code handling
+      await this.upgradeUserToPlan(user, validation.targetPlan!);
+      this.logger.log(`Promo code applied: User ${user.email} upgraded to ${validation.targetPlan} with code ${promoCode}`);
     }
 
     return { 
       success: true, 
-      message: `${promo.description} - You've been upgraded to ${promo.plan}!`,
-      newPlan: promo.plan
+      message: validation.message,
+      newPlan: validation.targetPlan!
     };
   }
 }

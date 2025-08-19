@@ -1,6 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository } from 'typeorm';
+import { GenerationPolicy } from '../core/domain/policies/generation.policy';
+import { PlanLimitPolicy } from '../core/domain/policies/plan-limit.policy';
+import { ContentGeneratorPort } from '../core/ports/content-generator.port';
 import { Generation } from '../entities/generation.entity';
 import { User, UserPlan } from '../entities/user.entity';
 import { OpenAIService } from '../openai/openai.service';
@@ -16,6 +19,10 @@ export class GenerationService {
     @InjectRepository(Generation)
     private generationRepository: Repository<Generation>,
     private openaiService: OpenAIService,
+    @Inject('ContentGeneratorPort')
+    private contentGenerator: ContentGeneratorPort,
+    private planLimitPolicy: PlanLimitPolicy,
+    private generationPolicy: GenerationPolicy,
   ) {}
 
   async generateContent(userId: string, generateDto: GenerateDto) {
@@ -24,82 +31,40 @@ export class GenerationService {
       throw new BadRequestException('User not found');
     }
 
-    // Check if user has reached monthly limit or trial limit
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    // Check if user can generate content using domain policy
+    const usageStatus = this.planLimitPolicy.canUserGenerate(
+      user.plan,
+      user.monthly_count,
+      user.trial_generations_used,
+      user.trial_started_at,
+      user.trial_ends_at
+    );
     
-    // Ensure reset_date is a Date object
-    const resetDate = user.reset_date instanceof Date ? user.reset_date : new Date(user.reset_date);
-    const resetMonth = resetDate.getMonth();
-    const resetYear = resetDate.getFullYear();
-    
-    if (currentMonth !== resetMonth || currentYear !== resetYear) {
-      // Reset monthly count if it's a new month
-      user.monthly_count = 0;
-      user.reset_date = new Date();
-      await this.userRepository.save(user);
+    if (!usageStatus.canGenerate) {
+      throw new ForbiddenException(usageStatus.upgradeMessage || 'Generation limit reached');
     }
 
-    // Check trial status and limits
-    if (user.plan === UserPlan.TRIAL) {
-      // Start trial if not started
-      if (!user.trial_started_at) {
-        user.trial_started_at = now;
-        user.trial_ends_at = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-        await this.userRepository.save(user);
-      }
-      
-      // Check if trial has expired
-      if (user.trial_ends_at && now > user.trial_ends_at) {
-        throw new ForbiddenException('Free trial has expired. Please upgrade to continue creating ads.');
-      }
-      
-      // Check trial generation limit (15 total generations over 7 days)
-      if (user.trial_generations_used >= 15) {
-        throw new ForbiddenException('Trial generation limit of 15 reached. Upgrade to Starter plan for 50 generations/month.');
-      }
-    }
-
-    // Check monthly limits for paid plans
-    const monthlyLimits = {
-      [UserPlan.TRIAL]: 15, // 15 total during trial period
-      [UserPlan.STARTER]: 50,
-      [UserPlan.PRO]: 200,
-      [UserPlan.AGENCY]: 500
-    };
-
-    const limit = monthlyLimits[user.plan];
-    const currentCount = user.plan === UserPlan.TRIAL ? user.trial_generations_used : user.monthly_count;
-    
-    if (limit && currentCount >= limit) {
-      const upgradeMessage = user.plan === UserPlan.STARTER 
-        ? 'Monthly generation limit of 50 reached. Upgrade to Pro for 200 generations/month.'
-        : user.plan === UserPlan.PRO
-        ? 'Monthly generation limit of 200 reached. Upgrade to Agency for 500 generations/month.'
-        : 'Generation limit reached. Please upgrade your plan.';
-      throw new ForbiddenException(upgradeMessage);
-    }
+    // Get generation configuration from domain policy
+    const generationConfig = this.generationPolicy.getGenerationConfig();
 
     let retryCount = 0;
-    const maxRetries = 3;
     let generatedContent: any;
     let processingStartTime: number;
     let processingTime: number;
 
-    while (retryCount < maxRetries) {
+    while (retryCount < generationConfig.maxRetries) {
       try {
         processingStartTime = Date.now();
         
-        // Generate content using OpenAI with timeout
+        // Generate content using content generator port with timeout
         generatedContent = await Promise.race([
-          this.openaiService.generateUGCContent({
+          this.contentGenerator.generateUGCContent({
             productName: generateDto.productName,
             niche: generateDto.niche,
             targetAudience: generateDto.targetAudience,
           }),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Generation timeout')), 30000) // 30 second timeout
+            setTimeout(() => reject(new Error('Generation timeout')), generationConfig.timeout)
           )
         ]);
 
@@ -110,17 +75,17 @@ export class GenerationService {
         retryCount++;
         processingTime = Date.now() - processingStartTime;
         
-        if (retryCount >= maxRetries) {
-          console.error(`Generation failed after ${maxRetries} attempts:`, error);
+        if (retryCount >= generationConfig.maxRetries) {
+          console.error(`Generation failed after ${generationConfig.maxRetries} attempts:`, error);
           throw new BadRequestException(
             retryCount === 1 
               ? 'AI generation service is temporarily unavailable. Please try again in a moment.'
-              : `Generation failed after ${maxRetries} attempts. Please try again later.`
+              : `Generation failed after ${generationConfig.maxRetries} attempts. Please try again later.`
           );
         }
 
-        // Wait before retry (exponential backoff)
-        const waitTime = Math.min(1000 * Math.pow(2, retryCount - 1), 5000);
+        // Wait before retry using policy-based backoff
+        const waitTime = this.generationPolicy.calculateRetryDelay(retryCount);
         await new Promise(resolve => setTimeout(resolve, waitTime));
         
         console.warn(`Generation attempt ${retryCount} failed, retrying in ${waitTime}ms:`, error instanceof Error ? error.message : 'Unknown error');
@@ -167,9 +132,7 @@ export class GenerationService {
       }
       await this.userRepository.save(user);
 
-      const remainingGenerations = user.plan === UserPlan.TRIAL 
-        ? Math.max(0, 15 - user.trial_generations_used)
-        : limit ? Math.max(0, limit - user.monthly_count) : null;
+      const remainingGenerations = usageStatus.remainingGenerations;
 
       return {
         id: generation.id,
@@ -184,7 +147,7 @@ export class GenerationService {
         created_at: generation.created_at,
         remaining_generations: remainingGenerations,
         trial_days_left: user.trial_ends_at && user.plan === UserPlan.TRIAL 
-          ? Math.max(0, Math.ceil((user.trial_ends_at.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)))
+          ? Math.max(0, Math.ceil((user.trial_ends_at.getTime() - new Date().getTime()) / (24 * 60 * 60 * 1000)))
           : null,
       };
     } catch (error) {
@@ -294,50 +257,33 @@ export class GenerationService {
       throw new ForbiddenException('Batch generation is a Pro feature. Upgrade to generate multiple variations at once.');
     }
 
-    // Check monthly limits (variations count as 3 generations)
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
-    // Ensure reset_date is a Date object
-    const resetDate = user.reset_date instanceof Date ? user.reset_date : new Date(user.reset_date);
-    const resetMonth = resetDate.getMonth();
-    const resetYear = resetDate.getFullYear();
-    
-    if (currentMonth !== resetMonth || currentYear !== resetYear) {
-      user.monthly_count = 0;
-      user.reset_date = new Date();
-      await this.userRepository.save(user);
-    }
-
-    const monthlyLimits = {
-      [UserPlan.TRIAL]: 3,
-      [UserPlan.STARTER]: 50,
-      [UserPlan.PRO]: 200,
-      [UserPlan.AGENCY]: 500
-    };
-
-    const limit = monthlyLimits[user.plan];
+    // Check if user can generate variations using domain policy
     const variationsCount = 3; // Always generate 3 variations
-    const currentCount = user.plan === UserPlan.TRIAL ? user.trial_generations_used : user.monthly_count;
+    const canGenerateVariations = await this.planLimitPolicy.canUserGenerate(
+      user.plan,
+      user.monthly_count + variationsCount,
+      user.trial_generations_used + variationsCount,
+      user.trial_started_at,
+      user.trial_ends_at
+    );
     
-    if (limit && (currentCount + variationsCount) > limit) {
+    if (!canGenerateVariations.canGenerate) {
       throw new ForbiddenException(`Not enough generations remaining. Need ${variationsCount} generations for variations.`);
     }
 
     try {
       // Generate 3 variations with single API call
-      const variationsData = await this.openaiService.generateUGCVariations({
+      const variationsData = await this.contentGenerator.generateUGCVariations({
         productName: generateVariationsDto.productName,
         niche: generateVariationsDto.niche,
         targetAudience: generateVariationsDto.targetAudience,
-      });
+      }, 3);
 
       // Save each variation as a separate generation
       const savedGenerations = [];
-      for (let i = 0; i < variationsData.variations.length; i++) {
-        const variation = variationsData.variations[i];
-        const performance = variationsData.performance[i];
+      for (let i = 0; i < variationsData.length; i++) {
+        const variation = variationsData[i];
+        const performance = variation.performance;
 
         // Add performance data to the variation
         const variationWithPerformance = {
@@ -383,7 +329,7 @@ export class GenerationService {
       return {
         variations: savedGenerations,
         totalGenerated: variationsCount,
-        remaining_generations: limit ? Math.max(0, limit - updatedCurrentCount) : null,
+        remaining_generations: Math.max(0, canGenerateVariations.remainingGenerations - variationsCount),
         message: `Generated ${variationsCount} variations with different approaches for maximum testing potential.`
       };
     } catch (error) {
