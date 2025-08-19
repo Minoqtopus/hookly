@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { 
-  CheckCircle, 
-  Crown, 
-  Sparkles, 
-  ArrowRight, 
-  Gift,
-  Zap,
-  TrendingUp,
-  Users
-} from 'lucide-react';
 import { useApp } from '@/app/lib/AppContext';
+import {
+  ArrowRight,
+  CheckCircle,
+  Crown,
+  Gift,
+  Sparkles,
+  TrendingUp,
+  Users,
+  Zap
+} from 'lucide-react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 
 function UpgradeSuccessPageContent() {
   const [showConfetti, setShowConfetti] = useState(true);
@@ -35,7 +35,7 @@ function UpgradeSuccessPageContent() {
   const nextSteps = [
     {
       icon: Zap,
-      title: "Generate Unlimited Ads",
+      title: "Generate 200 Ads per Month",
       description: "No more daily limits - create as many viral ads as you need",
       action: "Start Creating",
       link: "/generate"
@@ -57,7 +57,7 @@ function UpgradeSuccessPageContent() {
   ];
 
   const proFeatures = [
-    "✅ Unlimited ad generations",
+    "✅ 200 ad generations per month",
     "✅ Advanced performance analytics",
     "✅ Batch generation (10+ ads)",
     "✅ No watermarks",
@@ -111,7 +111,7 @@ function UpgradeSuccessPageContent() {
 
           <div className="inline-flex items-center bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-full font-semibold">
             <Crown className="h-5 w-5 mr-2" />
-            Pro Member - Unlimited Power Unlocked
+            Pro Member - Pro Power Unlocked
           </div>
         </div>
 
@@ -181,8 +181,8 @@ function UpgradeSuccessPageContent() {
             className="bg-gradient-to-r from-primary-600 to-secondary-600 text-white p-6 rounded-xl text-center hover:shadow-lg transition-shadow group"
           >
             <Zap className="h-8 w-8 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-            <h3 className="font-semibold mb-2">Start Creating Unlimited Ads</h3>
-            <p className="text-primary-100 text-sm">Jump right in and create your first unlimited ad</p>
+                    <h3 className="font-semibold mb-2">Start Creating Premium Ads</h3>
+        <p className="text-primary-100 text-sm">Jump right in and create your first premium ad</p>
           </Link>
           
           <Link 

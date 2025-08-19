@@ -170,8 +170,8 @@ describe('ApiClient', () => {
     });
   });
 
-  describe('upgradeToCreator', () => {
-    it('should upgrade user to creator plan', async () => {
+  describe('upgradeToStarter', () => {
+    it('should upgrade user to starter plan', async () => {
       const checkoutData = {
         plan: 'monthly',
         user_id: 'test-user-id',
@@ -179,15 +179,40 @@ describe('ApiClient', () => {
       };
 
       const mockResponse = { checkout_url: 'https://checkout.example.com' };
-      setupFetchMock('/user/upgrade/creator', mockResponse);
+      setupFetchMock('/user/upgrade/starter', mockResponse);
 
-      const result = await ApiClient.upgradeToCreator(checkoutData);
+      const result = await ApiClient.upgradeToStarter(checkoutData);
 
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/user/upgrade/creator'),
+        expect.stringContaining('/user/upgrade/starter'),
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify(checkoutData),
+          body: checkoutData,
+        })
+      );
+
+      expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe('upgradeToPro', () => {
+    it('should upgrade user to pro plan', async () => {
+      const checkoutData = {
+        plan: 'monthly',
+        user_id: 'test-user-id',
+        email: 'test@example.com',
+      };
+
+      const mockResponse = { checkout_url: 'https://checkout.example.com' };
+      setupFetchMock('/user/upgrade/pro', mockResponse);
+
+      const result = await ApiClient.upgradeToPro(checkoutData);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/user/upgrade/pro'),
+        expect.objectContaining({
+          method: 'POST',
+          body: checkoutData,
         })
       );
 

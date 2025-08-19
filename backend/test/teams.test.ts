@@ -1,12 +1,11 @@
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { TeamsService } from '../src/teams/teams.service';
-import { TeamsController } from '../src/teams/teams.controller';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { User, UserPlan } from '../src/entities/user.entity';
-import { Team, TeamMember, SharedGeneration, TeamRole } from '../src/entities/team.entity';
-import { Generation } from '../src/entities/generation.entity';
 import { Repository } from 'typeorm';
-import { ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Generation } from '../src/entities/generation.entity';
+import { SharedGeneration, Team, TeamMember, TeamRole } from '../src/entities/team.entity';
+import { User, UserPlan } from '../src/entities/user.entity';
+import { TeamsService } from '../src/teams/teams.service';
 
 describe('TeamsService', () => {
   let service: TeamsService;
@@ -177,7 +176,7 @@ describe('TeamsService', () => {
       const inviteeUser = {
         id: 'user-3',
         email: 'invitee@test.com',
-        plan: UserPlan.FREE,
+        plan: UserPlan.TRIAL,
       };
 
       mockRepositories.teamMemberRepository.findOne

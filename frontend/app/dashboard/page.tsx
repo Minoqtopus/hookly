@@ -216,7 +216,7 @@ export default function DashboardPage() {
               <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                 user.plan === 'agency'
                   ? 'bg-gradient-to-r from-purple-500 to-purple-700 text-white'
-                  : user.plan === 'creator'
+                  : user.plan === 'starter' || user.plan === 'pro'
                   ? 'bg-gradient-to-r from-blue-500 to-blue-700 text-white'
                   : 'bg-gray-100 text-gray-700'
               }`}>
@@ -225,10 +225,10 @@ export default function DashboardPage() {
                     <Crown className="h-3 w-3 mr-1" />
                     {user.is_beta_user ? 'AGENCY (FREE)' : 'AGENCY'}
                   </div>
-                ) : user.plan === 'creator' ? (
+                ) : user.plan === 'starter' || user.plan === 'pro' ? (
                   <div className="flex items-center">
                     <Sparkles className="h-3 w-3 mr-1" />
-                    CREATOR
+                    {user.plan === 'starter' ? 'STARTER' : 'PRO'}
                   </div>
                 ) : 'TRIAL'}
               </div>
@@ -274,7 +274,7 @@ export default function DashboardPage() {
         )}
 
         {/* Performance Overview - Uses real data from backend */}
-        {user && (user.plan === 'creator' || user.plan === 'agency') && displayStats && (
+        {user && (user.plan === 'starter' || user.plan === 'pro' || user.plan === 'agency') && displayStats && (
           <div className="card mb-8 bg-gradient-to-br from-primary-50 to-secondary-50 border-primary-200">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -342,7 +342,7 @@ export default function DashboardPage() {
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-1">📊 Unlock Performance Analytics</h3>
                   <p className="text-gray-600 text-sm mb-3">
-                    Upgrade to Creator plan for detailed insights, viral trends, and AI-powered recommendations
+                    Upgrade to Starter plan for detailed insights, viral trends, and AI-powered recommendations
                   </p>
                   <div className="flex items-center space-x-4 text-xs text-gray-500">
                     <span>• Industry benchmarks</span>
@@ -389,7 +389,7 @@ export default function DashboardPage() {
             </div>
             {trialLimit && displayStats?.isTrialUser && (displayStats?.generationsToday ?? 0) >= trialLimit && (
               <p className="text-sm text-red-600 mt-2">
-                Trial limit reached! <span className="font-medium cursor-pointer" onClick={() => setShowUpgradeModal(true)}>Upgrade to Creator</span>
+                Trial limit reached! <span className="font-medium cursor-pointer" onClick={() => setShowUpgradeModal(true)}>Upgrade to Starter</span>
               </p>
             )}
           </div>
@@ -506,16 +506,16 @@ export default function DashboardPage() {
             <div className="card bg-gradient-to-br from-primary-50 to-secondary-50 border-primary-200">
               <div className="text-center">
                 <Crown className="h-12 w-12 text-primary-600 mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Upgrade to Creator</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Upgrade to Starter</h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  {getPlanConfig('creator')?.features.slice(0, 3).join(', ') || 'Plan features loading...'}
+                  {getPlanConfig('starter')?.features.slice(0, 3).join(', ') || 'Plan features loading...'}
                 </p>
                 <button 
                   onClick={() => setShowUpgradeModal(true)}
                   className="btn-primary w-full text-sm"
                 >
-                  {getPlanConfig('creator')?.price.monthly ? 
-                    `Upgrade Now - $${getPlanConfig('creator')!.price.monthly}/mo` : 
+                  {getPlanConfig('starter')?.price.monthly ? 
+                    `Upgrade Now - $${getPlanConfig('starter')!.price.monthly}/mo` : 
                     'Upgrade Now - Loading...'
                   }
                 </button>
@@ -526,8 +526,8 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Creator/Agency Bonus */}
-          {(user.plan === 'creator' || user.plan === 'agency') && (
+          {/* Starter/Pro/Agency Bonus */}
+          {(user.plan === 'starter' || user.plan === 'pro' || user.plan === 'agency') && (
             <div className="card bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200">
               <div className="text-center">
                 <Gift className="h-12 w-12 text-yellow-600 mx-auto mb-4" />

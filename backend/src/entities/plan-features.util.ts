@@ -8,6 +8,11 @@ export interface PlanFeatures {
   has_white_label: boolean;
   has_custom_integrations: boolean;
   monthly_generation_limit: number | null;
+  // Platform access mapping
+  has_tiktok_access: boolean;
+  has_x_access: boolean;
+  has_instagram_access: boolean;
+  has_youtube_access: boolean;
 }
 
 export function getPlanFeatures(plan: UserPlan): PlanFeatures {
@@ -20,18 +25,44 @@ export function getPlanFeatures(plan: UserPlan): PlanFeatures {
         has_team_features: false,
         has_white_label: false,
         has_custom_integrations: false,
-        monthly_generation_limit: 3, // 3 during trial
+        monthly_generation_limit: 15, // 15 total during trial period
+        // Platform access: TikTok only for trial
+        has_tiktok_access: true,
+        has_x_access: false,
+        has_instagram_access: false,
+        has_youtube_access: false,
       };
 
-    case UserPlan.CREATOR:
+    case UserPlan.STARTER:
       return {
         has_batch_generation: false,
-        has_advanced_analytics: true,
+        has_advanced_analytics: false,
         has_api_access: false,
         has_team_features: false,
         has_white_label: false,
         has_custom_integrations: false,
-        monthly_generation_limit: 150,
+        monthly_generation_limit: 50,
+        // Platform access: TikTok + X for starter
+        has_tiktok_access: true,
+        has_x_access: true,
+        has_instagram_access: false,
+        has_youtube_access: false,
+      };
+
+    case UserPlan.PRO:
+      return {
+        has_batch_generation: true,
+        has_advanced_analytics: true,
+        has_api_access: false,
+        has_team_features: true,
+        has_white_label: false,
+        has_custom_integrations: false,
+        monthly_generation_limit: 200,
+        // Platform access: TikTok + X + Instagram for pro
+        has_tiktok_access: true,
+        has_x_access: true,
+        has_instagram_access: true,
+        has_youtube_access: false,
       };
 
     case UserPlan.AGENCY:
@@ -43,6 +74,11 @@ export function getPlanFeatures(plan: UserPlan): PlanFeatures {
         has_white_label: true,
         has_custom_integrations: true,
         monthly_generation_limit: 500,
+        // Platform access: All platforms for agency
+        has_tiktok_access: true,
+        has_x_access: true,
+        has_instagram_access: true,
+        has_youtube_access: true,
       };
 
     default:
@@ -61,4 +97,10 @@ export function updateUserPlanFeatures(user: any, plan: UserPlan): void {
   user.has_white_label = features.has_white_label;
   user.has_custom_integrations = features.has_custom_integrations;
   user.monthly_generation_limit = features.monthly_generation_limit;
+  
+  // Update platform access flags
+  user.has_tiktok_access = features.has_tiktok_access;
+  user.has_x_access = features.has_x_access;
+  user.has_instagram_access = features.has_instagram_access;
+  user.has_youtube_access = features.has_youtube_access;
 }

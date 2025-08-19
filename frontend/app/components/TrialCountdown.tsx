@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, ArrowRight, Zap } from 'lucide-react';
+import { ArrowRight, Clock, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface TrialCountdownProps {
@@ -137,8 +137,8 @@ export default function TrialCountdown({
         <div className="text-center pt-4 border-t border-blue-200">
           <p className="text-sm text-blue-700 mb-3">
             {isExpiringSoon 
-              ? "Don't lose access to unlimited viral ad generation!" 
-              : "Running low on generations? Upgrade for unlimited access!"
+              ? "Don't lose access to viral ad generation!" 
+              : "Running low on generations? Upgrade for more access!"
             }
           </p>
           <button

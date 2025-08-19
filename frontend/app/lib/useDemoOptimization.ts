@@ -90,7 +90,7 @@ export function useDemoOptimization() {
       return {
         shouldShowSignup: true, // Changed from shouldShowUpgrade
         signupReason: 'generations',
-        signupMessage: 'You\'ve created 3 amazing ads! Sign up to save them all and create unlimited more.',
+        signupMessage: 'You\'ve created 3 amazing ads! Sign up to save them all and create many more.',
         signupUrgency: 'high',
       };
     }
@@ -110,7 +110,7 @@ export function useDemoOptimization() {
       return {
         shouldShowSignup: true, // Changed from shouldShowUpgrade
         signupReason: 'engagement',
-        signupMessage: 'You\'re clearly loving this tool! Ready to unlock unlimited access?',
+        signupMessage: 'You\'re clearly loving this tool! Ready to unlock premium access?',
         signupUrgency: 'medium',
       };
     }

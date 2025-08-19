@@ -12,8 +12,8 @@ interface UpgradeModalProps {
 }
 
 export default function UpgradeModal({ isOpen, onClose, source = 'dashboard' }: UpgradeModalProps) {
-  const [selectedPlan, setSelectedPlan] = useState<'creator' | 'agency'>('creator');
-  const { isUpgrading, error, upgradeToCreatorMonthly, upgradeToAgencyMonthly, clearError } = useUpgrade();
+  const [selectedPlan, setSelectedPlan] = useState<'starter' | 'agency'>('starter');
+  const { isUpgrading, error, upgradeToStarterMonthly, upgradeToAgencyMonthly, clearError } = useUpgrade();
 
   // Clear error when modal opens
   useEffect(() => {
@@ -24,8 +24,8 @@ export default function UpgradeModal({ isOpen, onClose, source = 'dashboard' }: 
 
   const handleUpgrade = async () => {
     // Use appropriate checkout flow based on selected plan
-    const checkoutUrl = selectedPlan === 'creator' 
-      ? await upgradeToCreatorMonthly() 
+    const checkoutUrl = selectedPlan === 'starter' 
+      ? await upgradeToStarterMonthly() 
       : await upgradeToAgencyMonthly();
     
     if (checkoutUrl) {
@@ -39,21 +39,21 @@ export default function UpgradeModal({ isOpen, onClose, source = 'dashboard' }: 
       case 'limit_reached':
         return {
           title: '🎯 Ready for More?',
-          subtitle: 'You\'ve hit your daily limit - time to unlock unlimited access!',
+          subtitle: 'You\'ve hit your daily limit - time to unlock premium access!',
           urgency: 'Don\'t lose momentum - upgrade now and keep creating',
-          cta: 'Unlock Unlimited Access',
+          cta: 'Unlock Premium Access',
         };
       case 'feature_gate':
         return {
           title: '🚀 You\'re Loving This Tool!',
-          subtitle: 'Ready to unlock advanced features and unlimited generations?',
-          urgency: 'Join 1,000+ Pro creators making $10K+/month',
+          subtitle: 'Ready to unlock advanced features and 200 generations per month?',
+          urgency: 'Join 1,000+ Pro users making $10K+/month',
           cta: 'Upgrade to Pro',
         };
       case 'nav':
         return {
           title: '👑 Start Your Pro Journey',
-          subtitle: 'Unlock your full creative potential with unlimited access',
+          subtitle: 'Unlock your full creative potential with premium access',
           urgency: 'Limited time: Save 40% on yearly plans',
           cta: 'Get Started',
         };
@@ -70,27 +70,27 @@ export default function UpgradeModal({ isOpen, onClose, source = 'dashboard' }: 
   const content = getModalContent();
 
   const plans = {
-    creator: {
-      name: 'Creator',
-      price: 29,
-      dailyPrice: 0.97,
+    starter: {
+      name: 'Starter',
+      price: 19,
+      dailyPrice: 0.63,
       billing: 'per month',
-      description: 'Perfect for individual creators'
+              description: 'Perfect for individual creators and marketers'
     },
     agency: {
       name: 'Agency',
-      price: 79,
-      dailyPrice: 2.63,
+      price: 129,
+      dailyPrice: 4.30,
       billing: 'per month',
       description: 'Built for agencies and teams'
     }
   };
 
-  // Default to Pro for upgrade modals
-  const recommendedPlan = 'creator';
+  // Default to Starter for upgrade modals
+  const recommendedPlan = 'starter';
 
   const features = [
-    { icon: Zap, text: 'Unlimited ad generations', highlight: true },
+    { icon: Zap, text: '200 ad generations per month', highlight: true },
     { icon: TrendingUp, text: 'Advanced performance analytics', highlight: true },
     { icon: Crown, text: 'Batch generation (10+ ads at once)', highlight: true },
     { icon: Shield, text: 'Priority customer support', highlight: false },
@@ -137,7 +137,7 @@ export default function UpgradeModal({ isOpen, onClose, source = 'dashboard' }: 
                 {Object.entries(plans).map(([planKey, plan]) => (
                   <button
                     key={planKey}
-                    onClick={() => setSelectedPlan(planKey as 'creator' | 'agency')}
+                    onClick={() => setSelectedPlan(planKey as 'starter' | 'agency')}
                     className={`py-3 px-2 rounded-lg font-medium transition-all text-center ${
                       selectedPlan === planKey
                         ? 'bg-white text-gray-900 shadow-sm'
@@ -202,7 +202,7 @@ export default function UpgradeModal({ isOpen, onClose, source = 'dashboard' }: 
                 <p className="text-sm text-gray-600 italic mb-2">
                   "Upgraded to Pro and 10x'd my ad performance in 30 days. Best investment ever!"
                 </p>
-                <p className="text-xs text-gray-500">- Sarah K, Fitness Creator</p>
+                <p className="text-xs text-gray-500">- Sarah K, Fitness Creator & Marketer</p>
               </div>
             </div>
 
@@ -244,7 +244,7 @@ export default function UpgradeModal({ isOpen, onClose, source = 'dashboard' }: 
                 🔒 Secure payment • 💳 Cancel anytime • 🚀 Instant activation
               </p>
               <p className="text-xs text-gray-500">
-                Trusted by <span className="font-medium">1,000+ creators</span> worldwide
+                Trusted by <span className="font-medium">1,000+ users</span> worldwide
               </p>
             </div>
           </div>

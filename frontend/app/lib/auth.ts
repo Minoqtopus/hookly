@@ -1,7 +1,7 @@
 export interface User {
   id: string;
   email: string;
-  plan: 'trial' | 'creator' | 'agency';
+  plan: 'trial' | 'starter' | 'pro' | 'agency';
   auth_provider: 'email' | 'google';
   avatar_url?: string;
   is_verified: boolean;

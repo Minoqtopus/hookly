@@ -3,40 +3,67 @@
 import AuthModal from '@/app/components/AuthModal';
 import BetaBadge from '@/app/components/BetaBadge';
 import { useAuth } from '@/app/lib/AppContext';
-import { getPlanConfig, getTrialLimit } from '@/app/lib/plans';
-import { ArrowLeft, Check, Crown, Sparkles, Star, Zap } from 'lucide-react';
+import { getTrialLimit } from '@/app/lib/plans';
+import { ArrowLeft, Check, Sparkles, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
 export default function PricingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<'creator' | 'agency'>('creator');
+  const [selectedPlan, setSelectedPlan] = useState<'STARTER' | 'PRO' | 'AGENCY'>('STARTER');
   const { isAuthenticated, user } = useAuth();
 
-  // Use centralized plan configuration - no hardcoded values
-  const creatorConfig = getPlanConfig('creator');
-  const agencyConfig = getPlanConfig('agency');
-  
+  // Plans configuration - updated to reflect new pricing strategy
   const plans = [
     {
-      id: 'creator',
-      name: creatorConfig?.displayName || 'Creator Plan',
-      price: creatorConfig?.price.monthly || null,
-      description: 'Perfect for individual creators and small businesses',
-      features: creatorConfig?.features || ['Plan features loading...'],
-      popular: creatorConfig?.isPopular || false,
-      cta: 'Start Creator Plan',
-      icon: Star
+      name: 'STARTER',
+      price: '$19',
+      period: '/month',
+              description: 'Perfect for individual creators, marketers, and small businesses',
+      features: [
+        '50 generations per month',
+        'TikTok + X platform support',
+        '15+ templates',
+        'Basic analytics',
+        'Email support'
+      ],
+      generationLimit: 50,
+      popular: false
     },
     {
-      id: 'agency',
-      name: agencyConfig?.displayName || 'Agency Plan',
-      price: agencyConfig?.price.monthly || null,
-      description: 'Built for agencies and teams managing multiple clients',
-      features: agencyConfig?.features || ['Plan features loading...'],
-      popular: agencyConfig?.isPopular || true,
-      cta: 'Start Agency Plan',
-      icon: Crown
+      name: 'PRO',
+      price: '$59',
+      period: '/month',
+      description: 'Ideal for growing businesses and marketing teams',
+      features: [
+        '200 generations per month',
+        'TikTok + X + Instagram support',
+        '50+ templates',
+        'Batch generation (up to 10)',
+        'Advanced analytics',
+        'Team collaboration (up to 3 users)',
+        'Priority support'
+      ],
+      generationLimit: 200,
+      popular: true
+    },
+    {
+      name: 'AGENCY',
+      price: '$129',
+      period: '/month',
+      description: 'Built for agencies and enterprise teams',
+      features: [
+        '500 generations per month',
+        'All platforms + API access',
+        '100+ templates',
+        'Batch generation (up to 25)',
+        'Advanced analytics + team insights',
+        'Team collaboration (up to 10 users)',
+        'White-label options',
+        'Dedicated support'
+      ],
+      generationLimit: 500,
+      popular: false
     }
   ];
 
@@ -67,7 +94,7 @@ export default function PricingPage() {
     }
   ];
 
-  const handleSelectPlan = (planId: 'creator' | 'agency') => {
+  const handleSelectPlan = (planId: 'STARTER' | 'PRO' | 'AGENCY') => {
     setSelectedPlan(planId);
     
     if (!isAuthenticated) {
@@ -76,19 +103,21 @@ export default function PricingPage() {
     }
     
     // Beta users already have Agency plan for free
-    if (user?.is_beta_user && planId === 'agency') {
+    if (user?.is_beta_user && planId === 'AGENCY') {
       window.location.href = '/dashboard?welcome=beta';
       return;
     }
     
     // Redirect to upgrade flow for authenticated users
-    window.location.href = `/upgrade?plan=${planId}`;
+    window.location.href = `/upgrade?plan=${planId.toLowerCase()}`;
   };
 
   const getTriggerSource = () => {
-    if (selectedPlan === 'creator') {
-      return 'creator_plan_signup';
-    } else if (selectedPlan === 'agency') {
+    if (selectedPlan === 'STARTER') {
+      return 'starter_plan_signup';
+    } else if (selectedPlan === 'PRO') {
+      return 'pro_plan_signup';
+    } else if (selectedPlan === 'AGENCY') {
       return 'agency_plan_signup';
     }
     return 'pricing_page';
@@ -157,7 +186,7 @@ export default function PricingPage() {
         <div className="grid lg:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
           {plans.map((plan) => (
             <div
-              key={plan.id}
+              key={plan.name}
               className={`relative bg-white rounded-2xl shadow-lg border-2 p-8 ${
                 plan.popular 
                   ? 'border-primary-500 ring-4 ring-primary-100' 
@@ -174,16 +203,13 @@ export default function PricingPage() {
               
               {/* Plan Header */}
               <div className="text-center mb-8">
-                <plan.icon className={`h-10 w-10 mx-auto mb-4 ${
-                  plan.popular ? 'text-primary-600' : 'text-gray-600'
-                }`} />
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                 <p className="text-gray-600">{plan.description}</p>
               </div>
 
               {/* Price */}
               <div className="text-center mb-8">
-                {user?.is_beta_user && plan.id === 'agency' ? (
+                {user?.is_beta_user && plan.name === 'AGENCY' ? (
                   <div>
                     <div className="flex items-baseline justify-center">
                       <span className="text-4xl font-bold text-green-600">FREE</span>
@@ -191,25 +217,15 @@ export default function PricingPage() {
                     <p className="text-sm text-green-600 mt-1 font-medium">
                       🎉 Beta Tester Exclusive
                     </p>
-                    {plan.price && (
-                      <p className="text-xs text-gray-500 line-through mt-1">
-                        Regular price: ${plan.price}/month
-                      </p>
-                    )}
                   </div>
                 ) : (
                   <div>
                     <div className="flex items-baseline justify-center">
                       <span className="text-4xl font-bold text-gray-900">
-                        {plan.price ? `$${plan.price}` : 'Loading...'}
+                        {plan.price}
                       </span>
-                      <span className="text-gray-500 ml-1">/month</span>
+                      <span className="text-gray-500 ml-1">{plan.period}</span>
                     </div>
-                    {plan.price && (
-                      <p className="text-sm text-gray-500 mt-1">
-                        ${(plan.price * 12 * 0.83).toFixed(0)}/month billed annually
-                      </p>
-                    )}
                   </div>
                 )}
               </div>
@@ -226,18 +242,18 @@ export default function PricingPage() {
 
               {/* CTA Button */}
               <button
-                onClick={() => handleSelectPlan(plan.id as 'creator' | 'agency')}
+                onClick={() => handleSelectPlan(plan.name as 'STARTER' | 'PRO' | 'AGENCY')}
                 className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
                   plan.popular
                     ? 'bg-primary-600 text-white hover:bg-primary-700'
                     : 'bg-gray-900 text-white hover:bg-gray-800'
                 }`}
               >
-                {plan.cta}
+                {plan.name} Plan
               </button>
               
               <p className="text-center text-sm text-gray-500 mt-3">
-                7-day free trial included
+                Generation Limit: {plan.generationLimit}
               </p>
             </div>
           ))}
@@ -262,14 +278,14 @@ export default function PricingPage() {
             </div>
             
             <div className="bg-primary-50 rounded-lg p-6 border-2 border-primary-200">
-              <h3 className="font-semibold text-primary-900 mb-2">Hookly Creator</h3>
-              <div className="text-3xl font-bold text-primary-900 mb-1">$0.19</div>
+              <h3 className="font-semibold text-primary-900 mb-2">Hookly Starter</h3>
+              <div className="text-3xl font-bold text-primary-900 mb-1">$0.38</div>
               <div className="text-sm text-primary-700">per generation</div>
             </div>
             
             <div className="bg-purple-50 rounded-lg p-6">
               <h3 className="font-semibold text-purple-900 mb-2">Hookly Agency</h3>
-              <div className="text-3xl font-bold text-purple-900 mb-1">$0.16</div>
+              <div className="text-3xl font-bold text-purple-900 mb-1">$0.26</div>
               <div className="text-sm text-purple-700">per generation</div>
             </div>
           </div>
@@ -307,7 +323,7 @@ export default function PricingPage() {
               Ready to Create Viral Ads?
             </h2>
             <p className="text-xl mb-6 opacity-90">
-              Join thousands of creators who trust Hookly to generate high-converting ad scripts
+              Join thousands of creators and marketers who trust Hookly to generate high-converting ad scripts
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/demo" className="bg-white/20 backdrop-blur-sm border-2 border-white/30 text-white font-semibold px-8 py-3 rounded-xl hover:bg-white/30 transition-all duration-200">

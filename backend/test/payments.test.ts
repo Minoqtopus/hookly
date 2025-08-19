@@ -1,11 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PaymentsService } from '../src/payments/payments.service';
-import { PaymentsController } from '../src/payments/payments.controller';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { User, UserPlan } from '../src/entities/user.entity';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { AnalyticsService } from '../src/analytics/analytics.service';
+import { User, UserPlan } from '../src/entities/user.entity';
+import { PaymentsController } from '../src/payments/payments.controller';
+import { PaymentsService } from '../src/payments/payments.service';
 
 describe('PaymentsService', () => {
   let service: PaymentsService;
@@ -15,7 +16,7 @@ describe('PaymentsService', () => {
   const mockUser = {
     id: 'user-1',
     email: 'test@example.com',
-    plan: UserPlan.FREE,
+    plan: UserPlan.TRIAL,
     daily_count: 0,
     reset_date: new Date(),
   };
@@ -30,6 +31,11 @@ describe('PaymentsService', () => {
     get: jest.fn(),
   };
 
+  const mockAnalyticsService = {
+    trackEvent: jest.fn(),
+    trackConversion: jest.fn(),
+  } as Partial<AnalyticsService> as AnalyticsService;
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -41,6 +47,10 @@ describe('PaymentsService', () => {
         {
           provide: ConfigService,
           useValue: mockConfigService,
+        },
+        {
+          provide: AnalyticsService,
+          useValue: mockAnalyticsService,
         },
       ],
     }).compile();
@@ -160,12 +170,12 @@ describe('PaymentsService', () => {
 
       const proUser = { ...mockUser, plan: UserPlan.PRO };
       mockUserRepository.findOne.mockResolvedValue(proUser);
-      mockUserRepository.save.mockResolvedValue({ ...proUser, plan: UserPlan.FREE });
+      mockUserRepository.save.mockResolvedValue({ ...proUser, plan: UserPlan.TRIAL });
 
       await service.handleWebhook(webhookPayload);
 
       expect(mockUserRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({ plan: UserPlan.FREE })
+        expect.objectContaining({ plan: UserPlan.TRIAL })
       );
     });
 
@@ -228,10 +238,10 @@ describe('PaymentsService', () => {
 
   describe('Promo Codes', () => {
     test('should apply valid promo code', async () => {
-      const freeUser = { ...mockUser, plan: UserPlan.FREE };
-      mockUserRepository.findOne.mockResolvedValue(freeUser);
-      mockUserRepository.save.mockResolvedValue({
-        ...freeUser,
+      const trialUser = { ...mockUser, plan: UserPlan.TRIAL };
+              mockUserRepository.findOne.mockResolvedValue(trialUser);
+        mockUserRepository.save.mockResolvedValue({
+          ...trialUser,
         plan: UserPlan.STARTER,
       });
 
@@ -264,7 +274,7 @@ describe('PaymentsService', () => {
 
   describe('Plan Hierarchy Validation', () => {
     test('should allow upgrades', () => {
-      const isValid = service['isValidPlanTransition'](UserPlan.FREE, UserPlan.PRO);
+      const isValid = service['isValidPlanTransition'](UserPlan.TRIAL, UserPlan.PRO);
       expect(isValid).toBe(true);
     });
 
@@ -274,7 +284,7 @@ describe('PaymentsService', () => {
     });
 
     test('should prevent downgrades', () => {
-      const isValid = service['isValidPlanTransition'](UserPlan.PRO, UserPlan.FREE);
+      const isValid = service['isValidPlanTransition'](UserPlan.PRO, UserPlan.TRIAL);
       expect(isValid).toBe(false);
     });
   });

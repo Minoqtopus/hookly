@@ -1,13 +1,13 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { User, UserPlan } from '../entities/user.entity';
-import { LemonSqueezyWebhookDto } from './dto/webhook.dto';
-import { updateUserPlanFeatures } from '../entities/plan-features.util';
+import { InjectRepository } from '@nestjs/typeorm';
+import * as crypto from 'crypto';
+import { Repository } from 'typeorm';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { EventType } from '../entities/analytics-event.entity';
-import * as crypto from 'crypto';
+import { updateUserPlanFeatures } from '../entities/plan-features.util';
+import { User, UserPlan } from '../entities/user.entity';
+import { LemonSqueezyWebhookDto } from './dto/webhook.dto';
 
 @Injectable()
 export class PaymentsService {
@@ -16,8 +16,10 @@ export class PaymentsService {
   // Map LemonSqueezy product IDs to user plans
   private readonly PRODUCT_PLAN_MAPPING = {
     // Replace these with your actual LemonSqueezy product IDs
-    'creator_monthly': UserPlan.CREATOR,
-    'creator_yearly': UserPlan.CREATOR,
+    'starter_monthly': UserPlan.STARTER,
+    'starter_yearly': UserPlan.STARTER,
+    'pro_monthly': UserPlan.PRO,
+    'pro_yearly': UserPlan.PRO,
     'agency_monthly': UserPlan.AGENCY,
     'agency_yearly': UserPlan.AGENCY,
   };
@@ -182,13 +184,15 @@ export class PaymentsService {
     
     if (fullName.includes('agency')) {
       return UserPlan.AGENCY;
-    } else if (fullName.includes('creator')) {
-      return UserPlan.CREATOR;
+    } else if (fullName.includes('pro')) {
+      return UserPlan.PRO;
+    } else if (fullName.includes('starter')) {
+      return UserPlan.STARTER;
     }
 
-    // Default to CREATOR for backwards compatibility
-    this.logger.warn(`Could not determine plan from product data. Defaulting to CREATOR. Product: ${productName}, Variant: ${variantName}`);
-    return UserPlan.CREATOR;
+    // Default to PRO when uncertain to avoid under-provisioning features
+    this.logger.warn(`Could not determine plan from product data. Defaulting to PRO. Product: ${productName}, Variant: ${variantName}`);
+    return UserPlan.PRO;
   }
 
   private async upgradeUserToPlan(user: User, plan: UserPlan): Promise<void> {
@@ -217,22 +221,23 @@ export class PaymentsService {
     // Map plans to their monthly equivalent prices
     const prices = {
       [UserPlan.TRIAL]: 0,
-      [UserPlan.CREATOR]: 29,
-      [UserPlan.AGENCY]: 99,
+      [UserPlan.STARTER]: 19,
+      [UserPlan.PRO]: 59,
+      [UserPlan.AGENCY]: 129,
     };
     return prices[plan] || 0;
   }
 
-  // Legacy method - defaults to Creator for backwards compatibility
-  private async upgradeUserToCreator(user: User): Promise<void> {
-    await this.upgradeUserToPlan(user, UserPlan.CREATOR);
-  }
+
 
   private async downgradeUserToTrial(user: User): Promise<void> {
     updateUserPlanFeatures(user, UserPlan.TRIAL);
     // Reset monthly count to apply trial tier limits immediately
     const today = new Date().toISOString().split('T')[0];
-    if (user.reset_date.toISOString().split('T')[0] !== today) {
+    
+    // Ensure reset_date is a Date object
+    const resetDate = user.reset_date instanceof Date ? user.reset_date : new Date(user.reset_date);
+    if (resetDate.toISOString().split('T')[0] !== today) {
       user.monthly_count = 0;
       user.reset_date = new Date();
     }
@@ -257,7 +262,7 @@ export class PaymentsService {
 
   // Get plan hierarchy for validation
   private getPlanHierarchy(): UserPlan[] {
-    return [UserPlan.TRIAL, UserPlan.CREATOR, UserPlan.AGENCY];
+    return [UserPlan.TRIAL, UserPlan.STARTER, UserPlan.PRO, UserPlan.AGENCY];
   }
 
   // Check if plan transition is valid (can only upgrade, not downgrade via payments)
@@ -279,21 +284,23 @@ export class PaymentsService {
 
     // Define promo codes and their benefits
     const promoCodes = {
-      'CREATOR50': { plan: UserPlan.CREATOR, description: 'Launch Special - 50% off Creator' },
-      'BETA_AGENCY': { plan: UserPlan.AGENCY, description: 'Beta Tester - Free Agency Access', isBeta: true },
+      'STARTER50': { plan: UserPlan.STARTER, description: 'Launch Special - 50% off Starter' },
+      'LAUNCH50': { plan: UserPlan.STARTER, description: 'Launch Special - 50% off Starter' },
+      'BETA_PRO': { plan: UserPlan.PRO, description: 'Beta Tester - 30 Days Free PRO Access', isBeta: true, duration: 30 },
       'AGENCY30': { plan: UserPlan.AGENCY, description: 'Agency Trial - 30 days free' },
-    };
+    } as const;
 
-    const promo = promoCodes[promoCode.toUpperCase()];
+    const promo = promoCodes[promoCode.toUpperCase() as keyof typeof promoCodes];
     if (!promo) {
       return { success: false, message: 'Invalid promo code' };
     }
 
-    // Special handling for beta users with BETA_AGENCY promo code
-    if (promo.isBeta && promoCode.toUpperCase() === 'BETA_AGENCY') {
-      user.is_beta_user = true;
+    // Special handling for beta users with BETA_PRO promo code
+    if ((promo as any).isBeta && promoCode.toUpperCase() === 'BETA_PRO') {
+      (user as any).is_beta_user = true;
+      (user as any).beta_expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
       await this.upgradeUserToPlan(user, promo.plan);
-      this.logger.log(`Beta promo code applied: User ${user.email} marked as beta user and upgraded to ${promo.plan}`);
+      this.logger.log(`Beta promo code applied: User ${user.email} marked as beta user and upgraded to ${promo.plan} for 30 days`);
     } else {
       // Check if this is a valid upgrade for regular promo codes
       if (!this.isValidPlanTransition(user.plan, promo.plan)) {

@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { CheckCircle, Sparkles, ArrowRight, X } from 'lucide-react';
 import { AuthService } from '@/app/lib/auth';
+import { ArrowRight, CheckCircle, Sparkles, X } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 
 function AuthCallbackPageContent() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -147,7 +147,7 @@ function AuthCallbackPageContent() {
         <div className="bg-gradient-to-r from-primary-50 to-secondary-50 rounded-lg p-4 mb-6">
           <h3 className="font-semibold text-gray-900 mb-2">What's next?</h3>
           <ul className="text-sm text-gray-700 space-y-1 text-left">
-            <li>✨ Create unlimited ad variations</li>
+            <li>✨ Create 200 ad variations per month</li>
             <li>📊 Track your ad performance</li>
             <li>💾 Save and organize your favorites</li>
             <li>🚀 Access advanced features</li>

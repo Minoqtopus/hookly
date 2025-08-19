@@ -1,11 +1,11 @@
-import { Injectable, ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
-import { User, UserPlan } from '../entities/user.entity';
+import { MoreThan, Repository } from 'typeorm';
 import { Generation } from '../entities/generation.entity';
+import { User, UserPlan } from '../entities/user.entity';
 import { OpenAIService } from '../openai/openai.service';
-import { GenerateDto } from './dto/generate.dto';
 import { GenerateVariationsDto } from './dto/generate-variations.dto';
+import { GenerateDto } from './dto/generate.dto';
 import { GuestGenerateDto } from './dto/guest-generate.dto';
 
 @Injectable()
@@ -28,8 +28,11 @@ export class GenerationService {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-    const resetMonth = user.reset_date.getMonth();
-    const resetYear = user.reset_date.getFullYear();
+    
+    // Ensure reset_date is a Date object
+    const resetDate = user.reset_date instanceof Date ? user.reset_date : new Date(user.reset_date);
+    const resetMonth = resetDate.getMonth();
+    const resetYear = resetDate.getFullYear();
     
     if (currentMonth !== resetMonth || currentYear !== resetYear) {
       // Reset monthly count if it's a new month
@@ -54,14 +57,15 @@ export class GenerationService {
       
       // Check trial generation limit (15 total generations over 7 days)
       if (user.trial_generations_used >= 15) {
-        throw new ForbiddenException('Trial generation limit of 15 reached. Upgrade to Creator plan for 150 generations/month.');
+        throw new ForbiddenException('Trial generation limit of 15 reached. Upgrade to Starter plan for 50 generations/month.');
       }
     }
 
     // Check monthly limits for paid plans
     const monthlyLimits = {
       [UserPlan.TRIAL]: 15, // 15 total during trial period
-      [UserPlan.CREATOR]: 150,
+      [UserPlan.STARTER]: 50,
+      [UserPlan.PRO]: 200,
       [UserPlan.AGENCY]: 500
     };
 
@@ -69,8 +73,10 @@ export class GenerationService {
     const currentCount = user.plan === UserPlan.TRIAL ? user.trial_generations_used : user.monthly_count;
     
     if (limit && currentCount >= limit) {
-      const upgradeMessage = user.plan === UserPlan.CREATOR 
-        ? 'Monthly generation limit of 150 reached. Upgrade to Agency for 500 generations/month.'
+      const upgradeMessage = user.plan === UserPlan.STARTER 
+        ? 'Monthly generation limit of 50 reached. Upgrade to Pro for 200 generations/month.'
+        : user.plan === UserPlan.PRO
+        ? 'Monthly generation limit of 200 reached. Upgrade to Agency for 500 generations/month.'
         : 'Generation limit reached. Please upgrade your plan.';
       throw new ForbiddenException(upgradeMessage);
     }
@@ -122,7 +128,7 @@ export class GenerationService {
     }
 
     try {
-      // Add watermark for trial users
+      // Add watermark for trial users only
       let output = generatedContent;
       if (user.plan === UserPlan.TRIAL) {
         output = {
@@ -131,7 +137,7 @@ export class GenerationService {
           hook: generatedContent.hook + ' [Generated with Hookly Trial]',
         };
       }
-      // Creator and Agency plans get no watermarks
+      // STARTER, PRO, and AGENCY plans get no watermarks
 
       // Save generation to database with metadata
       const generation = this.generationRepository.create({
@@ -292,8 +298,11 @@ export class GenerationService {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-    const resetMonth = user.reset_date.getMonth();
-    const resetYear = user.reset_date.getFullYear();
+    
+    // Ensure reset_date is a Date object
+    const resetDate = user.reset_date instanceof Date ? user.reset_date : new Date(user.reset_date);
+    const resetMonth = resetDate.getMonth();
+    const resetYear = resetDate.getFullYear();
     
     if (currentMonth !== resetMonth || currentYear !== resetYear) {
       user.monthly_count = 0;
@@ -303,7 +312,8 @@ export class GenerationService {
 
     const monthlyLimits = {
       [UserPlan.TRIAL]: 3,
-      [UserPlan.CREATOR]: 150,
+      [UserPlan.STARTER]: 50,
+      [UserPlan.PRO]: 200,
       [UserPlan.AGENCY]: 500
     };
 

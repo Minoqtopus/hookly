@@ -1,18 +1,18 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  CheckCircle, 
-  Heart,
-  ArrowRight,
-  Star,
-  Gift,
-  Mail,
-  Calendar
-} from 'lucide-react';
 import { useApp } from '@/app/lib/AppContext';
+import {
+  ArrowRight,
+  Calendar,
+  CheckCircle,
+  Gift,
+  Heart,
+  Mail,
+  Star
+} from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function CancelledPage() {
   const router = useRouter();
@@ -41,7 +41,7 @@ export default function CancelledPage() {
     {
       title: "Free Pro Strategy Session",
       description: "1-on-1 session to maximize your ad performance",
-      value: "Worth $297",
+              value: "Worth $150",
       action: "Book Now"
     }
   ];
@@ -180,7 +180,7 @@ export default function CancelledPage() {
               <Star className="h-8 w-8 text-yellow-500 mx-auto mb-3" />
               <h3 className="font-semibold text-gray-900 mb-2">Community</h3>
               <p className="text-gray-600 text-sm mb-4">
-                Join our free community of creators
+                Join our free community of creators and marketers
               </p>
               <Link href="/community" className="text-yellow-600 hover:text-yellow-700 font-medium text-sm">
                 Join Community

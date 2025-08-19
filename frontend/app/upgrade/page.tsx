@@ -25,7 +25,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
 function UpgradePageContent() {
-  const [selectedPlan, setSelectedPlan] = useState<'creator' | 'agency'>('creator'); // Default to creator for better value
+  const [selectedPlan, setSelectedPlan] = useState<'starter' | 'agency'>('starter'); // Default to starter for better value
   const [showTestimonials, setShowTestimonials] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   
@@ -33,7 +33,7 @@ function UpgradePageContent() {
   const searchParams = useSearchParams();
   const source = searchParams.get('source') || 'direct';
   const { user, isAuthenticated } = useAuth();
-  const { isUpgrading, error, upgradeToCreatorMonthly, upgradeToAgencyMonthly, clearError } = useUpgrade();
+  const { isUpgrading, error, upgradeToStarterMonthly, upgradeToAgencyMonthly, clearError } = useUpgrade();
 
   // Redirect non-authenticated users
   useEffect(() => {
@@ -55,8 +55,8 @@ function UpgradePageContent() {
 
   const handleUpgrade = async () => {
     // Use appropriate checkout flow based on selected plan
-    const checkoutUrl = selectedPlan === 'creator' 
-      ? await upgradeToCreatorMonthly() 
+    const checkoutUrl = selectedPlan === 'starter' 
+                        ? await upgradeToStarterMonthly() 
       : await upgradeToAgencyMonthly();
     
     if (checkoutUrl) {
@@ -90,10 +90,10 @@ function UpgradePageContent() {
         };
       case 'generator':
         return {
-          headline: "Love That Ad? Create Unlimited More! 🚀",
-          subheadline: "Join 1,000+ Pro creators generating millions in ad revenue",
+          headline: "Love That Ad? Create 200+ More! 🚀",
+          subheadline: "Join 1,000+ Pro users generating millions in ad revenue",
           urgency: "Limited time: Save 40% on yearly plans",
-          cta: "Unlock Unlimited Power"
+          cta: "Unlock Pro Power"
         };
       case 'dashboard':
         return {
@@ -104,8 +104,8 @@ function UpgradePageContent() {
         };
       default:
         return {
-          headline: "Create Unlimited Viral Ads 🔥",
-          subheadline: "Join the creators making $100K+ with AI-generated UGC ads",
+          headline: "Create 200+ Viral Ads 🔥",
+          subheadline: "Join the users making $100K+ with AI-generated UGC ads",
           urgency: "Limited time: Save 40% on yearly plans",
           cta: "Start Free Trial"
         };
@@ -115,19 +115,19 @@ function UpgradePageContent() {
   const content = getSourceContent();
 
   // Use centralized plan configuration - no hardcoded values
-  const creatorConfig = getPlanConfig('creator');
+  const starterConfig = getPlanConfig('starter');
   const agencyConfig = getPlanConfig('agency');
   
   const plans = {
-    creator: {
-      name: creatorConfig?.displayName || 'Creator Plan',
-      price: creatorConfig?.price.monthly || null,
-      dailyPrice: creatorConfig?.price.monthly ? (creatorConfig.price.monthly / 30).toFixed(2) : null,
+    starter: {
+      name: starterConfig?.displayName || 'Starter Plan',
+      price: starterConfig?.price.monthly || null,
+      dailyPrice: starterConfig?.price.monthly ? (starterConfig.price.monthly / 30).toFixed(2) : null,
       billing: 'per month',
-      description: 'Perfect for individual creators',
-      generationsLimit: creatorConfig?.generationsPerMonth || null,
+              description: 'Perfect for individual creators and marketers',
+      generationsLimit: starterConfig?.generationsPerMonth || null,
       popular: false,
-      features: creatorConfig?.features || ['Plan features loading...']
+      features: starterConfig?.features || ['Plan features loading...']
     },
     agency: {
       name: agencyConfig?.displayName || 'Agency Plan',
@@ -144,7 +144,7 @@ function UpgradePageContent() {
   const features = [
     { 
       icon: Zap, 
-      title: 'Unlimited Ad Generations', 
+      title: '200 Ad Generations per Month', 
       description: 'Generate as many viral ads as you need - no daily limits',
       highlight: true 
     },
@@ -209,15 +209,15 @@ function UpgradePageContent() {
     },
     {
       name: "Emily Rodriguez", 
-      title: "TikTok Creator",
-      content: "Went from 10K to 500K followers using Pro. The unlimited generations let me test so many variations. Game changer!",
+              title: "TikTok Creator & Marketer",
+              content: "Went from 10K to 500K followers using Pro. The 200 generations per month let me test so many variations. Game changer!",
       rating: 5,
       revenue: "500K followers"
     }
   ];
 
   const comparisonData = [
-    { feature: "Daily generations", free: "3", pro: "Unlimited" },
+    { feature: "Monthly generations", free: "15", pro: "200" },
     { feature: "Watermarks", free: "Yes", pro: "None" },
     { feature: "Performance analytics", free: "Basic", pro: "Advanced" },
     { feature: "Batch generation", free: "No", pro: "Yes (10+)" },
@@ -323,7 +323,7 @@ function UpgradePageContent() {
                     <span className="text-lg font-normal text-gray-600">/day</span>
                   </div>
                   <p className="text-gray-600 mb-1">
-                    {plan.price ? (planKey === 'creator' ? 'Less than a coffee ☕' : 'Less than a lunch 🍕') : 'Price loading...'}
+                    {plan.price ? (planKey === 'starter' ? 'Less than a coffee ☕' : 'Less than a lunch 🍕') : 'Price loading...'}
                   </p>
                   <p className="text-sm text-gray-500">({plan.price ? `$${plan.price}` : 'Loading...'}/month)</p>
                   
@@ -345,7 +345,7 @@ function UpgradePageContent() {
                 </ul>
                 
                 <button
-                  onClick={() => setSelectedPlan(planKey as 'creator' | 'agency')}
+                                      onClick={() => setSelectedPlan(planKey as 'starter' | 'agency')}
                   className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
                     selectedPlan === planKey
                       ? 'bg-primary-600 text-white shadow-lg'
@@ -450,7 +450,7 @@ function UpgradePageContent() {
 
         {/* Final CTA */}
         <div className="bg-gradient-to-r from-primary-600 to-secondary-600 rounded-2xl p-8 text-center text-white">
-          <h2 className="text-3xl font-bold mb-4">Ready to Join 1,000+ Pro Creators?</h2>
+          <h2 className="text-3xl font-bold mb-4">Ready to Join 1,000+ Pro Users?</h2>
           <p className="text-xl text-primary-100 mb-8">
             Start your 7-day free trial today. Cancel anytime.
           </p>

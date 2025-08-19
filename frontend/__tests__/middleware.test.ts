@@ -3,19 +3,33 @@
  * Tests route protection and navigation logic
  */
 
+// Mock NextResponse and NextRequest with hoisted mocks
+jest.mock('next/server', () => ({
+  NextResponse: {
+    redirect: jest.fn(),
+    next: jest.fn(),
+  },
+  NextRequest: jest.fn().mockImplementation((url) => ({
+    url,
+    nextUrl: {
+      pathname: new URL(url).pathname,
+    },
+    cookies: {
+      get: jest.fn(),
+    },
+    headers: {
+      get: jest.fn(),
+    },
+  })),
+}));
+
 import { NextRequest } from 'next/server';
 import { middleware } from '../middleware';
 
-// Mock NextResponse
-const mockRedirect = jest.fn();
-const mockNext = jest.fn();
-
-jest.mock('next/server', () => ({
-  NextResponse: {
-    redirect: mockRedirect,
-    next: mockNext,
-  },
-}));
+// Get the mocked functions
+const { NextResponse } = require('next/server');
+const mockRedirect = NextResponse.redirect;
+const mockNext = NextResponse.next;
 
 describe('Middleware', () => {
   beforeEach(() => {

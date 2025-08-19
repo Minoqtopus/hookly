@@ -13,7 +13,7 @@ interface AuthModalProps {
     targetAudience: string;
     generatedAd: any;
   };
-  triggerSource?: 'demo_save' | 'try_again' | 'nav_signup' | 'login' | 'creator_plan_signup' | 'agency_plan_signup' | 'pricing_page';
+  triggerSource?: 'demo_save' | 'try_again' | 'nav_signup' | 'login' | 'agency_plan_signup' | 'starter_plan_signup' | 'pro_plan_signup' | 'pricing_page';
 }
 
 export default function AuthModal({ isOpen, onClose, demoData, triggerSource = 'demo_save' }: AuthModalProps) {

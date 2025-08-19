@@ -220,10 +220,10 @@ export class ApiClient {
   }
 
   // User plan endpoints
-  static async upgradeToCreator(checkoutData: any): Promise<{ checkout_url: string }> {
-    return this.makeRequest<{ checkout_url: string }>('/user/upgrade/creator', {
+  static async upgradeToStarter(checkoutData: any): Promise<{ checkout_url: string }> {
+    return this.makeRequest<{ checkout_url: string }>('/user/upgrade/starter', {
       method: 'POST',
-      body: JSON.stringify(checkoutData),
+      body: checkoutData,
     });
   }
 
@@ -234,9 +234,11 @@ export class ApiClient {
     });
   }
 
-  // Legacy method for backward compatibility
   static async upgradeToPro(checkoutData: any): Promise<{ checkout_url: string }> {
-    return this.upgradeToCreator(checkoutData);
+    return this.makeRequest<{ checkout_url: string }>('/user/upgrade/pro', {
+      method: 'POST',
+      body: checkoutData,
+    });
   }
 
   static async cancelSubscription(): Promise<void> {

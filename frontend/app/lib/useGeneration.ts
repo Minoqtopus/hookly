@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { ApiClient, GenerateRequest, GuestGenerateRequest, GenerateResponse, ApiErrorClass } from './api';
+import { useCallback, useState } from 'react';
+import { ApiClient, ApiErrorClass, GenerateRequest, GenerateResponse, GuestGenerateRequest } from './api';
 import { useApp } from './AppContext';
 
 interface UseGenerationReturn {
@@ -91,7 +91,7 @@ export function useGeneration(): UseGenerationReturn {
         // Handle specific error cases
         switch (err.details.code) {
           case 'RATE_LIMIT_EXCEEDED':
-            errorMessage = 'You\'ve reached your daily generation limit. Upgrade to Pro for unlimited generations!';
+            errorMessage = 'You\'ve reached your daily generation limit. Upgrade to Pro for 200 generations per month!';
             break;
           case 'SESSION_EXPIRED':
             errorMessage = 'Your session has expired. Please log in again.';

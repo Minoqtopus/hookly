@@ -44,11 +44,11 @@ export default function AnalyticsPage() {
             
             {/* Plan Badge */}
             <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-              user.plan === 'creator' || user.plan === 'agency'
+              user.plan === 'starter' || user.plan === 'agency'
                 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-white'
                 : 'bg-gray-100 text-gray-700'
             }`}>
-              {user.plan?.toUpperCase() || 'TRIAL'}
+              {user.plan === 'trial' ? 'TRIAL' : user.plan === 'starter' ? 'STARTER' : user.plan === 'pro' ? 'PRO' : 'AGENCY'}
             </div>
           </div>
         </div>

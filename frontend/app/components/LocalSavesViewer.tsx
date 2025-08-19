@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Heart, Trash2, Download, Copy, Calendar } from 'lucide-react';
 import { LocalSaveService, LocalSavedAd } from '@/app/lib/localSaves';
-import ExportModal from './ExportModal';
+import { Calendar, Copy, Download, Heart, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from '../lib/toast';
+import ExportModal from './ExportModal';
 
 export default function LocalSavesViewer() {
   const [savedAds, setSavedAds] = useState<LocalSavedAd[]>([]);
@@ -111,7 +111,7 @@ export default function LocalSavesViewer() {
             <div className="flex-1">
               <h4 className="font-medium text-amber-900 mb-1">Storage Limit Reached</h4>
               <p className="text-sm text-amber-700 mb-3">
-                You've used all 3 guest saves. Sign up for unlimited storage!
+                You've used all 3 guest saves. Sign up for premium storage!
               </p>
               <button className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors">
                 Sign Up for Free

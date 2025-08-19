@@ -44,9 +44,14 @@ export class UserController {
     return this.userService.getUserGenerations(req.user.userId, limitNum, offsetNum);
   }
 
-  @Post('upgrade/creator')
-  async upgradeToCreator(@Request() req, @Body() body: any) {
-    return this.userService.upgradeToCreator(req.user.userId, body);
+  @Post('upgrade/starter')
+  async upgradeToStarter(@Request() req, @Body() body: any) {
+    return this.userService.upgradeToStarter(req.user.userId, body);
+  }
+
+  @Post('upgrade/pro')
+  async upgradeToPro(@Request() req, @Body() body: any) {
+    return this.userService.upgradeToPro(req.user.userId, body);
   }
 
   @Post('upgrade/agency')

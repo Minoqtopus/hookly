@@ -63,7 +63,7 @@ export default function HomePage() {
             <div className="inline-flex items-center bg-primary-50 rounded-full px-4 py-2 mb-4">
               <Star className="h-4 w-4 text-primary-600 mr-2" />
               <span className="text-sm font-medium text-primary-700">
-                Trusted by 10,000+ creators • 4.9/5 rating
+                Trusted by 10,000+ creators & marketers • 4.9/5 rating
               </span>
             </div>
 
@@ -132,7 +132,7 @@ No signup required
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Trusted by Top Creators
+              Trusted by Top Creators & Marketers
             </h2>
             <p className="text-gray-600">
               Join thousands who've generated millions in ad revenue
@@ -143,7 +143,7 @@ No signup required
             {[
               { metric: "50M+", label: "Views Generated", icon: TrendingUp },
               { metric: "$2.3M", label: "Revenue Created", icon: Star },
-              { metric: "10,000+", label: "Happy Creators", icon: CheckCircle },
+              { metric: "10,000+", label: "Happy Users", icon: CheckCircle },
             ].map((stat, index) => (
               <div key={index} className="text-center">
                 <stat.icon className="h-12 w-12 text-primary-600 mx-auto mb-4" />

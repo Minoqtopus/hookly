@@ -165,7 +165,8 @@ export class LogViewerService {
           
           // Count by hour
           const hour = entryDate.getHours().toString().padStart(2, '0');
-          const hourKey = `${entryDate.toISOString().split('T')[0]} ${hour}:00`;
+          const entryDateString = entryDate instanceof Date ? entryDate.toISOString() : new Date(entryDate).toISOString();
+          const hourKey = `${entryDateString.split('T')[0]} ${hour}:00`;
           errorsByHour[hourKey] = (errorsByHour[hourKey] || 0) + 1;
           
           // Count error messages

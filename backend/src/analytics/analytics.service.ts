@@ -70,7 +70,7 @@ export class AnalyticsService {
           trial_days_remaining: this.calculateTrialDaysRemaining(user),
           generations_used: user.trial_generations_used || 0,
           is_beta_user: user.is_beta_user || false,
-          signup_date: user.created_at.toISOString(),
+          signup_date: user.created_at instanceof Date ? user.created_at.toISOString() : new Date(user.created_at).toISOString(),
           last_active: new Date().toISOString(),
         };
       }

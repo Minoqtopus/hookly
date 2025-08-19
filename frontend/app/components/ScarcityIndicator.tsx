@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Users, Clock, Flame, Zap } from 'lucide-react';
+import { Clock, Flame, Users, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface ScarcityIndicatorProps {
   type?: 'users_online' | 'recent_signups' | 'limited_spots' | 'trending';
@@ -13,7 +13,7 @@ const scarcityMessages = {
   users_online: [
     { count: 47, message: 'people generating ads right now', icon: Users, color: 'text-green-600 bg-green-100' },
     { count: 23, message: 'people just upgraded to Pro', icon: Zap, color: 'text-blue-600 bg-blue-100' },
-    { count: 12, message: 'creators online in your niche', icon: Flame, color: 'text-orange-600 bg-orange-100' },
+            { count: 12, message: 'users online in your niche', icon: Flame, color: 'text-orange-600 bg-orange-100' },
   ],
   recent_signups: [
     { count: 89, message: 'people signed up in the last hour', icon: Users, color: 'text-purple-600 bg-purple-100' },
@@ -27,7 +27,7 @@ const scarcityMessages = {
   ],
   trending: [
     { count: 2847, message: 'ads went viral this week', icon: Flame, color: 'text-orange-600 bg-orange-100' },
-    { count: 1203, message: 'creators hit 100K+ views', icon: Users, color: 'text-green-600 bg-green-100' },
+            { count: 1203, message: 'users hit 100K+ views', icon: Users, color: 'text-green-600 bg-green-100' },
     { count: 567, message: 'businesses scaled with our ads', icon: Zap, color: 'text-blue-600 bg-blue-100' },
   ],
 };

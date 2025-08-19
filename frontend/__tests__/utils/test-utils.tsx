@@ -2,6 +2,21 @@ import { AppProvider } from '@/app/lib/AppContext';
 import { render, RenderOptions } from '@testing-library/react';
 import React, { ReactElement } from 'react';
 
+// Test data factories (define first to avoid circular references)
+export const createMockUser = (overrides = {}) => ({
+  id: 'test-user-id',
+  email: 'test@example.com',
+  plan: 'trial' as const,
+  monthly_generation_count: 0,
+  trial_generations_used: 5,
+  trial_started_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+  trial_ends_at: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // 4 days from now
+  has_batch_generation: false,
+  has_advanced_analytics: false,
+  has_team_features: false,
+  ...overrides,
+});
+
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(() => ({
@@ -25,7 +40,11 @@ jest.mock('next/navigation', () => ({
 
 // Mock localStorage and sessionStorage
 const mockLocalStorage = {
-  store: {} as Record<string, string>,
+  store: {
+    user: JSON.stringify(createMockUser()),
+    access_token: 'mock-access-token',
+    refresh_token: 'mock-refresh-token',
+  } as Record<string, string>,
   getItem: jest.fn((key: string) => mockLocalStorage.store[key] || null),
   setItem: jest.fn((key: string, value: string) => {
     mockLocalStorage.store[key] = value;
@@ -98,20 +117,7 @@ export * from '@testing-library/react';
 // Override render method
 export { customRender as render };
 
-// Test data factories
-export const createMockUser = (overrides = {}) => ({
-  id: 'test-user-id',
-  email: 'test@example.com',
-  plan: 'trial' as const,
-  monthly_generation_count: 0,
-  trial_generations_used: 5,
-  trial_started_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-  trial_ends_at: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // 4 days from now
-  has_batch_generation: false,
-  has_advanced_analytics: false,
-  has_team_features: false,
-  ...overrides,
-});
+// Test data factories (duplicate removed - defined at top)
 
 export const createMockGeneration = (overrides = {}) => ({
   id: 'test-generation-id',

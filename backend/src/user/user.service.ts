@@ -22,7 +22,11 @@ export class UserService {
 
     // Check if monthly count needs reset
     const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-    const resetMonth = user.monthly_reset_date.toISOString().slice(0, 7);
+    
+    // Ensure monthly_reset_date is a Date object
+    const resetDate = user.monthly_reset_date instanceof Date ? user.monthly_reset_date : new Date(user.monthly_reset_date);
+    const resetMonth = resetDate.toISOString().slice(0, 7);
+    
     if (resetMonth !== currentMonth) {
       user.monthly_generation_count = 0;
       user.monthly_reset_date = new Date();
@@ -48,7 +52,7 @@ export class UserService {
     user.plan = updatePlanDto.plan;
     
     // Reset monthly count when upgrading to paid plans
-    if (updatePlanDto.plan === UserPlan.CREATOR || updatePlanDto.plan === UserPlan.AGENCY) {
+    if (updatePlanDto.plan === UserPlan.STARTER || updatePlanDto.plan === UserPlan.PRO || updatePlanDto.plan === UserPlan.AGENCY) {
       user.monthly_generation_count = 0;
       user.monthly_reset_date = new Date();
     }
@@ -189,8 +193,10 @@ export class UserService {
     switch (plan) {
       case UserPlan.TRIAL:
         return 15; // 15 total during 7-day trial period
-      case UserPlan.CREATOR:
-        return 150; // 150 per month
+      case UserPlan.STARTER:
+        return 50; // 50 per month
+      case UserPlan.PRO:
+        return 200; // 200 per month
       case UserPlan.AGENCY:
         return 500; // 500 per month
       default:
@@ -204,25 +210,69 @@ export class UserService {
     return Math.max(0, limit - usedThisMonth);
   }
 
-  async upgradeToCreator(userId: string, checkoutData: any) {
+  async upgradeToStarter(userId: string, checkoutData: any) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
+
+    // Update user plan to STARTER
+    user.plan = UserPlan.STARTER;
     
-    // Update user plan and reset limits
-    user.plan = UserPlan.CREATOR;
-    user.monthly_generation_count = 0;
-    user.monthly_reset_date = new Date();
-    user.has_batch_generation = true;
-    user.has_advanced_analytics = true;
+    // Reset monthly generation count for new plan
+    user.monthly_count = 0;
+    user.reset_date = new Date();
+    
+    // Enable STARTER plan features
+    user.has_batch_generation = false; // STARTER doesn't have batch generation
     
     await this.userRepository.save(user);
-    
+
     return {
       success: true,
-      message: 'Successfully upgraded to Creator plan',
-      user: { id: user.id, plan: user.plan }
+      message: 'Successfully upgraded to Starter plan',
+      user: {
+        id: user.id,
+        email: user.email,
+        plan: user.plan,
+        monthly_count: user.monthly_count,
+        has_batch_generation: user.has_batch_generation
+      }
+    };
+  }
+
+  async upgradeToPro(userId: string, checkoutData: any) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Update user plan to PRO
+    user.plan = UserPlan.PRO;
+    
+    // Reset monthly generation count for new plan
+    user.monthly_count = 0;
+    user.reset_date = new Date();
+    
+    // Enable PRO plan features
+    user.has_batch_generation = true;
+    user.has_advanced_analytics = true;
+    user.has_team_features = true;
+    
+    await this.userRepository.save(user);
+
+    return {
+      success: true,
+      message: 'Successfully upgraded to Pro plan',
+      user: {
+        id: user.id,
+        email: user.email,
+        plan: user.plan,
+        monthly_count: user.monthly_count,
+        has_batch_generation: user.has_batch_generation,
+        has_advanced_analytics: user.has_advanced_analytics,
+        has_team_features: user.has_team_features
+      }
     };
   }
 
@@ -304,7 +354,7 @@ export class UserService {
         ctr: 0
       },
       is_favorite: generation.is_favorite,
-      created_at: generation.created_at.toISOString(),
+      created_at: generation.created_at instanceof Date ? generation.created_at.toISOString() : new Date(generation.created_at).toISOString(),
     }));
 
     return {

@@ -1,9 +1,10 @@
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Generation } from './generation.entity';
 
 export enum UserPlan {
   TRIAL = 'trial',
-  CREATOR = 'creator', 
+  STARTER = 'starter',
+  PRO = 'pro',
   AGENCY = 'agency'
 }
 
@@ -114,9 +115,12 @@ export class User {
   @Column({ default: false })
   has_custom_integrations: boolean;
 
-  // Beta user flag for free Agency access
+  // Beta user management
   @Column({ type: 'boolean', default: false })
   is_beta_user: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  beta_expires_at?: Date; // When beta access expires
 
   // Conversion tracking
   @Column({ type: 'timestamp', nullable: true })
@@ -131,6 +135,32 @@ export class User {
   // Plan-specific limits
   @Column({ type: 'int', nullable: true })
   monthly_generation_limit?: number; // null = unlimited
+
+  // Overage tracking and pricing
+  @Column({ type: 'int', default: 0 })
+  overage_generations: number; // Generations beyond monthly limit
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  overage_charges: number; // Total overage charges in USD
+
+  @Column({ type: 'timestamp', nullable: true })
+  last_overage_notification?: Date; // When user was last notified about overage
+
+  @Column({ type: 'boolean', default: false })
+  overage_warning_sent: boolean; // Whether 80% usage warning was sent
+
+  // Platform-specific feature flags
+  @Column({ default: true })
+  has_tiktok_access: boolean;
+
+  @Column({ default: false })
+  has_x_access: boolean;
+
+  @Column({ default: false })
+  has_instagram_access: boolean;
+
+  @Column({ default: false })
+  has_youtube_access: boolean;
 
   @CreateDateColumn()
   created_at: Date;

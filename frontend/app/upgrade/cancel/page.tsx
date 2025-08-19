@@ -1,22 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  AlertCircle, 
-  ArrowLeft, 
-  Heart,
-  TrendingDown,
-  Users,
-  MessageSquare,
-  Gift,
-  Crown,
-  Check,
-  X
-} from 'lucide-react';
 import { useAuth } from '@/app/lib/AppContext';
 import { useUpgrade } from '@/app/lib/useUpgrade';
+import {
+  AlertCircle,
+  ArrowLeft,
+  Check,
+  Crown,
+  Gift,
+  Heart,
+  MessageSquare,
+  TrendingDown,
+  Users
+} from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function CancelSubscriptionPage() {
   const [selectedReason, setSelectedReason] = useState('');
@@ -70,11 +69,11 @@ export default function CancelSubscriptionPage() {
       title: "Let Us Help You Get More Value",
       description: "Our Pro success team can help you maximize your results with a free strategy call.",
       offer: "Get free Pro strategy session",
-      savings: "Worth $297"
+              savings: "Worth $150"
     }
   };
 
-  if (!user || (user.plan !== 'creator' && user.plan !== 'agency')) {
+  if (!user || (user.plan !== 'starter' && user.plan !== 'pro' && user.plan !== 'agency')) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -201,7 +200,7 @@ export default function CancelSubscriptionPage() {
           
           <div className="grid md:grid-cols-2 gap-6">
             {[
-              { icon: Crown, title: 'Unlimited Generations', desc: 'Back to 3 ads per day limit' },
+              { icon: Crown, title: '200 Generations per Month', desc: 'Back to 15 ads total limit' },
               { icon: TrendingDown, title: 'Advanced Analytics', desc: 'Limited performance insights' },
               { icon: Users, title: 'Batch Generation', desc: 'No more bulk ad creation' },
               { icon: MessageSquare, title: 'Priority Support', desc: 'Standard support response times' }

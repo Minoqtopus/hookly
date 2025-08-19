@@ -1,29 +1,30 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { ApiClient, ApiErrorClass } from './api';
 import { useApp } from './AppContext';
 
 interface UseUpgradeReturn {
+  upgradeToStarterMonthly: () => Promise<string | null>;
+  upgradeToProMonthly: () => Promise<string | null>;
+  upgradeToAgencyMonthly: () => Promise<string | null>;
+  upgradeToStarterYearly: () => Promise<string | null>;
+  upgradeToProYearly: () => Promise<string | null>;
+  upgradeToAgencyYearly: () => Promise<string | null>;
   isUpgrading: boolean;
   error: string | null;
-  upgradeToCreatorMonthly: () => Promise<string | null>;
-  upgradeToAgencyMonthly: () => Promise<string | null>;
-  upgradeToProMonthly: () => Promise<string | null>;
-  upgradeToProYearly: () => Promise<string | null>;
   cancelSubscription: () => Promise<boolean>;
   clearError: () => void;
 }
 
-export function useUpgrade(): UseUpgradeReturn {
+export const useUpgrade = (): UseUpgradeReturn => {
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
   const { state, actions } = useApp();
 
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  const upgradeToCreatorMonthly = useCallback(async (): Promise<string | null> => {
+  const upgradeToStarterMonthly = useCallback(async (): Promise<string | null> => {
     if (!state.user) {
       setError('Please log in to upgrade your plan');
       return null;
@@ -33,36 +34,14 @@ export function useUpgrade(): UseUpgradeReturn {
     setError(null);
     
     try {
-      const result = await ApiClient.upgradeToCreator({
-        plan: 'monthly',
-        user_id: state.user.id,
-        email: state.user.email,
-        success_url: `${window.location.origin}/dashboard?upgrade=success`,
-        cancel_url: `${window.location.origin}/dashboard?upgrade=cancelled`,
+      const result = await ApiClient.upgradeToStarter({
+        plan: 'starter',
+        interval: 'monthly'
       });
       
       return result.checkout_url;
     } catch (err) {
-      let errorMessage = 'Failed to initiate upgrade';
-      
-      if (err instanceof ApiErrorClass) {
-        errorMessage = err.details.message;
-        
-        switch (err.details.code) {
-          case 'ALREADY_SUBSCRIBED':
-            errorMessage = 'You already have an active subscription';
-            break;
-          case 'NETWORK_ERROR':
-            errorMessage = 'Network error. Please check your connection and try again.';
-            break;
-          case 'SESSION_EXPIRED':
-            errorMessage = 'Your session has expired. Please log in again.';
-            break;
-        }
-      } else if (err instanceof Error) {
-        errorMessage = err.message;
-      }
-      
+      const errorMessage = err instanceof Error ? err.message : 'Failed to upgrade to Starter plan';
       setError(errorMessage);
       return null;
     } finally {
@@ -117,10 +96,55 @@ export function useUpgrade(): UseUpgradeReturn {
     }
   }, [state.user]);
 
+  const upgradeToStarterYearly = useCallback(async (): Promise<string | null> => {
+    if (!state.user) {
+      setError('Please log in to upgrade your plan');
+      return null;
+    }
+
+    setIsUpgrading(true);
+    setError(null);
+    
+    try {
+      const result = await ApiClient.upgradeToStarter({
+        plan: 'starter',
+        interval: 'yearly'
+      });
+      
+      return result.checkout_url;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to upgrade to Starter plan';
+      setError(errorMessage);
+      return null;
+    } finally {
+      setIsUpgrading(false);
+    }
+  }, [state.user]);
+
   const upgradeToProMonthly = useCallback(async (): Promise<string | null> => {
-    // Legacy method - redirect to Creator plan
-    return upgradeToCreatorMonthly();
-  }, [upgradeToCreatorMonthly]);
+    if (!state.user) {
+      setError('Please log in to upgrade your plan');
+      return null;
+    }
+
+    setIsUpgrading(true);
+    setError(null);
+    
+    try {
+      const result = await ApiClient.upgradeToPro({
+        plan: 'pro',
+        interval: 'monthly'
+      });
+      
+      return result.checkout_url;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to upgrade to Pro plan';
+      setError(errorMessage);
+      return null;
+    } finally {
+      setIsUpgrading(false);
+    }
+  }, [state.user]);
 
   const upgradeToProYearly = useCallback(async (): Promise<string | null> => {
     if (!state.user) {
@@ -133,6 +157,30 @@ export function useUpgrade(): UseUpgradeReturn {
     
     try {
       const result = await ApiClient.upgradeToPro({
+        plan: 'pro',
+        interval: 'yearly'
+      });
+      
+      return result.checkout_url;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to upgrade to Pro plan';
+      return null;
+    } finally {
+      setIsUpgrading(false);
+    }
+  }, [state.user]);
+
+  const upgradeToAgencyYearly = useCallback(async (): Promise<string | null> => {
+    if (!state.user) {
+      setError('Please log in to upgrade your plan');
+      return null;
+    }
+
+    setIsUpgrading(true);
+    setError(null);
+    
+    try {
+      const result = await ApiClient.upgradeToAgency({
         plan: 'yearly',
         user_id: state.user.id,
         email: state.user.email,
@@ -149,7 +197,7 @@ export function useUpgrade(): UseUpgradeReturn {
         
         switch (err.details.code) {
           case 'ALREADY_SUBSCRIBED':
-            errorMessage = 'You already have an active Pro subscription';
+            errorMessage = 'You already have an active subscription';
             break;
           case 'NETWORK_ERROR':
             errorMessage = 'Network error. Please check your connection and try again.';
@@ -168,6 +216,31 @@ export function useUpgrade(): UseUpgradeReturn {
       setIsUpgrading(false);
     }
   }, [state.user]);
+
+  const handleUpgrade = useCallback(async (plan: string, interval: string): Promise<string | null> => {
+    if (plan === 'starter' && interval === 'monthly') {
+      return upgradeToStarterMonthly();
+    } else if (plan === 'starter' && interval === 'yearly') {
+      return upgradeToStarterYearly();
+    } else if (plan === 'agency' && interval === 'monthly') {
+      return upgradeToAgencyMonthly();
+    } else if (plan === 'agency' && interval === 'yearly') {
+      return upgradeToAgencyYearly();
+    } else if (plan === 'pro' && interval === 'monthly') {
+      return upgradeToProMonthly();
+    } else if (plan === 'pro' && interval === 'yearly') {
+      return upgradeToProYearly();
+    }
+    
+    throw new Error(`Unsupported plan: ${plan} ${interval}`);
+  }, [
+    upgradeToStarterMonthly,
+    upgradeToProMonthly,
+    upgradeToStarterYearly,
+    upgradeToProYearly,
+    upgradeToAgencyMonthly,
+    upgradeToAgencyYearly
+  ]);
 
   const cancelSubscription = useCallback(async (): Promise<boolean> => {
     if (!state.user) {
@@ -214,13 +287,15 @@ export function useUpgrade(): UseUpgradeReturn {
   }, [state.user, actions]);
 
   return {
+    upgradeToStarterMonthly,
+    upgradeToProMonthly,
+    upgradeToAgencyMonthly,
+    upgradeToStarterYearly,
+    upgradeToProYearly,
+    upgradeToAgencyYearly,
     isUpgrading,
     error,
-    upgradeToCreatorMonthly,
-    upgradeToAgencyMonthly,
-    upgradeToProMonthly,
-    upgradeToProYearly,
     cancelSubscription,
     clearError,
   };
-}
+};

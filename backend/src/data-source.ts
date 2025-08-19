@@ -5,7 +5,7 @@ import { ApiKey } from './entities/api-key.entity';
 import { EmailVerification } from './entities/email-verification.entity';
 import { Generation } from './entities/generation.entity';
 import { SubscriptionEvent } from './entities/subscription-event.entity';
-import { SharedGeneration, Team, TeamMember } from './entities/team.entity';
+import { SharedGeneration, Team, TeamActivity, TeamInvitation, TeamMember } from './entities/team.entity';
 import { Template } from './entities/template.entity';
 import { UserSettings } from './entities/user-settings.entity';
 import { User } from './entities/user.entity';
@@ -21,6 +21,8 @@ export const AppDataSource = new DataSource({
     Team,
     TeamMember,
     SharedGeneration,
+    TeamInvitation,
+    TeamActivity,
     Template,
     UserSettings,
     AnalyticsEvent,

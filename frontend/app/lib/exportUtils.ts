@@ -47,7 +47,7 @@ Viral Score: ${ad.performance.viralScore}/10
 
 ` : ''}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Created with Hookly.xyz - The AI UGC Generator
-Get unlimited ad scripts at hookly.xyz
+        Get premium ad scripts at hookly.xyz
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
   }
 
@@ -310,7 +310,7 @@ hookly.xyz`;
     <div class="footer">
         <strong>Created with Hookly.xyz</strong><br>
         The AI-powered UGC ad generator for viral content<br>
-        Get unlimited scripts at hookly.xyz
+        Get premium scripts at hookly.xyz
     </div>
 </body>
 </html>`;

@@ -8,9 +8,9 @@ import TemplateLibrary from '@/app/components/TemplateLibrary';
 import UpgradeModal from '@/app/components/UpgradeModal';
 import VariationsGenerator from '@/app/components/VariationsGenerator';
 import { useAuth, useUserStats } from '@/app/lib/AppContext';
-import { toast } from '../lib/toast';
 import { AuthService } from '@/app/lib/auth';
 import { LocalSaveService } from '@/app/lib/localSaves';
+import { getPlanConfig, getTrialLimit } from '@/app/lib/plans';
 import { useDemoOptimization } from '@/app/lib/useDemoOptimization';
 import { useGeneration } from '@/app/lib/useGeneration';
 import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
@@ -33,7 +33,7 @@ import {
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
-import { getPlanConfig, getTrialLimit } from '@/app/lib/plans';
+import { toast } from '../lib/toast';
 
 function GeneratePageContent() {
   const [showResult, setShowResult] = useState(false);
@@ -513,7 +513,7 @@ function GeneratePageContent() {
                     <AlertCircle className="h-4 w-4" />
                     <span className="text-sm">
                       {remainingGenerations === 0 
-                        ? 'Trial limit reached! Upgrade for unlimited generations.'
+                        ? 'Trial limit reached! Upgrade for more generations.'
                         : `Only ${remainingGenerations} generation left in trial.`
                       }
                     </span>
@@ -753,7 +753,7 @@ function GeneratePageContent() {
             )}
 
             {/* Pro Upsell */}
-            {(user?.plan === 'trial' || user?.plan === 'creator') && (
+            {(user?.plan === 'trial' || user?.plan === 'starter') && (
               <div className="card bg-gradient-to-r from-primary-50 to-secondary-50 border-primary-200">
                 <div className="text-center">
                   <Crown className="h-12 w-12 text-primary-600 mx-auto mb-4" />
@@ -764,7 +764,7 @@ function GeneratePageContent() {
                     <ScarcityIndicator type="trending" size="small" />
                   </div>
                   <p className="text-gray-600 mb-4">
-                    Generate unlimited variations, get advanced analytics, and remove watermarks with Pro
+                    Generate 200 variations per month, get advanced analytics, and remove watermarks with Pro
                   </p>
                   <button 
                     onClick={() => {
@@ -776,7 +776,7 @@ function GeneratePageContent() {
                     Upgrade to Pro - Just $1.30/day
                   </button>
                   <p className="text-xs text-gray-500 mt-2">
-                    Join 1,000+ Pro creators • Cancel anytime
+                    Join 1,000+ Pro users • Cancel anytime
                   </p>
                 </div>
               </div>

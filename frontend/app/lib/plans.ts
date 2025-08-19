@@ -1,90 +1,123 @@
 // Plan configuration - centralized place for all plan-related constants
 // This should eventually be fetched from the backend
 
-export interface PlanConfig {
-  id: string;
-  name: string;
-  displayName: string;
-  generationsPerMonth: number;
-  price: {
-    monthly: number;
-    annual?: number;
-  };
-  features: string[];
-  isPopular?: boolean;
+export enum UserPlan {
+  TRIAL = 'trial',
+  STARTER = 'starter',
+  PRO = 'pro',
+  AGENCY = 'agency'
 }
 
-export const PLAN_CONFIGS: Record<string, PlanConfig> = {
-  trial: {
-    id: 'trial',
-    name: 'trial',
-    displayName: 'Free Trial',
-    generationsPerMonth: 15, // Actually trial total, not monthly
-    price: {
-      monthly: 0
-    },
+export interface PlanConfig {
+  id: UserPlan;
+  displayName: string;
+  price: {
+    monthly: number;
+    yearly: number;
+  };
+  generationsPerMonth: number;
+  features: string[];
+  isPopular?: boolean;
+  icon?: any;
+}
+
+export const PLAN_CONFIGS: Record<UserPlan, PlanConfig> = {
+  [UserPlan.TRIAL]: {
+    id: UserPlan.TRIAL,
+    displayName: 'Trial',
+    price: { monthly: 0, yearly: 0 },
+    generationsPerMonth: 15,
     features: [
-      '15 total generations during trial',
-      'Basic templates',
-      'Copy to clipboard',
-      '7-day trial period'
+      '7-day free trial',
+      '15 total generations',
+      'TikTok platform support',
+      '5 basic templates',
+      'Basic analytics'
     ]
   },
-  creator: {
-    id: 'creator',
-    name: 'creator',
-    displayName: 'Creator',
-    generationsPerMonth: 150,
-    price: {
-      monthly: 29,
-      annual: 290 // ~$24/month when billed annually
-    },
+  [UserPlan.STARTER]: {
+    id: UserPlan.STARTER,
+    displayName: 'Starter',
+    price: { monthly: 19, yearly: 190 },
+    generationsPerMonth: 50,
     features: [
-      '150 generations/month',
-      'All viral ad templates',
-      'Performance analytics',
-      'Script & visual suggestions',
-      'Copy to clipboard tools',
+      '50 generations per month',
+      'TikTok + X platform support',
+      '15+ templates',
+      'Basic analytics',
+      'Email support'
+    ]
+  },
+  [UserPlan.PRO]: {
+    id: UserPlan.PRO,
+    displayName: 'Pro',
+    price: { monthly: 59, yearly: 590 },
+    generationsPerMonth: 200,
+    features: [
+      '200 generations per month',
+      'TikTok + X + Instagram support',
+      '50+ templates',
+      'Batch generation (up to 10)',
+      'Advanced analytics',
+      'Team collaboration (up to 3 users)',
       'Priority support'
     ],
     isPopular: true
   },
-  agency: {
-    id: 'agency',
-    name: 'agency',
+  [UserPlan.AGENCY]: {
+    id: UserPlan.AGENCY,
     displayName: 'Agency',
+    price: { monthly: 129, yearly: 1290 },
     generationsPerMonth: 500,
-    price: {
-      monthly: 79,
-      annual: 790 // ~$66/month when billed annually
-    },
     features: [
-      '500 generations/month',
-      'Everything in Creator plan',
-      'Team collaboration tools',
-      'Batch ad generation',
-      'Priority support',
-      'White-label options'
+      '500 generations per month',
+      'All platforms + API access',
+      '100+ templates',
+      'Batch generation (up to 25)',
+      'Advanced analytics + team insights',
+      'Team collaboration (up to 10 users)',
+      'White-label options',
+      'Dedicated support'
     ]
   }
 };
 
-// Helper functions
-export function getPlanConfig(planId: string): PlanConfig | null {
-  return PLAN_CONFIGS[planId] || null;
-}
+export const getPlanConfig = (planId: string): PlanConfig | null => {
+  const plan = Object.values(PLAN_CONFIGS).find(p => p.id === planId);
+  return plan || null;
+};
 
-export function getTrialLimit(): number {
-  return PLAN_CONFIGS.trial.generationsPerMonth;
-}
+export const getTrialLimit = (): number => {
+  return PLAN_CONFIGS[UserPlan.TRIAL].generationsPerMonth;
+};
 
-export function getCreatorLimit(): number {
-  return PLAN_CONFIGS.creator.generationsPerMonth;
-}
+export const getStarterLimit = (): number => {
+  return PLAN_CONFIGS[UserPlan.STARTER].generationsPerMonth;
+};
 
-export function getAgencyLimit(): number {
-  return PLAN_CONFIGS.agency.generationsPerMonth;
-}
+export const getProLimit = (): number => {
+  return PLAN_CONFIGS[UserPlan.PRO].generationsPerMonth;
+};
+
+export const getAgencyLimit = (): number => {
+  return PLAN_CONFIGS[UserPlan.AGENCY].generationsPerMonth;
+};
+
+export const getPlanPrice = (planId: UserPlan, isYearly: boolean = false): number => {
+  const plan = PLAN_CONFIGS[planId];
+  if (!plan) return 0;
+  return isYearly ? plan.price.yearly : plan.price.monthly;
+};
+
+export const getPlanFeatures = (planId: UserPlan): string[] => {
+  const plan = PLAN_CONFIGS[planId];
+  return plan ? plan.features : [];
+};
+
+export const isPopularPlan = (planId: UserPlan): boolean => {
+  const plan = PLAN_CONFIGS[planId];
+  return plan ? plan.isPopular || false : false;
+};
 
 // NOTE: These are placeholder values and should be replaced with backend API calls
 // TODO: Create API endpoints to fetch plan configurations dynamically
