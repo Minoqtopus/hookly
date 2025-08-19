@@ -14,6 +14,7 @@ import { AnalyticsEvent } from './entities/analytics-event.entity';
 import { ApiKey } from './entities/api-key.entity';
 import { EmailVerification } from './entities/email-verification.entity';
 import { Generation } from './entities/generation.entity';
+import { SignupControl } from './entities/signup-control.entity';
 import { SubscriptionEvent } from './entities/subscription-event.entity';
 import { SharedGeneration, Team, TeamActivity, TeamInvitation, TeamMember } from './entities/team.entity';
 import { Template } from './entities/template.entity';
@@ -54,7 +55,8 @@ import { UserModule } from './user/user.module';
         AnalyticsEvent,
         EmailVerification,
         ApiKey,
-        SubscriptionEvent
+        SubscriptionEvent,
+        SignupControl
       ],
       synchronize: false, // Disabled to avoid enum conflicts - migrations handled separately
     }),

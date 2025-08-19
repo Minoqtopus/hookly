@@ -4,7 +4,8 @@ import AuthModal from '@/app/components/AuthModal';
 import ScarcityIndicator from '@/app/components/ScarcityIndicator';
 import { useAuth } from '@/app/lib/AppContext';
 import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
-import { ArrowRight, CheckCircle, Play, Sparkles, Star, TrendingUp } from 'lucide-react';
+import { useSignupAvailability } from '@/app/lib/useSignupAvailability';
+import { AlertCircle, ArrowRight, CheckCircle, Play, Sparkles, Star, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -12,6 +13,7 @@ export default function HomePage() {
   const { user } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authTrigger, setAuthTrigger] = useState<'nav_signup' | 'login'>('nav_signup');
+  const { availability, loading } = useSignupAvailability();
   
   // Apply route guard - redirect authenticated users to dashboard
   useRouteGuard(routeConfigs.landing);
@@ -45,15 +47,37 @@ export default function HomePage() {
               >
                 Login
               </button>
-              <button 
-                onClick={() => {
-                  setAuthTrigger('nav_signup');
-                  setShowAuthModal(true);
-                }}
-                className="btn-primary text-sm px-6 py-2"
-              >
-                Start Free Trial
-              </button>
+              {availability && !loading ? (
+                availability.canSignup ? (
+                  <button 
+                    onClick={() => {
+                      setAuthTrigger('nav_signup');
+                      setShowAuthModal(true);
+                    }}
+                    className="btn-primary text-sm px-6 py-2"
+                  >
+                    {availability.remainingSignups <= 10 
+                      ? `${availability.remainingSignups} Spots Left` 
+                      : 'Start Free Trial'
+                    }
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      setAuthTrigger('nav_signup');
+                      setShowAuthModal(true);
+                    }}
+                    className="btn-secondary text-sm px-6 py-2 opacity-75 cursor-not-allowed"
+                    disabled
+                  >
+                    Join Waitlist
+                  </button>
+                )
+              ) : (
+                <button className="btn-primary text-sm px-6 py-2" disabled>
+                  Loading...
+                </button>
+              )}
             </div>
           </nav>
 
@@ -71,6 +95,34 @@ export default function HomePage() {
             <div className="flex justify-center mb-6">
               <ScarcityIndicator type="users_online" size="medium" />
             </div>
+
+            {/* Signup Availability Alert */}
+            {availability && !loading && (
+              <div className="mb-6">
+                {!availability.canSignup ? (
+                  <div className="inline-flex items-center bg-amber-50 border border-amber-200 rounded-full px-4 py-2">
+                    <AlertCircle className="h-4 w-4 text-amber-600 mr-2" />
+                    <span className="text-sm font-medium text-amber-700">
+                      {availability.signupMessage || 'Signups temporarily limited. Join our waitlist!'}
+                    </span>
+                  </div>
+                ) : availability.remainingSignups <= 10 ? (
+                  <div className="inline-flex items-center bg-red-50 border border-red-200 rounded-full px-4 py-2">
+                    <AlertCircle className="h-4 w-4 text-red-600 mr-2" />
+                    <span className="text-sm font-medium text-red-700">
+                      Only {availability.remainingSignups} spots left! Join now before we close signups.
+                    </span>
+                  </div>
+                ) : availability.remainingSignups <= 25 ? (
+                  <div className="inline-flex items-center bg-orange-50 border border-orange-200 rounded-full px-4 py-2">
+                    <AlertCircle className="h-4 w-4 text-orange-600 mr-2" />
+                    <span className="text-sm font-medium text-orange-700">
+                      {availability.remainingSignups} spots remaining. Don't miss out!
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            )}
 
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
@@ -95,8 +147,39 @@ export default function HomePage() {
                 className="btn-primary text-lg px-8 py-4 flex items-center justify-center"
               >
                 <Play className="h-5 w-5 mr-2" />
-Try Demo Now
+                Try Demo Now
               </button>
+              
+              {availability && !loading && (
+                availability.canSignup ? (
+                  <button 
+                    onClick={() => {
+                      setAuthTrigger('nav_signup');
+                      setShowAuthModal(true);
+                    }}
+                    className="btn-secondary text-lg px-8 py-4 flex items-center justify-center"
+                  >
+                    <Sparkles className="h-5 w-5 mr-2" />
+                    {availability.remainingSignups <= 10 
+                      ? `Join Now (${availability.remainingSignups} left)` 
+                      : 'Start Free Trial'
+                    }
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      setAuthTrigger('nav_signup');
+                      setShowAuthModal(true);
+                    }}
+                    className="btn-secondary text-lg px-8 py-4 flex items-center justify-center opacity-75 cursor-not-allowed"
+                    disabled
+                  >
+                    <AlertCircle className="h-5 w-5 mr-2" />
+                    Join Waitlist
+                  </button>
+                )
+              )}
+              
               <Link href="/examples" className="btn-secondary text-lg px-8 py-4 flex items-center justify-center">
                 Browse Templates
                 <ArrowRight className="h-5 w-5 ml-2" />

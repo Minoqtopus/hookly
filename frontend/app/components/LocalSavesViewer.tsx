@@ -209,14 +209,12 @@ export default function LocalSavesViewer() {
             setShowExportModal(false);
             setSelectedAd(null);
           }}
-          adData={{
-            title: selectedAd.title,
+          content={{
             hook: selectedAd.hook,
             script: selectedAd.script,
-            visuals: selectedAd.visuals,
-            niche: selectedAd.niche,
-            targetAudience: selectedAd.targetAudience,
-            performance: selectedAd.performance
+            visualDescription: selectedAd.visuals.join(', '),
+            callToAction: `Check out this amazing ${selectedAd.niche} content!`,
+            platformOptimization: `Optimized for ${selectedAd.targetAudience} in the ${selectedAd.niche} niche`
           }}
         />
       )}

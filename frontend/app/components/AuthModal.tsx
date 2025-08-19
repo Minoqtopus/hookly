@@ -1,7 +1,8 @@
 'use client';
 
 import { AuthService } from '@/app/lib/auth';
-import { Sparkles, X } from 'lucide-react';
+import { useSignupAvailability } from '@/app/lib/useSignupAvailability';
+import { AlertCircle, Sparkles, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface AuthModalProps {
@@ -22,6 +23,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(true);
   const [error, setError] = useState('');
+  const { availability, loading: availabilityLoading } = useSignupAvailability();
   
   // Set default auth mode based on trigger source
   useEffect(() => {
@@ -43,6 +45,12 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
 
   const handleEmailAuth = () => {
     if (!email || !password) return;
+    
+    // Check signup availability before proceeding
+    if (isSignUp && availability && !availability.canSignup) {
+      setError('Signups are currently limited. Please join our waitlist or try again later.');
+      return;
+    }
     
     setIsLoading(true);
     setError('');
@@ -184,6 +192,30 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                     </span>
                   </div>
                 )}
+
+                {/* Signup Availability Alert */}
+                {isSignUp && availability && !availability.canSignup && (
+                  <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded relative" role="alert">
+                    <div className="flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      <span className="text-sm">
+                        <strong>Signups Limited:</strong> {availability.signupMessage || 'We\'re currently limiting new signups. Please join our waitlist or try again later.'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Signup Availability Info */}
+                {isSignUp && availability && availability.canSignup && availability.remainingSignups <= 25 && (
+                  <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded relative" role="alert">
+                    <div className="flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      <span className="text-sm">
+                        <strong>Limited Spots:</strong> Only {availability.remainingSignups} signup spots remaining!
+                      </span>
+                    </div>
+                  </div>
+                )}
                 
                 {/* Google Sign Up */}
                 <button
@@ -197,7 +229,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                     
                     AuthService.initiateGoogleAuth();
                   }}
-                  disabled={isLoading}
+                  disabled={isLoading || (isSignUp && availability ? !availability.canSignup : false)}
                   className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-4 px-6 rounded-xl flex items-center justify-center transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
@@ -253,9 +285,9 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                     required
                   />
                 </div>
-                <button
-                      type="submit"
-                  disabled={isLoading || !email || !password}
+                                <button
+                  type="submit"
+                  disabled={isLoading || !email || !password || (isSignUp && availability ? !availability.canSignup : false)}
                   className="w-full btn-primary py-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (

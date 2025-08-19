@@ -1,18 +1,22 @@
-import { Controller, Post, Body, Get, UseGuards, Request, Res, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Request, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
+import { RateLimit, RateLimits } from '../common/decorators/rate-limit.decorator';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RateLimit, RateLimits } from '../common/decorators/rate-limit.decorator';
+import { SignupControlService } from './signup-control.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private signupControlService: SignupControlService,
+  ) {}
 
   @Post('register')
   @RateLimit(RateLimits.AUTH_REGISTER)
@@ -88,5 +92,10 @@ export class AuthController {
   @RateLimit(RateLimits.AUTH_RESET_PASSWORD)
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto.token, resetPasswordDto.password);
+  }
+
+  @Get('signup-availability')
+  async getSignupAvailability() {
+    return this.signupControlService.getSignupAvailability();
   }
 }

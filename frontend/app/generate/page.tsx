@@ -801,14 +801,12 @@ function GeneratePageContent() {
       <ExportModal
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
-        adData={{
-          title: `${formData.productName} Ad`,
+        content={{
           hook: generatedAd?.hook || '',
           script: generatedAd?.script || '',
-          visuals: generatedAd?.visuals || [],
-          niche: formData.niche,
-          targetAudience: formData.targetAudience,
-          performance: generatedAd?.performance
+          visualDescription: generatedAd?.visuals?.join(', ') || '',
+          callToAction: `Check out this amazing ${formData.niche} content!`,
+          platformOptimization: `Optimized for ${formData.targetAudience} in the ${formData.niche} niche`
         }}
       />
 
