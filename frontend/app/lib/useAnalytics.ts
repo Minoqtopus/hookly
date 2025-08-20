@@ -44,7 +44,7 @@ export function useAnalytics() {
       user_plan: user?.plan,
       trial_days_remaining: user?.trial_ends_at ? 
         Math.ceil((new Date(user.trial_ends_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null,
-      generations_used: user?.trial_generations_used || user?.monthly_count || 0,
+      generations_used: user?.trial_generations_used || user?.monthly_generation_count || 0,
       ...data,
     };
 
@@ -92,7 +92,7 @@ export function useAnalytics() {
     const performanceData = {
       ...data,
       user_plan: user?.plan,
-      generation_count: user?.trial_generations_used || user?.monthly_count || 0,
+      generation_count: user?.trial_generations_used || user?.monthly_generation_count || 0,
     };
 
     if (data.success) {
@@ -230,7 +230,7 @@ export function useUserBehaviorTracking() {
       eventData: {
         user_journey_stage: stage,
         user_plan: user?.plan,
-        generations_created: user?.trial_generations_used || user?.monthly_count || 0,
+        generations_created: user?.trial_generations_used || user?.monthly_generation_count || 0,
         is_beta_user: user?.is_beta_user,
         ...data,
       },

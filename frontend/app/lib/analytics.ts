@@ -31,6 +31,12 @@ export enum EventType {
   TEAM_MEMBER_INVITED = 'team_member_invited',
   TEAM_GENERATION_SHARED = 'team_generation_shared',
   
+  // Viral growth events
+  VIRAL_CONTENT_SHARED = 'viral_content_shared',
+  VIRAL_GROWTH_SIGNUP = 'viral_growth_signup',
+  SOCIAL_SHARE_COMPLETED = 'social_share_completed',
+  VIRAL_WATERMARK_ADDED = 'viral_watermark_added',
+  
   // Page views
   PAGE_VIEW = 'page_view',
   DEMO_COMPLETED = 'demo_completed',

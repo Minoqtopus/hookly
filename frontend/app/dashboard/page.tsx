@@ -5,6 +5,7 @@ import LocalSavesViewer from '@/app/components/LocalSavesViewer';
 import TemplateLibrary from '@/app/components/TemplateLibrary';
 import TrialCountdown from '@/app/components/TrialCountdown';
 import UpgradeModal from '@/app/components/UpgradeModal';
+import ViralGrowthDashboard from '@/app/components/ViralGrowthDashboard';
 import { ApiClient } from '@/app/lib/api';
 import { useApp, useAuth, useRecentGenerations, useUserStats } from '@/app/lib/AppContext';
 import { getPlanConfig } from '@/app/lib/plans';
@@ -601,6 +602,13 @@ export default function DashboardPage() {
         {!isAuthenticated && (
           <div className="mb-8">
             <LocalSavesViewer />
+          </div>
+        )}
+
+        {/* Viral Growth Dashboard */}
+        {isAuthenticated && user && ['pro', 'agency'].includes(user.plan) && (
+          <div className="mb-8">
+            <ViralGrowthDashboard />
           </div>
         )}
 

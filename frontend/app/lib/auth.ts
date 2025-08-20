@@ -9,6 +9,8 @@ export interface User {
   trial_started_at?: string;
   trial_ends_at?: string;
   trial_generations_used?: number;
+  monthly_generation_count?: number;
+  created_at?: string;
   // Feature flags
   has_batch_generation?: boolean;
   has_advanced_analytics?: boolean;
