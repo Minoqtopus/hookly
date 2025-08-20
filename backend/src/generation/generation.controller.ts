@@ -1,6 +1,7 @@
 import { Controller, Post, Get, Body, UseGuards, Request, Query, Ip, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { GenerationService } from './generation.service';
+import { GenerationQueueService } from './generation-queue.service';
 import { GenerateDto } from './dto/generate.dto';
 import { GenerateVariationsDto } from './dto/generate-variations.dto';
 import { GuestGenerateDto } from './dto/guest-generate.dto';
@@ -10,7 +11,7 @@ import { RateLimit, RateLimits } from '../common/decorators/rate-limit.decorator
 @ApiTags('Generation')
 @Controller('generate')
 export class GenerationController {
-  constructor(private generationService: GenerationService) {}
+  constructor(private generationService: GenerationQueueService) {}
 
   @Post()
   @ApiOperation({ summary: 'Generate AI-powered ad content', description: 'Generate personalized ad content using AI based on user input' })

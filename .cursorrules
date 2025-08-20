@@ -1,0 +1,195 @@
+# 🚀 Hookly - AI-Powered UGC Content Generation Platform
+# Cursor AI Development Rules & Guidelines
+
+## 🎯 PROJECT OVERVIEW
+Hookly is an AI-powered SaaS platform that transforms businesses into viral content creators. We generate high-converting UGC ads using advanced AI across multiple platforms (TikTok, X, Instagram, YouTube) with performance prediction and proven templates.
+
+## 🏗️ ARCHITECTURE & DEVELOPMENT APPROACH
+
+### **Clean Architecture & SOLID Principles (CRITICAL)**
+- **Clean Architecture Layers**: Domain (entities, policies) → Application (use-cases/services) → Infrastructure (controllers, DB, external APIs)
+- **Dependency Rule**: Inner layers know nothing about outer layers. Application depends on interfaces, not implementations.
+- **Ports/Adapters**: Define interfaces (ports) for external systems, implement adapters in Infrastructure
+- **SOLID Principles**: Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
+- **Modularity**: Never import repositories into other repositories; communicate via services. Keep modules autonomous.
+
+### **Quality-First Development (CRITICAL)**
+- **Fix infrastructure before building features** - prevents technical debt
+- **Small, incremental, granular changes** - don't break things by going too fast
+- **Comprehensive testing prevents production breakage** - insurance, not overhead
+- **Backend as source of truth** - ensures data consistency
+
+### **Testing Strategy (ENTERPRISE STANDARD)**
+- **Test Pyramid**: Unit (60%), Component (25%), Integration (10%), E2E (5%)
+- **Coverage**: >95% for critical business logic
+- **Always run ALL tests** - not just the ones for changes we make
+- **Test everything as a Senior Tester** - comprehensive quality assurance
+- **Report exact pass/fail counts** in every response
+
+## 🔧 TECHNICAL CONSTRAINTS & REQUIREMENTS
+
+### **Database & Data Management (CRITICAL)**
+- **Database-First Approach**: Always plan schema before implementation, never hardcode data
+- **Real Data Only**: Use seeded data from database, never hardcoded dummy values
+- **Dynamic Content**: All UI content must come from database or environment variables
+- **Migration Control**: All migrations generated and run manually by you, never auto-generated
+- **Non-Breaking Changes**: All entity changes must maintain backward compatibility
+- **Synchronize False**: Never use synchronize: true - always work with proper migrations
+
+### **Environment Variables (CRITICAL)**
+- **Configuration Management**: All configurable values must be environment variables
+- **No Hardcoded Values**: Zero tolerance for hardcoded configuration in production code
+- **Production Stability**: Environment variables prevent configuration issues during releases
+- **Configuration Scope**: API keys, URLs, limits, settings, feature flags, and business logic
+
+### **Security Requirements (CRITICAL)**
+- **Security First**: Security must be top-notch across the entire codebase
+- **Input Validation**: All user inputs must be validated and sanitized
+- **SQL Injection Prevention**: Use parameterized queries and ORM, never raw SQL
+- **XSS Protection**: Sanitize all user-generated content
+- **CSRF Protection**: Implement proper CSRF tokens
+- **Rate Limiting**: Prevent abuse and brute force attacks
+- **Authentication Security**: Secure JWT implementation, proper token refresh
+
+### **UI/UX Design Philosophy (CRITICAL CONSTRAINT)**
+- **Existing Design Excellence**: Current Notion-like minimalistic design is excellent and must be preserved
+- **No Major Pattern Changes**: Zero tolerance for major UI/UX pattern changes without very strong justification
+- **Functional Fixes Only**: Fix broken functionality while maintaining existing design patterns
+- **Design Consistency**: Preserve the clean, professional aesthetic that users already love
+- **User Experience Preservation**: Maintain the smooth, intuitive navigation and interaction patterns
+
+## 🎯 BUSINESS MODEL & FEATURE CONSTRAINTS
+
+### **Pricing Strategy & Plan Structure**
+- **UserPlan Enum**: TRIAL, STARTER, PRO, AGENCY (must be consistent across frontend/backend)
+- **Platform Progression**: TRIAL (TikTok) → STARTER (TikTok+Instagram) → PRO (TikTok+Instagram+X) → AGENCY (All platforms+API)
+- **No Free Tier**: Eliminates freeloaders, focuses on paying customers
+- **Premium Positioning**: Multi-platform capability justifies higher pricing
+
+### **Feature Transparency (CRITICAL)**
+- **No Feature Over-Promising**: UI must never show features that aren't built and tested
+- **API Version Concealment**: Never reveal AI model versions in UI (use "Premium AI")
+- **Copy Consistency**: Zero tolerance for copy mistakes across entire application
+- **Feature Validation**: Only describe features that are actually implemented
+
+### **AI Infrastructure Strategy**
+- **Multi-Provider AI**: Gemini (primary), Groq (speed), OpenAI (premium) with cost optimization
+- **Token Management**: 1,000 input + 2,000 output tokens per generation (~$0.0008-0.0015 cost)
+- **Cost Control**: AI costs must stay under $100/month with current strategy
+- **Provider Orchestrator**: Intelligent routing based on request type, load, cost, and quality
+- **No Platform Dependencies**: Users export content manually, no external API dependencies
+
+### **Platform Strategy & Exclusions**
+- **Core Platforms**: TikTok, Instagram, X, YouTube (standard tiers)
+- **Excluded Platforms**: Facebook, LinkedIn (become enterprise upsells)
+- **Strategic Reasoning**: Focus on viral short-form UGC platforms, exclude professional/educational platforms
+- **Enterprise Upsells**: Facebook ($500/month), LinkedIn ($300/month), Custom ($1000/month)
+
+## 🚨 CRITICAL SUCCESS FACTORS
+
+### **Technical Excellence**
+- **100% test coverage** for critical business logic
+- **Zero production breakages** - comprehensive testing prevents regressions
+- **Performance optimization** - fast, responsive user experience
+- **Security hardening** - protect user data and platform integrity
+- **AI content quality** - world-class prompt engineering and user style learning
+
+### **User Experience**
+- **Intuitive interface** - minimal learning curve
+- **Immediate value** - users see results in first session
+- **Performance transparency** - users understand potential ROI
+- **Seamless onboarding** - demo to paid conversion optimization
+
+### **Business Metrics**
+- **User retention** - high engagement and feature adoption
+- **Conversion rates** - trial to paid subscription optimization
+- **Customer satisfaction** - NPS and user feedback scores
+- **Revenue growth** - sustainable business model execution
+
+## 📋 DEVELOPMENT WORKFLOW
+
+### **Working Directory Awareness (CRITICAL)**
+- **Always use `pwd` before running commands or creating files** to confirm current location
+- **Verify working directory** before any file operations to prevent creating files in wrong locations
+- **Check current directory** before running builds, tests, or file searches
+
+### **Code Organization & Standards**
+- **Frontend**: Next.js 14 (App Router), React 19, Context API + useReducer, Tailwind CSS
+- **Backend**: NestJS, TypeORM, PostgreSQL, JWT authentication
+- **Testing**: Jest + React Testing Library + MSW (frontend), Jest + TypeORM testing utilities (backend)
+- **File Structure**: Follow existing patterns, maintain clean separation of concerns
+
+### **Development Priorities**
+- **Phase 1**: Foundation & Testing (COMPLETED ✅)
+- **Phase 2**: Core Features & Quality (IN PROGRESS 🚀)
+- **Phase 3**: Production Readiness (PLANNED)
+- **Phase 4**: Scaling & Optimization (FUTURE)
+
+## 💡 STRATEGIC INSIGHTS
+
+### **Market Positioning**
+- **Competitive advantage**: AI-powered performance prediction with realistic pricing
+- **Target market**: Small businesses competing with big brands
+- **Differentiation**: Focus on UGC content, not generic AI tools
+- **Scalability**: API access for power users, enterprise-ready from day one
+
+### **Revenue Strategy**
+- **Base subscriptions**: $19/$59/$129 tiers with team collaboration multipliers
+- **Enterprise upsells**: Additional users, custom integrations, white-label solutions
+- **Content marketing**: Newsletter monetization, sponsored content, affiliate marketing
+- **Revenue potential**: $132,500/month ($1.59M/year) through systematic execution
+
+### **Growth Strategy**
+- **Viral growth**: Share feature creates organic user acquisition (no referral costs)
+- **Strategic beta testing**: 50-100 users maximum, prevent viral growth before readiness
+- **Team collaboration**: 3-10x revenue multiplier per customer, path to $10M+
+- **Quality-first approach**: Premium AI models justify premium pricing, 91% profit margin
+
+## 🔍 CODE SEARCH & IMPLEMENTATION GUIDELINES
+
+### **When Implementing Features**
+1. **Search existing codebase** for similar patterns and implementations
+2. **Follow established naming conventions** and file organization
+3. **Maintain consistency** with existing UI/UX patterns
+4. **Implement comprehensive testing** before considering feature complete
+5. **Update documentation** and strategic files as needed
+
+### **When Debugging Issues**
+1. **Check test suite** first - ensure all tests are passing
+2. **Verify data consistency** between frontend and backend
+3. **Check environment variables** and configuration
+4. **Review recent changes** for potential regressions
+5. **Use comprehensive logging** and monitoring
+
+### **When Adding New Dependencies**
+1. **Evaluate necessity** - prefer existing solutions over new libraries
+2. **Check compatibility** with current tech stack
+3. **Consider security implications** and maintenance overhead
+4. **Update package files** and document changes
+5. **Test thoroughly** to ensure no breaking changes
+
+## 📚 REFERENCE FILES
+
+### **Strategic Documents**
+- **product_strategy.md**: Business strategy and market positioning
+- **cursor_memories.md**: Strategic directives for AI development sessions
+- **todo.md**: Implementation roadmap and development tasks
+
+### **Key Directories**
+- **Backend**: `/backend/src/` - NestJS application with clean architecture
+- **Frontend**: `/frontend/app/` - Next.js 14 application with app router
+- **Tests**: `/backend/test/` and `/frontend/__tests__/` - Comprehensive test suites
+- **Entities**: `/backend/src/entities/` - Database schema and business logic
+
+---
+
+## 🎯 REMEMBER: YOU ARE BUILDING A MARKET-WINNING PRODUCT
+
+- **Think strategically** about every feature and implementation decision
+- **Maintain quality standards** that prevent production breakages
+- **Consider user experience** and business impact in all decisions
+- **Follow established patterns** while innovating where appropriate
+- **Test everything thoroughly** to maintain enterprise-ready standards
+- **Build for scale** from day one - this product will serve thousands of users
+
+*This .cursorrules file ensures consistent, high-quality development aligned with Hookly's strategic vision and technical standards.*

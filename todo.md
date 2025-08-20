@@ -73,51 +73,30 @@
 - [x] **Style consistently** with dashboard design
 - [x] **Test data loading** and pagination
 
-#### **1.15 Create Missing Static Pages (1 hour)**
-- [ ] **Create** `frontend/app/help/page.tsx` - Getting started guide
-- [ ] **Create** `frontend/app/community/page.tsx` - Community resources
-
-#### **1.16 Implement A/B Testing Infrastructure (3 hours)**
-- [ ] **Create A/B Testing Service** in `backend/src/analytics/ab-testing.service.ts`:
-  - [ ] Test platform progression (TikTok → TikTok+Instagram → All Platforms) vs full access
-  - [ ] Track conversion rates from STARTER → PRO → AGENCY
-  - [ ] Monitor user engagement and feature adoption per test group
-- [ ] **Platform Access Configuration** in `backend/src/entities/user.entity.ts`:
-  - [ ] Add `ab_test_group` field ('platform_progression' | 'full_access' | null)
-  - [ ] Add `conversion_metrics` tracking for upgrade behavior
-- [ ] **Frontend A/B Testing Integration** in `frontend/app/lib/abTesting.ts`:
-  - [ ] Assign users to test groups on signup (50/50 split)
-  - [ ] Track feature usage and platform preferences
-  - [ ] Monitor trial-to-paid conversion rates
-- [ ] **Analytics Dashboard** for A/B test monitoring:
-  - [ ] Real-time conversion rate comparison
-  - [ ] User behavior analytics per test group
-  - [ ] Revenue impact measurement
-
 ## 📈 UPCOMING PRIORITIES (Next 2 Weeks)
 
 ### **TIER 2: SCALABILITY INFRASTRUCTURE**
 
-#### **2.1 Implement Job Queue & Retry Infrastructure (6 hours)**
-- [ ] **Setup Bull/BullMQ Infrastructure** in `backend/src/queues/`:
-  - [ ] Install and configure Bull/BullMQ with Redis
-  - [ ] Create queue configuration with priorities (High/Medium/Low)
-  - [ ] Setup job processors for AI generation, email notifications, analytics
-- [ ] **Create Job Queue Service** in `backend/src/queues/queue.service.ts`:
-  - [ ] Queue management with job creation, monitoring, and cleanup
-  - [ ] Priority-based job scheduling
-  - [ ] Job status tracking and progress reporting
-- [ ] **Implement Retry Infrastructure** in `backend/src/queues/retry.service.ts`:
-  - [ ] Exponential backoff strategy (1s, 2s, 4s, 8s, 16s, max 30s)
-  - [ ] Provider rotation on consecutive failures
-  - [ ] Circuit breaker implementation for failing providers
-  - [ ] Retry attempt tracking in database and Redis
-- [ ] **Create Retry Tracking Entities** in `backend/src/entities/`:
-  - [ ] `GenerationJob.entity.ts` - track job status, attempts, provider used, costs
-  - [ ] `ProviderHealth.entity.ts` - monitor provider uptime, response times, error rates
-  - [ ] `RetryAttempt.entity.ts` - detailed retry history for analytics
-- [ ] **Update Generation Service** to use job queues instead of direct API calls
-- [ ] **Implement Job Monitoring** with real-time queue health and performance metrics
+#### **✅ 2.1 Implement Job Queue & Retry Infrastructure (6 hours) - COMPLETED**
+- [x] **Setup Bull/BullMQ Infrastructure** in `backend/src/queues/`:
+  - [x] Install and configure Bull/BullMQ with Redis
+  - [x] Create queue configuration with priorities (High/Medium/Low)
+  - [x] Setup job processors for AI generation, email notifications, analytics
+- [x] **Create Job Queue Service** in `backend/src/queues/simple-queue.service.ts`:
+  - [x] Queue management with job creation, monitoring, and cleanup
+  - [x] Priority-based job scheduling
+  - [x] Job status tracking and progress reporting
+- [x] **Implement Retry Infrastructure** in `backend/src/queues/retry.service.ts`:
+  - [x] Exponential backoff strategy (1s, 2s, 4s, 8s, 16s, max 30s)
+  - [x] Provider rotation on consecutive failures
+  - [x] Circuit breaker implementation for failing providers
+  - [x] Retry attempt tracking in database and Redis
+- [x] **Create Retry Tracking Entities** in `backend/src/entities/`:
+  - [x] `GenerationJob.entity.ts` - track job status, attempts, provider used, costs
+  - [x] `ProviderHealth.entity.ts` - monitor provider uptime, response times, error rates
+  - [x] `RetryAttempt.entity.ts` - detailed retry history for analytics
+- [x] **Update Generation Service** to use job queues via `generation-queue.service.ts`
+- [x] **Implement Job Monitoring** with real-time queue health and performance metrics
 
 #### **✅ 2.2 Implement Analytics Foundation - COMPLETED**
 - [x] **Comprehensive Analytics System** in `frontend/app/lib/`:
@@ -275,9 +254,9 @@
 1. **✅ Tier 1.13 COMPLETED**: Flexible multi-provider AI infrastructure (Gemini/Groq/OpenAI) ✅
 2. **✅ Tier 1.14 COMPLETED**: History page with pagination, filtering, and favorites ✅
 3. **✅ Tier 2.2 COMPLETED**: Analytics foundation with comprehensive user behavior tracking ✅
-4. **Implement Job Queue Infrastructure**: Bull/BullMQ with Redis for scalable AI generation
+4. **✅ Tier 2.1 COMPLETED**: Job Queue & Retry Infrastructure with enterprise-grade reliability ✅
 5. **Add Missing Pages**: Help and Community pages to complete static page coverage
 
-**Current Focus**: Job queue and retry infrastructure to enable reliable, scalable AI generation processing.
+**Current Focus**: Complete remaining static pages (Help, Community) for full application coverage.
 
 *This roadmap reflects the actual current state of the Hookly codebase as of August 2025.*

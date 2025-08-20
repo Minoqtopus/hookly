@@ -15,10 +15,15 @@ import { AnalyticsEvent } from './entities/analytics-event.entity';
 import { ApiKey } from './entities/api-key.entity';
 import { EmailVerification } from './entities/email-verification.entity';
 import { Generation } from './entities/generation.entity';
+import { GenerationJob } from './entities/generation-job.entity';
+import { ProviderHealth } from './entities/provider-health.entity';
+import { RetryAttempt } from './entities/retry-attempt.entity';
 import { SignupControl } from './entities/signup-control.entity';
 import { SubscriptionEvent } from './entities/subscription-event.entity';
 import { SharedGeneration, Team, TeamActivity, TeamInvitation, TeamMember } from './entities/team.entity';
 import { Template } from './entities/template.entity';
+import { TemplatePurchase } from './entities/template-purchase.entity';
+import { TemplateReview } from './entities/template-review.entity';
 import { UserSettings } from './entities/user-settings.entity';
 import { User } from './entities/user.entity';
 import { GenerationModule } from './generation/generation.module';
@@ -26,6 +31,7 @@ import { HealthModule } from './health/health.module';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { MonitoringModule } from './monitoring/monitoring.module';
 import { PaymentsModule } from './payments/payments.module';
+// import { SimpleQueueModule } from './queues/simple-queue.module'; // Replaced with production queue system
 import { TeamsModule } from './teams/teams.module';
 import { TemplatesModule } from './templates/templates.module';
 import { UserModule } from './user/user.module';
@@ -47,12 +53,17 @@ import { UserModule } from './user/user.module';
       entities: [
         User, 
         Generation, 
+        GenerationJob,
+        ProviderHealth,
+        RetryAttempt,
         Team, 
         TeamMember, 
         SharedGeneration,
         TeamInvitation,
         TeamActivity,
         Template,
+        TemplatePurchase,
+        TemplateReview,
         UserSettings,
         AnalyticsEvent,
         EmailVerification,
@@ -74,6 +85,7 @@ import { UserModule } from './user/user.module';
     CoreModule,
     InfrastructureModule,
     BackupModule,
+    // SimpleQueueModule, // Replaced with production queue system via GenerationModule
   ],
   providers: [
     {
