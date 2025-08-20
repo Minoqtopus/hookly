@@ -4,6 +4,7 @@ import AuthModal from '@/app/components/AuthModal';
 import { ApiClient, Generation } from '@/app/lib/api';
 import { useAuth } from '@/app/lib/AppContext';
 import { toast } from '@/app/lib/toast';
+import { useAnalytics } from '@/app/lib/useAnalytics';
 import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import {
     ArrowLeft,
@@ -63,6 +64,7 @@ export default function HistoryPage() {
   const [availableNiches, setAvailableNiches] = useState<string[]>([]);
 
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { trackPageView, trackInteraction } = useAnalytics();
 
   // Apply route guard - redirect unauthenticated users to homepage
   useRouteGuard(routeConfigs.dashboard);
@@ -81,12 +83,21 @@ export default function HistoryPage() {
         setGenerations(prev => [...prev, ...response.generations]);
       }
       
-      setPagination(response.pagination);
+      // Calculate pagination info manually since API doesn't return it
+      const totalPages = Math.ceil(response.total / pagination.limit);
+      const hasMore = offset + pagination.limit < response.total;
+      
+      setPagination({
+        limit: pagination.limit,
+        offset,
+        hasMore,
+        totalPages,
+      });
       setTotal(response.total);
       setCurrentPage(page);
       
       // Extract unique niches for filter dropdown
-      const niches = [...new Set(response.generations.map(g => g.niche).filter(Boolean))];
+      const niches = Array.from(new Set(response.generations.map(g => g.niche).filter(Boolean)));
       setAvailableNiches(niches);
       
     } catch (error) {
@@ -100,13 +111,25 @@ export default function HistoryPage() {
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
       loadGenerations(1, true);
+      // Track page view
+      trackPageView('history', {
+        total_generations: total,
+        user_plan: user?.plan,
+      });
     }
-  }, [isAuthenticated, authLoading, loadGenerations]);
+  }, [isAuthenticated, authLoading, loadGenerations, trackPageView, total, user?.plan]);
 
   const handleCopyGeneration = (generation: Generation) => {
     const textToCopy = `${generation.hook}\n\n${generation.script}`;
     navigator.clipboard.writeText(textToCopy);
     toast.success('Ad content copied to clipboard!');
+    
+    // Track analytics
+    trackInteraction('copy_to_clipboard', {
+      generation_id: generation.id,
+      content_type: 'generation',
+      source: 'history',
+    });
   };
 
   const handleShareGeneration = (generation: Generation) => {
@@ -118,26 +141,50 @@ export default function HistoryPage() {
         title: generation.title,
         text: shareText,
         url: shareUrl,
+      }).then(() => {
+        // Track successful share
+        trackInteraction('share_generation', {
+          generation_id: generation.id,
+          method: 'native_share',
+          source: 'history',
+        });
       }).catch(console.error);
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
       toast.success('Share link copied to clipboard!');
+      
+      // Track fallback share
+      trackInteraction('share_generation', {
+        generation_id: generation.id,
+        method: 'clipboard_fallback',
+        source: 'history',
+      });
     }
   };
 
   const handleToggleFavorite = async (generationId: string) => {
     try {
+      const generation = generations.find(g => g.id === generationId);
+      const newFavoriteStatus = !generation?.is_favorite;
+      
       // For now, just update the local state
       // In production, you'd call an API endpoint to toggle favorite
       setGenerations(prev => 
         prev.map(gen => 
           gen.id === generationId 
-            ? { ...gen, is_favorite: !gen.is_favorite }
+            ? { ...gen, is_favorite: newFavoriteStatus }
             : gen
         )
       );
       toast.success('Favorite status updated!');
+      
+      // Track analytics
+      trackInteraction('favorite_toggle', {
+        generation_id: generationId,
+        is_favorite: newFavoriteStatus,
+        source: 'history',
+      });
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
       toast.error('Failed to update favorite status');

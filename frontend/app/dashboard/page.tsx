@@ -9,6 +9,7 @@ import { ApiClient } from '@/app/lib/api';
 import { useApp, useAuth, useRecentGenerations, useUserStats } from '@/app/lib/AppContext';
 import { getPlanConfig } from '@/app/lib/plans';
 import { toast } from '@/app/lib/toast';
+import { useAnalytics } from '@/app/lib/useAnalytics';
 import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import {
   ArrowRight,
@@ -30,10 +31,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function DashboardPage() {
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showUpgradeModalState, setShowUpgradeModal] = useState(false);
   const [isQuickAILoading, setIsQuickAILoading] = useState(false);
   const [isDuplicateLoading, setIsDuplicateLoading] = useState(false);
   const router = useRouter();
@@ -42,14 +43,31 @@ export default function DashboardPage() {
   const userStats = useUserStats();
   const recentGenerations = useRecentGenerations();
   const { actions } = useApp();
+  const { trackPageView, trackInteraction, trackConversionEvent } = useAnalytics();
 
   // Apply route guard - redirect unauthenticated users to homepage
   useRouteGuard(routeConfigs.dashboard);
+
+  // Track page view
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      trackPageView('dashboard', {
+        user_plan: user.plan,
+        generations_used: user.trial_generations_used || 0,
+        is_beta_user: user.is_beta_user,
+      });
+    }
+  }, [isAuthenticated, user, trackPageView]);
 
   // Route guard handles authentication redirects - no need for modal
 
   const handleLogout = () => {
     actions.logout();
+  };
+
+  const handleShowUpgradeModal = (source: string) => {
+    trackConversionEvent('upgrade_modal_shown', { source });
+    setShowUpgradeModal(true);
   };
 
   const handleUseTemplate = (template: any) => {
@@ -66,6 +84,13 @@ export default function DashboardPage() {
     const textToCopy = `${generation.hook}\n\n${generation.script}`;
     navigator.clipboard.writeText(textToCopy);
     toast.success('Ad content copied to clipboard!');
+    
+    // Track analytics
+    trackInteraction('copy_to_clipboard', {
+      generation_id: generation.id,
+      content_type: 'generation',
+      source: 'dashboard',
+    });
   };
 
   const handleShareGeneration = (generation: any) => {
@@ -77,18 +102,42 @@ export default function DashboardPage() {
         title: generation.title,
         text: shareText,
         url: shareUrl,
+      }).then(() => {
+        // Track successful share
+        trackInteraction('share_generation', {
+          generation_id: generation.id,
+          method: 'native_share',
+          source: 'dashboard',
+        });
       }).catch(console.error);
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
       toast.success('Share link copied to clipboard!');
+      
+      // Track fallback share
+      trackInteraction('share_generation', {
+        generation_id: generation.id,
+        method: 'clipboard_fallback',
+        source: 'dashboard',
+      });
     }
   };
 
   const handleToggleFavorite = async (generationId: string) => {
     try {
+      const generation = recentGenerations.find(g => g.id === generationId);
+      const newFavoriteStatus = !generation?.is_favorite;
+      
       await actions.toggleFavorite(generationId);
       toast.success('Favorite updated!');
+      
+      // Track analytics
+      trackInteraction('favorite_toggle', {
+        generation_id: generationId,
+        is_favorite: newFavoriteStatus,
+        source: 'dashboard',
+      });
     } catch (error) {
       toast.error('Failed to update favorite');
     }
@@ -268,7 +317,7 @@ export default function DashboardPage() {
             trialEndsAt={user.trial_ends_at}
             generationsUsed={displayStats.trialGenerationsUsed}
             generationsLimit={displayStats.monthlyLimit || 15}
-            onUpgrade={() => setShowUpgradeModal(true)}
+            onUpgrade={() => handleShowUpgradeModal('trial_countdown')}
             className="mb-8"
           />
         )}
@@ -352,7 +401,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <button 
-                onClick={() => setShowUpgradeModal(true)}
+                onClick={() => handleShowUpgradeModal('performance_overview')}
                 className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
               >
                 Upgrade to Pro
@@ -389,7 +438,7 @@ export default function DashboardPage() {
             </div>
             {trialLimit && displayStats?.isTrialUser && (displayStats?.generationsToday ?? 0) >= trialLimit && (
               <p className="text-sm text-red-600 mt-2">
-                Trial limit reached! <span className="font-medium cursor-pointer" onClick={() => setShowUpgradeModal(true)}>Upgrade to Starter</span>
+                Trial limit reached! <span className="font-medium cursor-pointer" onClick={() => handleShowUpgradeModal('trial_limit_reached')}>Upgrade to Starter</span>
               </p>
             )}
           </div>
@@ -511,7 +560,7 @@ export default function DashboardPage() {
                   {getPlanConfig('starter')?.features.slice(0, 3).join(', ') || 'Plan features loading...'}
                 </p>
                 <button 
-                  onClick={() => setShowUpgradeModal(true)}
+                  onClick={() => handleShowUpgradeModal('empty_state_cta')}
                   className="btn-primary w-full text-sm"
                 >
                   {getPlanConfig('starter')?.price.monthly ? 
@@ -638,7 +687,7 @@ export default function DashboardPage() {
 
       {/* Upgrade Modal */}
       <UpgradeModal
-        isOpen={showUpgradeModal}
+        isOpen={showUpgradeModalState}
         onClose={() => setShowUpgradeModal(false)}
         source="dashboard"
       />

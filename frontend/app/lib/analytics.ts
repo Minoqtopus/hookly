@@ -134,10 +134,46 @@ export class AnalyticsService {
   }
 
   static async trackFeatureUsage(feature: string, context?: any) {
-    return this.trackEvent(EventType.COPY_TO_CLIPBOARD, {
+    return this.trackEvent(EventType.PAGE_VIEW, {
       eventData: {
         feature_used: feature,
         ...context,
+      },
+    });
+  }
+
+  static async trackCopyToClipboard(content: string, source: string) {
+    return this.trackEvent(EventType.COPY_TO_CLIPBOARD, {
+      eventData: {
+        content_type: content,
+        source,
+      },
+    });
+  }
+
+  static async trackShareGeneration(generationId: string, method: string) {
+    return this.trackEvent(EventType.SHARE_GENERATION, {
+      eventData: {
+        generation_id: generationId,
+        share_method: method,
+      },
+    });
+  }
+
+  static async trackFavoriteToggle(generationId: string, isFavorite: boolean) {
+    return this.trackEvent(EventType.SAVE_TO_FAVORITES, {
+      eventData: {
+        generation_id: generationId,
+        is_favorite: isFavorite,
+      },
+    });
+  }
+
+  static async trackTemplateUsage(templateId: string, templateNiche: string) {
+    return this.trackEvent(EventType.TEMPLATE_USED, {
+      eventData: {
+        template_id: templateId,
+        template_niche: templateNiche,
       },
     });
   }
