@@ -6,6 +6,7 @@ import TemplateLibrary from '@/app/components/TemplateLibrary';
 import TrialCountdown from '@/app/components/TrialCountdown';
 import UpgradeModal from '@/app/components/UpgradeModal';
 import ViralGrowthDashboard from '@/app/components/ViralGrowthDashboard';
+import ContentMarketingDashboard from '@/app/components/ContentMarketingDashboard';
 import { ApiClient } from '@/app/lib/api';
 import { useApp, useAuth, useRecentGenerations, useUserStats } from '@/app/lib/AppContext';
 import { getPlanConfig } from '@/app/lib/plans';
@@ -609,6 +610,13 @@ export default function DashboardPage() {
         {isAuthenticated && user && ['pro', 'agency'].includes(user.plan) && (
           <div className="mb-8">
             <ViralGrowthDashboard />
+          </div>
+        )}
+
+        {/* Content Marketing Dashboard */}
+        {isAuthenticated && user && user.plan === 'agency' && (
+          <div className="mb-8">
+            <ContentMarketingDashboard />
           </div>
         )}
 
