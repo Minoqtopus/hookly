@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index, ManyToOne, JoinColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from './user.entity';
 
 export enum EventType {
@@ -31,6 +31,13 @@ export enum EventType {
   TEAM_CREATED = 'team_created',
   TEAM_MEMBER_INVITED = 'team_member_invited',
   TEAM_GENERATION_SHARED = 'team_generation_shared',
+  
+  // Enterprise upsell events
+  ENTERPRISE_UPSELL_PURCHASED = 'enterprise_upsell_purchased',
+  ENTERPRISE_UPSELL_CANCELLED = 'enterprise_upsell_cancelled',
+  CUSTOM_INTEGRATION_REQUESTED = 'custom_integration_requested',
+  WHITE_LABEL_ENABLED = 'white_label_enabled',
+  DEDICATED_SUPPORT_UPGRADED = 'dedicated_support_upgraded',
   
   // Page views
   PAGE_VIEW = 'page_view',
