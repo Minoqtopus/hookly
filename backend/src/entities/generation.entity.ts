@@ -60,6 +60,14 @@ export class Generation {
     retry_count?: number;
     error_count?: number;
     generated_at?: string;
+    token_usage?: {
+      inputTokens: number;
+      outputTokens: number;
+      totalTokens: number;
+      estimatedCost: number;
+    };
+    cost?: number;
+    quality_score?: number;
   };
 
   @Column({ type: 'int', default: 0 })

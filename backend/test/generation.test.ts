@@ -2,18 +2,19 @@ import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { AIService } from '../src/ai/ai.service';
+import { TokenManagementService } from '../src/ai/token-management.service';
 import { GenerationPolicy } from '../src/core/domain/policies/generation.policy';
 import { PlanLimitPolicy } from '../src/core/domain/policies/plan-limit.policy';
 import { Generation } from '../src/entities/generation.entity';
 import { User, UserPlan } from '../src/entities/user.entity';
 import { GenerationService } from '../src/generation/generation.service';
-import { OpenAIService } from '../src/openai/openai.service';
 
 describe('GenerationService', () => {
   let service: GenerationService;
   let userRepository: Repository<User>;
   let generationRepository: Repository<Generation>;
-  let openaiService: OpenAIService;
+  let aiService: AIService;
 
   const mockUser = {
     id: 'user-1',
@@ -54,7 +55,7 @@ describe('GenerationService', () => {
     count: jest.fn(),
   };
 
-  const mockOpenAIService = {
+  const mockAIService = {
     generateUGCContent: jest.fn(),
     generateUGCVariations: jest.fn(),
   };
@@ -62,6 +63,12 @@ describe('GenerationService', () => {
   const mockContentGenerator = {
     generateUGCContent: jest.fn(),
     generateUGCVariations: jest.fn(),
+    getLastGenerationMetrics: jest.fn(),
+    getProviderId: jest.fn(),
+    isAvailable: jest.fn(),
+    getCapabilities: jest.fn(),
+    validateContent: jest.fn(),
+    getProviderHealth: jest.fn(),
   };
 
   const mockPlanLimitPolicy = {
@@ -71,6 +78,10 @@ describe('GenerationService', () => {
   const mockGenerationPolicy = {
     getGenerationConfig: jest.fn(),
     calculateRetryDelay: jest.fn(),
+  };
+
+  const mockTokenManagementService = {
+    canUserGenerate: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -90,6 +101,37 @@ describe('GenerationService', () => {
 
     mockGenerationPolicy.calculateRetryDelay.mockReturnValue(1000);
 
+    mockTokenManagementService.canUserGenerate.mockReturnValue({
+      canGenerate: true,
+      reason: null,
+    });
+
+    // Setup default mock behaviors for content generator
+    mockContentGenerator.getLastGenerationMetrics.mockReturnValue(null);
+    mockContentGenerator.getProviderId.mockReturnValue('test-provider');
+    mockContentGenerator.isAvailable.mockResolvedValue(true);
+    mockContentGenerator.getCapabilities.mockReturnValue({
+      supportsCreativeContent: true,
+      supportsSpeedOptimization: false,
+      supportsPremiumQuality: true,
+      maxTokensPerRequest: 3000,
+      costPer1MInputTokens: 0.10,
+      costPer1MOutputTokens: 0.40,
+    });
+    mockContentGenerator.validateContent.mockResolvedValue({
+      quality: 0.85,
+      uniqueness: 0.78,
+      relevance: 0.92,
+      suggestions: [],
+    });
+    mockContentGenerator.getProviderHealth.mockResolvedValue({
+      status: 'healthy',
+      responseTime: 2500,
+      errorRate: 0.02,
+      uptime: 0.998,
+      costPerGeneration: 0.0015,
+    });
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GenerationService,
@@ -102,8 +144,8 @@ describe('GenerationService', () => {
           useValue: mockGenerationRepository,
         },
         {
-          provide: OpenAIService,
-          useValue: mockOpenAIService,
+          provide: AIService,
+          useValue: mockAIService,
         },
         {
           provide: 'ContentGeneratorPort',
@@ -117,13 +159,17 @@ describe('GenerationService', () => {
           provide: GenerationPolicy,
           useValue: mockGenerationPolicy,
         },
+        {
+          provide: TokenManagementService,
+          useValue: mockTokenManagementService,
+        },
       ],
     }).compile();
 
     service = module.get<GenerationService>(GenerationService);
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     generationRepository = module.get<Repository<Generation>>(getRepositoryToken(Generation));
-    openaiService = module.get<OpenAIService>(OpenAIService);
+    aiService = module.get<AIService>(AIService);
 
     // Default identity behavior for create/save so service returns the values it writes
     mockGenerationRepository.create.mockImplementation((data: any) => ({ ...data }));
@@ -254,7 +300,7 @@ describe('GenerationService', () => {
       const trialUser = { ...mockUser, plan: UserPlan.TRIAL, trial_generations_used: 0 };
       mockUserRepository.findOne.mockResolvedValue(trialUser);
       mockUserRepository.save.mockResolvedValue(trialUser);
-      mockOpenAIService.generateUGCContent.mockResolvedValue(mockGeneratedContent);
+      mockAIService.generateUGCContent.mockResolvedValue(mockGeneratedContent);
 
       const result = await service.generateContent('user-1', {
         productName: 'Test Product',
@@ -270,7 +316,7 @@ describe('GenerationService', () => {
       const proUser = { ...mockUser, plan: UserPlan.PRO, monthly_count: 0 };
       mockUserRepository.findOne.mockResolvedValue(proUser);
       mockUserRepository.save.mockResolvedValue(proUser);
-      mockOpenAIService.generateUGCContent.mockResolvedValue(mockGeneratedContent);
+      mockAIService.generateUGCContent.mockResolvedValue(mockGeneratedContent);
 
       const result = await service.generateContent('user-1', {
         productName: 'Test Product',
@@ -286,7 +332,7 @@ describe('GenerationService', () => {
       const agencyUser = { ...mockUser, plan: UserPlan.AGENCY, monthly_count: 0 };
       mockUserRepository.findOne.mockResolvedValue(agencyUser);
       mockUserRepository.save.mockResolvedValue(agencyUser);
-      mockOpenAIService.generateUGCContent.mockResolvedValue(mockGeneratedContent);
+      mockAIService.generateUGCContent.mockResolvedValue(mockGeneratedContent);
 
       const result = await service.generateContent('user-1', {
         productName: 'Test Product',
@@ -334,7 +380,7 @@ describe('GenerationService', () => {
   describe('Guest Generation', () => {
     test('should generate content for guest users', async () => {
       mockGenerationRepository.count.mockResolvedValue(0); // No recent guest generations
-      mockOpenAIService.generateUGCContent.mockResolvedValue(mockGeneratedContent);
+      mockAIService.generateUGCContent.mockResolvedValue(mockGeneratedContent);
 
       const result = await service.generateGuestContent(
         {

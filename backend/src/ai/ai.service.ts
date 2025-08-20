@@ -25,7 +25,7 @@ export interface UGCVariationsOutput {
 }
 
 @Injectable()
-export class OpenAIService implements ContentGeneratorPort {
+export class AIService implements ContentGeneratorPort {
   private openai: OpenAI;
 
   constructor(private configService: ConfigService) {
@@ -85,7 +85,7 @@ Make it sound authentic, relatable, and focused on solving a problem or showing 
         visuals: parsedResponse.visuals || [],
       };
     } catch (error) {
-      console.error('OpenAI API Error:', error);
+      console.error('AI API Error:', error);
       throw new Error('Failed to generate UGC content');
     }
   }
@@ -175,7 +175,7 @@ Make each variation feel authentic, relatable, and focused on solving a problem 
         performance: generatePerformanceMetrics(index)
       }));
     } catch (error) {
-      console.error('OpenAI API Error:', error);
+      console.error('AI API Error:', error);
       throw new Error('Failed to generate UGC variations');
     }
   }
@@ -210,5 +210,28 @@ Make each variation feel authentic, relatable, and focused on solving a problem 
       uptime: 0.998,
       costPerGeneration: 0.015
     };
+  }
+
+  getCapabilities(): any {
+    return {
+      supportsCreativeContent: true,
+      supportsSpeedOptimization: false,
+      supportsPremiumQuality: true,
+      maxTokensPerRequest: 4096,
+      costPer1MInputTokens: 0.15,
+      costPer1MOutputTokens: 0.60
+    };
+  }
+
+  getLastGenerationMetrics(): any {
+    return null;
+  }
+
+  getProviderId(): string {
+    return 'openai';
+  }
+
+  async isAvailable(): Promise<boolean> {
+    return !!this.configService.get<string>('OPENAI_API_KEY');
   }
 }

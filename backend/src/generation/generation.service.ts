@@ -6,7 +6,8 @@ import { PlanLimitPolicy } from '../core/domain/policies/plan-limit.policy';
 import { ContentGeneratorPort } from '../core/ports/content-generator.port';
 import { Generation } from '../entities/generation.entity';
 import { User, UserPlan } from '../entities/user.entity';
-import { OpenAIService } from '../openai/openai.service';
+import { AIService } from '../ai/ai.service';
+import { TokenManagementService } from '../ai/token-management.service';
 import { GenerateVariationsDto } from './dto/generate-variations.dto';
 import { GenerateDto } from './dto/generate.dto';
 import { GuestGenerateDto } from './dto/guest-generate.dto';
@@ -18,11 +19,12 @@ export class GenerationService {
     private userRepository: Repository<User>,
     @InjectRepository(Generation)
     private generationRepository: Repository<Generation>,
-    private openaiService: OpenAIService,
+    private aiService: AIService,
     @Inject('ContentGeneratorPort')
     private contentGenerator: ContentGeneratorPort,
     private planLimitPolicy: PlanLimitPolicy,
     private generationPolicy: GenerationPolicy,
+    private tokenManagementService: TokenManagementService,
   ) {}
 
   async generateContent(userId: string, generateDto: GenerateDto) {
@@ -42,6 +44,12 @@ export class GenerationService {
     
     if (!usageStatus.canGenerate) {
       throw new ForbiddenException(usageStatus.upgradeMessage || 'Generation limit reached');
+    }
+
+    // Additional check using new token management system
+    const tokenCheck = await this.tokenManagementService.canUserGenerate(userId, user.plan);
+    if (!tokenCheck.canGenerate) {
+      throw new ForbiddenException(tokenCheck.reason || 'Generation limit reached');
     }
 
     // Get generation configuration from domain policy
@@ -104,6 +112,9 @@ export class GenerationService {
       }
       // STARTER, PRO, and AGENCY plans get no watermarks
 
+      // Get metrics from the provider orchestrator
+      const generationMetrics = this.contentGenerator.getLastGenerationMetrics();
+      
       // Save generation to database with metadata
       const generation = this.generationRepository.create({
         user_id: userId,
@@ -115,14 +126,31 @@ export class GenerationService {
         visuals: output.visuals,
         generation_metadata: {
           processing_time_ms: processingTime,
-          model_version: 'gpt-4-turbo', // This should come from OpenAI service
-          ai_provider: 'openai',
+          model_version: generationMetrics?.model || 'multi-provider',
+          ai_provider: generationMetrics?.providerId || 'orchestrator',
           retry_count: retryCount,
           error_count: retryCount,
           generated_at: new Date().toISOString(),
+          token_usage: generationMetrics?.tokenUsage || null,
+          cost: generationMetrics?.tokenUsage?.estimatedCost || null,
+          quality_score: generationMetrics?.quality || null,
         },
       });
       await this.generationRepository.save(generation);
+
+      // Record token usage in the token management system
+      if (generationMetrics?.tokenUsage) {
+        await this.tokenManagementService.recordTokenUsage({
+          userId,
+          providerId: generationMetrics.providerId,
+          inputTokens: generationMetrics.tokenUsage.inputTokens,
+          outputTokens: generationMetrics.tokenUsage.outputTokens,
+          totalTokens: generationMetrics.tokenUsage.totalTokens,
+          estimatedCost: generationMetrics.tokenUsage.estimatedCost,
+          timestamp: new Date(),
+          success: true,
+        });
+      }
 
       // Increment appropriate counter
       if (user.plan === UserPlan.TRIAL) {
@@ -173,8 +201,8 @@ export class GenerationService {
     }
 
     try {
-      // Generate content using OpenAI
-      const generatedContent = await this.openaiService.generateUGCContent({
+      // Generate content using AI service
+      const generatedContent = await this.aiService.generateUGCContent({
         productName: guestGenerateDto.productName,
         niche: guestGenerateDto.niche,
         targetAudience: guestGenerateDto.targetAudience,

@@ -28,6 +28,32 @@ export interface ContentGenerationResponse {
   };
 }
 
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  estimatedCost: number;
+}
+
+export interface GenerationMetrics {
+  providerId: string;
+  model: string;
+  responseTime: number;
+  tokenUsage: TokenUsage;
+  quality: number;
+  success: boolean;
+  error?: string;
+}
+
+export interface ProviderCapabilities {
+  supportsCreativeContent: boolean;
+  supportsSpeedOptimization: boolean;
+  supportsPremiumQuality: boolean;
+  maxTokensPerRequest: number;
+  costPer1MInputTokens: number;
+  costPer1MOutputTokens: number;
+}
+
 export interface ContentGeneratorPort {
   /**
    * Generate UGC content based on the request
@@ -59,4 +85,24 @@ export interface ContentGeneratorPort {
     uptime: number;
     costPerGeneration: number;
   }>;
+
+  /**
+   * Get provider capabilities and pricing
+   */
+  getCapabilities(): ProviderCapabilities;
+
+  /**
+   * Get generation metrics for monitoring
+   */
+  getLastGenerationMetrics(): GenerationMetrics | null;
+
+  /**
+   * Provider identifier
+   */
+  getProviderId(): string;
+
+  /**
+   * Check if provider is available
+   */
+  isAvailable(): Promise<boolean>;
 }

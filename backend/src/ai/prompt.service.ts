@@ -60,11 +60,11 @@ export interface GeneratedContent {
 
 @Injectable()
 export class AdvancedPromptService {
-  private readonly openaiApiKey: string;
+  private readonly aiApiKey: string;
   private readonly modelName: string;
 
   constructor(private configService: ConfigService) {
-    this.openaiApiKey = this.configService.get<string>('OPENAI_API_KEY');
+    this.aiApiKey = this.configService.get<string>('OPENAI_API_KEY');
     this.modelName = this.configService.get<string>('OPENAI_MODEL_NAME', 'gpt-4o-mini');
   }
 
@@ -77,7 +77,7 @@ export class AdvancedPromptService {
       const systemPrompt = this.buildSystemPrompt(request.userStyleProfile);
       const userPrompt = this.buildUserPrompt(request);
       
-      // TODO: Integrate with OpenAI API
+      // TODO: Integrate with AI provider
       // For now, return a structured response that demonstrates the system
       return this.generateMockResponse(request);
     } catch (error) {

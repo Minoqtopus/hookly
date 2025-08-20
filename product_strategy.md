@@ -84,13 +84,13 @@
 - **Premium positioning**: Multi-platform capability + team collaboration justifies higher pricing
 - **Viral growth**: Share feature creates organic user acquisition (no referral costs)
 
-### **Cost Structure (Monthly) - Quality Maintained**
-- **AI Costs**: ~$2,200 (maintaining premium quality)
+### **Cost Structure (Monthly) - Optimized for Scalability**
+- **AI Costs**: ~$15-50 (flexible multi-provider strategy, August 2025 pricing)
 - **Infrastructure**: ~$500 (hosting, databases, CDN)
 - **Integrations**: ~$300 (payment processing, email, analytics)
 - **Template Marketplace**: ~$60 (creator revenue sharing)
-- **Total Costs**: ~$3,060/month
-- **Profit Margin**: ~70% ($7,140/month)
+- **Total Costs**: ~$875-910/month
+- **Profit Margin**: ~91% ($9,290-9,325/month)
 
 ## **🏗️ TECHNICAL ARCHITECTURE & INFRASTRUCTURE**
 
@@ -113,17 +113,17 @@
 - **Database**: PostgreSQL with TypeORM
 - **Authentication**: JWT with refresh tokens, working correctly
 - **Payment Integration**: LemonSqueezy (already implemented)
-- **AI Integration**: OpenAI GPT-4o-mini for content generation
+- **AI Integration**: Multi-provider AI strategy (Gemini/Groq/OpenAI) for optimal cost and quality
 - **Testing**: Jest with comprehensive test coverage
 
 ### **Clean Architecture & SOLID (Engineering Standard)**
 - **Clean Architecture Layers**:
   - Domain: Entities, enums, business policies (e.g., `User`, `UserPlan`, plan features)
   - Application: Use-cases/services orchestrating domain rules (e.g., generation, payments, user plans)
-  - Infrastructure: Controllers, repositories, external adapters (OpenAI, LemonSqueezy, Redis, Mixpanel)
+  - Infrastructure: Controllers, repositories, external adapters (Gemini, Groq, OpenAI, LemonSqueezy, Redis, Mixpanel)
 - **Dependency Rule**: Inner layers know nothing about outer layers. Application depends on interfaces, not implementations.
 - **Ports/Adapters**:
-  - ContentGeneratorPort (AI) → OpenAIService adapter
+  - ContentGeneratorPort (AI) → Multi-provider orchestrator (Gemini/Groq/OpenAI adapters)
   - PaymentProviderPort (billing) → LemonSqueezy adapter
   - CachePort → RedisService adapter
   - MonitoringPort → LogViewer/Monitoring adapter
@@ -131,7 +131,7 @@
 - **Modularity Rules**: Never import a repository into another repository; always communicate via services. Keep modules autonomous and interact through public service APIs.
 
 ### **Database Design**
-- **User Management**: Trial, Creator, Agency plans with feature flags
+- **User Management**: Trial, Starter, Pro, Agency plans with feature flags
 - **Content Generation**: Hooks, scripts, visuals with performance tracking
 - **Templates**: Reusable content structures with usage analytics
 - **Team Features**: Collaboration and sharing capabilities
@@ -293,13 +293,14 @@
 - **Differentiation**: Focus on UGC content, not generic AI tools
 - **Scalability**: API access for power users, not enterprise (bootstrapped approach)
 
-### **Beta Testing Strategy (Critical for Launch)**
+### **Beta Testing Strategy (Optimized for Conversion)**
 - **Strategic beta testers**: 50-100 maximum (not unlimited)
 - **Beta user criteria**: Content creators (30), small businesses (30), agencies (20), influencers (20)
-- **Beta benefits**: 30 days free PRO access (not Agency)
-- **Conversion path**: PRO → AGENCY upgrade
-- **Cost control**: Prevents viral growth before platform readiness
+- **Beta benefits**: 14 days free PRO access (reduced from 30 days for better conversion timing)
+- **Conversion rationale**: 14-day beta period creates urgency while allowing sufficient evaluation time
+- **Cost control**: Prevents viral growth before platform readiness (~$1-2 total beta cost vs $5-7 for 30 days)
 - **Marketing control**: Limited spots create urgency and exclusivity
+- **Note**: Regular TRIAL users still get 15 generations over 7 days (unchanged)
 
 ### **Pricing Strategy Insights**
 - **Quality-First Approach**: Premium AI models justify premium pricing
@@ -470,10 +471,10 @@
 - **Platform-specific optimization** (TikTok, X, Instagram, YouTube)
 - **Quality validation system** for uniqueness and relevance
 - **Performance prediction algorithms** with engagement scoring
-- **Multi-provider AI infrastructure** with automatic fallback (OpenAI + Claude + Gemini)
+- **Flexible multi-provider AI infrastructure** with hot-swappable providers (Gemini/Groq/OpenAI)
 - **Job queue system** for reliable, scalable AI generation (Bull/BullMQ)
 - **Comprehensive retry tracking** with provider rotation and circuit breakers
-- **Cost optimization** across AI providers while maintaining quality
+- **Cost optimization** with environment-driven configuration and real-time monitoring
 - **No platform dependencies** - users export content manually
 
 ### **Database Schema**
@@ -495,16 +496,39 @@
 - **Configuration Scope**: API keys, URLs, limits, settings, feature flags, and business logic
 - **Release Safety**: Environment variables ensure smooth production deployments
 
-### **AI Infrastructure & Job Queue Strategy (CRITICAL FOR SCALABILITY)**
-- **Multi-Provider AI**: OpenAI (primary), Claude (secondary), Gemini (tertiary) with automatic fallback
-- **Job Queue System**: Bull/BullMQ with Redis for reliable AI generation scaling
-- **Retry Infrastructure**: Comprehensive tracking in database + Redis with exponential backoff
-- **Provider Health Monitoring**: Track uptime, response times, error rates, costs per generation
+### **AI Infrastructure Strategy (August 2025) - FLEXIBLE & COST-OPTIMIZED**
+
+#### **Multi-Provider Strategy (V1 - Initial Implementation)**
+- **Primary Provider**: Google Gemini 2.5 Flash-Lite ($0.10 input + $0.40 output per 1M tokens)
+  - Purpose: Creative content generation, primary UGC creation
+  - Quality: Excellent for social media content, cost-effective
+- **Speed Provider**: Groq Llama 4 Scout ($0.11 input + $0.34 output per 1M tokens)
+  - Purpose: Fast responses, overflow capacity, real-time generation
+  - Performance: 18x faster inference, good quality for speed-critical tasks
+- **Premium Provider**: OpenAI GPT-4o Mini ($0.15 input + $0.60 output per 1M tokens)
+  - Purpose: Complex requests, premium quality, fallback for difficult tasks
+  - Quality: Highest quality output, used sparingly for cost control
+
+#### **Token Management & Cost Control**
+- **Per Generation Allocation**: 1,000 input + 2,000 output tokens (3,000 total)
+- **Cost Per Generation**: ~$0.0008-0.0015 (less than 0.2 cents)
+- **Monthly Projections**: 
+  - 100 users × 50 avg generations = 5,000 generations = $5-8/month
+  - 500 users × 50 avg generations = 25,000 generations = $25-38/month
+- **Safety Margins**: 99%+ profit margins maintained with hard budget caps
+
+#### **Flexible Architecture Design**
+- **Hot-Swappable Providers**: Environment-driven configuration allows model changes without code changes
+- **Evolution Strategy**: Start cost-optimized, upgrade to premium models as revenue grows
+- **A/B Testing Ready**: Can test different model combinations for quality/cost optimization
+- **Real-Time Monitoring**: Track costs, quality metrics, and user satisfaction per provider
+
+#### **Job Queue System & Reliability**
+- **Bull/BullMQ Integration**: Redis-backed job queue for reliable AI generation
+- **Provider Orchestrator**: Intelligent routing based on request type, load, and cost
+- **Retry Infrastructure**: Comprehensive tracking with exponential backoff and provider rotation
 - **Circuit Breaker Pattern**: Temporarily disable failing providers to prevent cascade failures
-- **Cost Optimization**: Route to most cost-effective provider that meets quality thresholds
-- **Horizontal Scaling**: Multiple job workers, load balancing, queue priorities (High/Medium/Low)
-- **Failure Analytics**: Identify patterns in provider issues, user inputs, rate limits
-- **User Experience**: Never show "AI is down" - always attempt fallback providers
+- **Cost Monitoring**: Real-time budget tracking with automatic alerts and limits
 
 ### **Development Workflow Strategy (CRITICAL)**
 - **Database-First Approach**: Always plan schema before implementation, never hardcode data
