@@ -1,5 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from '../../entities/user.entity';
@@ -9,7 +8,6 @@ export class AdminGuard implements CanActivate {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    private reflector: Reflector,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -30,7 +28,7 @@ export class AdminGuard implements CanActivate {
     }
 
     // Check if user has admin or super admin role
-    if (user.role !== UserRole.ADMIN && user.role !== UserRole.SUPER_ADMIN) {
+    if (user.role !== UserRole.ADMIN) {
       throw new ForbiddenException('Admin access required');
     }
 

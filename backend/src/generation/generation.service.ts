@@ -1,13 +1,13 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository } from 'typeorm';
+import { AIService } from '../ai/ai.service';
+import { TokenManagementService } from '../ai/token-management.service';
 import { GenerationPolicy } from '../core/domain/policies/generation.policy';
 import { PlanLimitPolicy } from '../core/domain/policies/plan-limit.policy';
 import { ContentGeneratorPort } from '../core/ports/content-generator.port';
 import { Generation } from '../entities/generation.entity';
 import { User, UserPlan } from '../entities/user.entity';
-import { AIService } from '../ai/ai.service';
-import { TokenManagementService } from '../ai/token-management.service';
 import { GenerateVariationsDto } from './dto/generate-variations.dto';
 import { GenerateDto } from './dto/generate.dto';
 import { GuestGenerateDto } from './dto/guest-generate.dto';
@@ -36,7 +36,7 @@ export class GenerationService {
     // Check if user can generate content using domain policy
     const usageStatus = this.planLimitPolicy.canUserGenerate(
       user.plan,
-      user.monthly_count,
+      user.monthly_generation_count,
       user.trial_generations_used,
       user.trial_started_at,
       user.trial_ends_at
@@ -156,7 +156,7 @@ export class GenerationService {
       if (user.plan === UserPlan.TRIAL) {
         user.trial_generations_used += 1;
       } else {
-        user.monthly_count += 1;
+        user.monthly_generation_count += 1;
       }
       await this.userRepository.save(user);
 
@@ -289,7 +289,7 @@ export class GenerationService {
     const variationsCount = 3; // Always generate 3 variations
     const canGenerateVariations = await this.planLimitPolicy.canUserGenerate(
       user.plan,
-      user.monthly_count + variationsCount,
+      user.monthly_generation_count + variationsCount,
       user.trial_generations_used + variationsCount,
       user.trial_started_at,
       user.trial_ends_at
@@ -348,11 +348,11 @@ export class GenerationService {
       if (user.plan === UserPlan.TRIAL) {
         user.trial_generations_used += variationsCount;
       } else {
-        user.monthly_count += variationsCount;
+        user.monthly_generation_count += variationsCount;
       }
       await this.userRepository.save(user);
 
-      const updatedCurrentCount = user.plan === UserPlan.TRIAL ? user.trial_generations_used : user.monthly_count;
+      const updatedCurrentCount = user.plan === UserPlan.TRIAL ? user.trial_generations_used : user.monthly_generation_count;
       
       return {
         variations: savedGenerations,

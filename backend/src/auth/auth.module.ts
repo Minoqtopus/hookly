@@ -20,7 +20,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     PassportModule,
     JwtModule.register({}),
     EmailModule,
-
     forwardRef(() => AnalyticsModule),
   ],
   controllers: [AuthController],

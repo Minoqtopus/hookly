@@ -220,8 +220,8 @@ export class UserService {
     user.plan = UserPlan.STARTER;
     
     // Reset monthly generation count for new plan
-    user.monthly_count = 0;
-    user.reset_date = new Date();
+    user.monthly_generation_count = 0;
+    user.monthly_reset_date = new Date();
     
     // Enable STARTER plan features
     user.has_batch_generation = false; // STARTER doesn't have batch generation
@@ -235,7 +235,7 @@ export class UserService {
         id: user.id,
         email: user.email,
         plan: user.plan,
-        monthly_count: user.monthly_count,
+        monthly_generation_count: user.monthly_generation_count,
         has_batch_generation: user.has_batch_generation
       }
     };
@@ -251,13 +251,12 @@ export class UserService {
     user.plan = UserPlan.PRO;
     
     // Reset monthly generation count for new plan
-    user.monthly_count = 0;
-    user.reset_date = new Date();
+    user.monthly_generation_count = 0;
+    user.monthly_reset_date = new Date();
     
     // Enable PRO plan features
     user.has_batch_generation = true;
     user.has_advanced_analytics = true;
-    user.has_team_features = true;
     
     await this.userRepository.save(user);
 
@@ -268,10 +267,9 @@ export class UserService {
         id: user.id,
         email: user.email,
         plan: user.plan,
-        monthly_count: user.monthly_count,
+        monthly_generation_count: user.monthly_generation_count,
         has_batch_generation: user.has_batch_generation,
-        has_advanced_analytics: user.has_advanced_analytics,
-        has_team_features: user.has_team_features
+        has_advanced_analytics: user.has_advanced_analytics
       }
     };
   }
@@ -282,14 +280,12 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
     
-    // Update user plan and enable team features
+    // Update user plan and enable agency features
     user.plan = UserPlan.AGENCY;
     user.monthly_generation_count = 0;
     user.monthly_reset_date = new Date();
     user.has_batch_generation = true;
     user.has_advanced_analytics = true;
-    user.has_team_features = true;
-    user.has_api_access = true;
     
     await this.userRepository.save(user);
     

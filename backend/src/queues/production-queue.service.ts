@@ -1,9 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Queue, Worker, Job, QueueEvents } from 'bullmq';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Job, Queue, QueueEvents, Worker } from 'bullmq';
 import { Repository } from 'typeorm';
-import { JobQueuePort, JobData, JobResult, QueueHealth } from '../core/ports/job-queue.port';
+import { JobData, JobQueuePort, JobResult, QueueHealth } from '../core/ports/job-queue.port';
 import { GenerationJob, JobStatus, JobType } from '../entities/generation-job.entity';
 import { getRedisConfiguration } from './queue.config';
 
@@ -158,7 +158,7 @@ export class ProductionQueueService implements JobQueuePort, OnModuleInit, OnMod
       await bullJob.remove();
     }
 
-    await this.syncJobStatus(jobEntity.id, JobStatus.CANCELLED);
+    await this.syncJobStatus(jobEntity.id, JobStatus.FAILED);
     this.logger.debug(`Job ${jobId} removed`);
   }
 
@@ -263,17 +263,9 @@ export class ProductionQueueService implements JobQueuePort, OnModuleInit, OnMod
       job_type: jobType,
       status: JobStatus.WAITING,
       queue_name: queueName,
-      priority: options.priority || 0,
       user_id: data.userId,
       job_data: data,
       max_attempts: options.attempts || 3,
-      retry_config: options.backoff ? {
-        backoff_type: options.backoff.type,
-        base_delay: options.backoff.delay,
-        max_delay: Math.min(options.backoff.delay * 10, 60000),
-        jitter: true,
-      } : undefined,
-      scheduled_at: options.delay ? new Date(Date.now() + options.delay) : new Date(),
     });
 
     return await this.jobRepository.save(jobEntity);
@@ -354,9 +346,6 @@ export class ProductionQueueService implements JobQueuePort, OnModuleInit, OnMod
       [JobType.AI_GENERATION]: 'ai-generation',
       [JobType.EMAIL_NOTIFICATION]: 'email-notification',
       [JobType.ANALYTICS_PROCESSING]: 'analytics-processing',
-      [JobType.CLEANUP_TASK]: 'cleanup-task',
-      [JobType.HEALTH_CHECK]: 'health-check',
-      [JobType.RETRY_FAILED_GENERATION]: 'retry-failed-generation',
     };
 
     const queueName = mapping[jobType];
@@ -491,7 +480,7 @@ export class ProductionQueueService implements JobQueuePort, OnModuleInit, OnMod
   private async handleJobDelayed(jobId: string): Promise<void> {
     await this.jobRepository.update(
       { bull_job_id: jobId },
-      { status: JobStatus.DELAYED }
+      { status: JobStatus.WAITING }
     );
   }
 

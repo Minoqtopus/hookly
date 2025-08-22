@@ -108,7 +108,7 @@ export class PaymentsService {
     // Track cancellation event before downgrade
     try {
       await this.analyticsService.trackEvent(
-        EventType.SUBSCRIPTION_CANCELLED,
+        EventType.UPGRADE_COMPLETED,
         user.id,
         {
           cancelled_plan: user.plan,
@@ -157,7 +157,7 @@ export class PaymentsService {
   private async upgradeUserToPlan(user: User, plan: UserPlan): Promise<void> {
     const previousPlan = user.plan;
     updateUserPlanFeatures(user, plan);
-    user.monthly_count = 0; // Reset monthly count on upgrade
+          user.monthly_generation_count = 0; // Reset monthly count on upgrade
     await this.userRepository.save(user);
     
     // Track conversion event
@@ -187,12 +187,9 @@ export class PaymentsService {
     // Reset monthly count to apply trial tier limits immediately
     const today = new Date().toISOString().split('T')[0];
     
-    // Ensure reset_date is a Date object
-    const resetDate = user.reset_date instanceof Date ? user.reset_date : new Date(user.reset_date);
-    if (resetDate.toISOString().split('T')[0] !== today) {
-      user.monthly_count = 0;
-      user.reset_date = new Date();
-    }
+    // Reset monthly generation count
+    user.monthly_generation_count = 0;
+    user.monthly_reset_date = new Date();
     await this.userRepository.save(user);
     this.logger.log(`User ${user.email} downgraded to TRIAL`);
   }

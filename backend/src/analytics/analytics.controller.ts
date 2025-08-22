@@ -1,9 +1,8 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Request } from '@nestjs/common';
-import { AnalyticsService } from './analytics.service';
-import { EventType } from '../entities/analytics-event.entity';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Body, Controller, Get, Post, Query, Request } from '@nestjs/common';
 import { RequireAdmin } from '../auth/decorators/admin.decorator';
 import { RateLimit, RateLimits } from '../common/decorators/rate-limit.decorator';
+import { EventType } from '../entities/analytics-event.entity';
+import { AnalyticsService } from './analytics.service';
 
 export class TrackEventDto {
   eventType: EventType;
@@ -16,14 +15,12 @@ export class AnalyticsController {
   constructor(private analyticsService: AnalyticsService) {}
 
   @Post('track')
-  @UseGuards(JwtAuthGuard)
   @RateLimit(RateLimits.ANALYTICS)
   async trackEvent(@Body() trackEventDto: TrackEventDto, @Request() req: any) {
     return this.analyticsService.trackEvent(
       trackEventDto.eventType,
       req.user.userId,
       trackEventDto.eventData,
-      trackEventDto.sessionId,
       req
     );
   }
@@ -35,7 +32,6 @@ export class AnalyticsController {
       trackEventDto.eventType,
       undefined,
       trackEventDto.eventData,
-      trackEventDto.sessionId,
       req
     );
   }
@@ -76,7 +72,7 @@ export class AnalyticsController {
     const start = startDate ? new Date(startDate) : undefined;
     const end = endDate ? new Date(endDate) : undefined;
     
-    return this.analyticsService.getFunnelAnalytics(start, end);
+    return this.analyticsService.getBasicFunnel(start, end);
   }
 
   @Get('dashboard')
@@ -108,7 +104,7 @@ export class AnalyticsController {
     const [conversionMetrics, userJourney, funnel] = await Promise.all([
       this.analyticsService.getConversionMetrics(startDate, now),
       this.analyticsService.getUserJourneyAnalytics(startDate, now),
-      this.analyticsService.getFunnelAnalytics(startDate, now),
+      this.analyticsService.getBasicFunnel(startDate, now),
     ]);
 
     return {

@@ -1,34 +1,30 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { getPlanFeatures } from '../entities/plan-features.util';
 import { User } from '../entities/user.entity';
 
 export interface OverageCalculation {
   currentUsage: number;
   monthlyLimit: number;
   overageGenerations: number;
-  overageCharges: number;
-  usagePercentage: number;
+  overageCost: number;
   shouldWarn: boolean;
-  shouldUpgrade: boolean;
-  recommendedPlan: string;
+  shouldCharge: boolean;
 }
 
-export interface PlanUpgradePrompt {
-  showPrompt: boolean;
-  message: string;
-  recommendedPlan: string;
-  currentPlan: string;
-  usagePercentage: number;
-  overageCharges: number;
+export interface OverageReport {
+  totalUsers: number;
+  usersWithOverage: number;
+  totalOverageGenerations: number;
+  totalOverageRevenue: number;
+  averageOveragePerUser: number;
 }
 
 @Injectable()
 export class OverageService {
   private readonly logger = new Logger(OverageService.name);
-  private readonly OVERAGE_RATE = 0.15; // $0.15 per generation
-  private readonly WARNING_THRESHOLD = 0.8; // 80% usage warning
-  private readonly UPGRADE_THRESHOLD = 0.9; // 90% usage upgrade prompt
+  private readonly OVERAGE_RATE = 0.15; // $0.15 per overage generation
 
   constructor(
     @InjectRepository(User)
@@ -36,176 +32,150 @@ export class OverageService {
   ) {}
 
   /**
-   * Calculate overage charges and usage metrics for a user
+   * Calculate overage for a specific user
    */
-  async calculateOverage(userId: string): Promise<OverageCalculation> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new Error('User not found');
+  async calculateUserOverage(userId: string): Promise<OverageCalculation> {
+    try {
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      const planFeatures = getPlanFeatures(user.plan);
+      const monthlyLimit = planFeatures.monthly_generation_limit || 0;
+      const currentUsage = user.monthly_generation_count;
+      
+      const overageGenerations = Math.max(0, currentUsage - monthlyLimit);
+      const overageCost = overageGenerations * this.OVERAGE_RATE;
+      
+      const shouldWarn = monthlyLimit > 0 && currentUsage >= monthlyLimit * 0.8;
+      const shouldCharge = overageGenerations > 0;
+
+      return {
+        currentUsage,
+        monthlyLimit,
+        overageGenerations,
+        overageCost,
+        shouldWarn,
+        shouldCharge,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to calculate overage for user ${userId}:`, error);
+      throw error;
     }
-
-    const currentUsage = user.monthly_generation_count;
-    const monthlyLimit = user.monthly_generation_limit || 0;
-    
-    let overageGenerations = 0;
-    let overageCharges = 0;
-    
-    if (monthlyLimit > 0 && currentUsage > monthlyLimit) {
-      overageGenerations = currentUsage - monthlyLimit;
-      overageCharges = overageGenerations * this.OVERAGE_RATE;
-    }
-
-    const usagePercentage = monthlyLimit > 0 ? (currentUsage / monthlyLimit) * 100 : 0;
-    const shouldWarn = usagePercentage >= this.WARNING_THRESHOLD * 100;
-    const shouldUpgrade = usagePercentage >= this.UPGRADE_THRESHOLD * 100;
-
-    // Determine recommended plan based on usage
-    const recommendedPlan = this.getRecommendedPlan(currentUsage, monthlyLimit);
-
-    return {
-      currentUsage,
-      monthlyLimit,
-      overageGenerations,
-      overageCharges,
-      usagePercentage,
-      shouldWarn,
-      shouldUpgrade,
-      recommendedPlan,
-    };
   }
 
   /**
-   * Get plan upgrade prompt based on usage
+   * Process overage charges for a user
    */
-  async getPlanUpgradePrompt(userId: string): Promise<PlanUpgradePrompt> {
-    const overage = await this.calculateOverage(userId);
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    
-    if (!user) {
-      throw new Error('User not found');
-    }
+  async processOverageCharges(userId: string): Promise<void> {
+    try {
+      const overage = await this.calculateUserOverage(userId);
+      
+      if (!overage.shouldCharge) {
+        this.logger.debug(`No overage charges for user ${userId}`);
+        return;
+      }
 
-    const showPrompt = overage.shouldUpgrade || overage.overageCharges > 0;
-    
-    let message = '';
-    if (overage.overageCharges > 0) {
-      message = `You've exceeded your monthly limit by ${overage.overageGenerations} generations. Current overage charges: $${overage.overageCharges.toFixed(2)}. Consider upgrading to avoid additional charges.`;
-    } else if (overage.shouldUpgrade) {
-      message = `You're at ${overage.usagePercentage.toFixed(1)}% of your monthly limit. Upgrade now to avoid overage charges and unlock more features.`;
-    }
-
-    return {
-      showPrompt,
-      message,
-      recommendedPlan: overage.recommendedPlan,
-      currentPlan: user.plan,
-      usagePercentage: overage.usagePercentage,
-      overageCharges: overage.overageCharges,
-    };
-  }
-
-  /**
-   * Record overage charges for a user
-   */
-  async recordOverage(userId: string, generationsUsed: number): Promise<void> {
-    const overage = await this.calculateOverage(userId);
-    
-    if (overage.overageGenerations > 0) {
+      // For MVP, we'll just log the overage
+      // In production, this would integrate with payment processing
+      this.logger.log(`Overage charges for user ${userId}: ${overage.overageGenerations} generations = $${overage.overageCost.toFixed(2)}`);
+      
+      // Reset monthly count for next month
       await this.userRepository.update(userId, {
-        overage_generations: overage.overageGenerations,
-        overage_charges: overage.overageCharges,
-        last_overage_notification: new Date(),
+        monthly_generation_count: 0,
+        monthly_reset_date: new Date(),
       });
 
-      this.logger.log(`Overage recorded for user ${userId}: ${overage.overageGenerations} generations, $${overage.overageCharges.toFixed(2)} charges`);
+      this.logger.log(`Monthly generation count reset for user ${userId}`);
+    } catch (error) {
+      this.logger.error(`Failed to process overage charges for user ${userId}:`, error);
+      throw error;
     }
   }
 
   /**
-   * Send usage warning if threshold is reached
+   * Get overage report for all users
    */
-  async checkAndSendUsageWarning(userId: string): Promise<boolean> {
-    const overage = await this.calculateOverage(userId);
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    
-    if (!user) {
-      return false;
-    }
+  async getOverageReport(): Promise<OverageReport> {
+    try {
+      const users = await this.userRepository.find();
+      let totalOverageGenerations = 0;
+      let totalOverageRevenue = 0;
+      let usersWithOverage = 0;
 
-    if (overage.shouldWarn && !user.overage_warning_sent) {
-      // Mark warning as sent
-      await this.userRepository.update(userId, {
-        overage_warning_sent: true,
+      for (const user of users) {
+        const planFeatures = getPlanFeatures(user.plan);
+        const monthlyLimit = planFeatures.monthly_generation_limit || 0;
+        const overageGenerations = Math.max(0, user.monthly_generation_count - monthlyLimit);
+        
+        if (overageGenerations > 0) {
+          usersWithOverage++;
+          totalOverageGenerations += overageGenerations;
+          totalOverageRevenue += overageGenerations * this.OVERAGE_RATE;
+        }
+      }
+
+      return {
+        totalUsers: users.length,
+        usersWithOverage,
+        totalOverageGenerations,
+        totalOverageRevenue,
+        averageOveragePerUser: usersWithOverage > 0 ? totalOverageGenerations / usersWithOverage : 0,
+      };
+    } catch (error) {
+      this.logger.error('Failed to get overage report:', error);
+      return {
+        totalUsers: 0,
+        usersWithOverage: 0,
+        totalOverageGenerations: 0,
+        totalOverageRevenue: 0,
+        averageOveragePerUser: 0,
+      };
+    }
+  }
+
+  /**
+   * Reset monthly generation counts for all users
+   */
+  async resetMonthlyCounts(): Promise<void> {
+    try {
+      await this.userRepository.update({}, {
+        monthly_generation_count: 0,
+        monthly_reset_date: new Date(),
       });
-
-      this.logger.log(`Usage warning sent to user ${userId} at ${overage.usagePercentage.toFixed(1)}% usage`);
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Reset monthly overage tracking (called monthly)
-   */
-  async resetMonthlyOverage(userId: string): Promise<void> {
-    await this.userRepository.update(userId, {
-      overage_generations: 0,
-      overage_charges: 0,
-      overage_warning_sent: false,
-    });
-
-    this.logger.log(`Monthly overage reset for user ${userId}`);
-  }
-
-  /**
-   * Get recommended plan based on usage patterns
-   */
-  private getRecommendedPlan(currentUsage: number, monthlyLimit: number): string {
-    if (monthlyLimit === 0) return 'AGENCY'; // Unlimited plan
-    
-    const usageRatio = currentUsage / monthlyLimit;
-    
-    if (usageRatio >= 1.5) {
-      return 'AGENCY'; // Heavy usage
-    } else if (usageRatio >= 1.2) {
-      return 'PRO'; // Moderate overage
-    } else if (usageRatio >= 0.8) {
-      return 'PRO'; // Approaching limit
-    } else {
-      return 'STARTER'; // Within limits
+      
+      this.logger.log('Monthly generation counts reset for all users');
+    } catch (error) {
+      this.logger.error('Failed to reset monthly generation counts:', error);
+      throw error;
     }
   }
 
   /**
-   * Get overage analytics for business intelligence
+   * Get users approaching their monthly limits
    */
-  async getOverageAnalytics(): Promise<{
-    totalOverageCharges: number;
-    usersWithOverage: number;
-    averageOveragePerUser: number;
-    topOverageUsers: Array<{ userId: string; overageCharges: number; email: string }>;
-  }> {
-    const usersWithOverage = await this.userRepository
-      .createQueryBuilder('user')
-      .select(['user.id', 'user.email', 'user.overage_charges'])
-      .where('user.overage_charges > 0')
-      .orderBy('user.overage_charges', 'DESC')
-      .limit(10)
-      .getMany();
+  async getUsersApproachingLimits(warningThreshold: number = 0.8): Promise<Array<{ user: User; usagePercentage: number }>> {
+    try {
+      const users = await this.userRepository.find();
+      const usersApproachingLimits = [];
 
-    const totalOverageCharges = usersWithOverage.reduce((sum, user) => sum + Number(user.overage_charges), 0);
-    const averageOveragePerUser = usersWithOverage.length > 0 ? totalOverageCharges / usersWithOverage.length : 0;
+      for (const user of users) {
+        const planFeatures = getPlanFeatures(user.plan);
+        const monthlyLimit = planFeatures.monthly_generation_limit || 0;
+        
+        if (monthlyLimit > 0) {
+          const usagePercentage = user.monthly_generation_count / monthlyLimit;
+          if (usagePercentage >= warningThreshold) {
+            usersApproachingLimits.push({ user, usagePercentage });
+          }
+        }
+      }
 
-    return {
-      totalOverageCharges,
-      usersWithOverage: usersWithOverage.length,
-      averageOveragePerUser,
-      topOverageUsers: usersWithOverage.map(user => ({
-        userId: user.id,
-        overageCharges: Number(user.overage_charges),
-        email: user.email,
-      })),
-    };
+      return usersApproachingLimits.sort((a, b) => b.usagePercentage - a.usagePercentage);
+    } catch (error) {
+      this.logger.error('Failed to get users approaching limits:', error);
+      return [];
+    }
   }
 }

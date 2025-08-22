@@ -1,32 +1,25 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from './user.entity';
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Generation } from './generation.entity';
+import { User } from './user.entity';
 
 export enum JobStatus {
   WAITING = 'waiting',
   ACTIVE = 'active',
   COMPLETED = 'completed',
-  FAILED = 'failed',
-  DELAYED = 'delayed',
-  CANCELLED = 'cancelled'
+  FAILED = 'failed'
 }
 
 export enum JobType {
   AI_GENERATION = 'ai-generation',
   EMAIL_NOTIFICATION = 'email-notification',
-  ANALYTICS_PROCESSING = 'analytics-processing',
-  CLEANUP_TASK = 'cleanup-task',
-  HEALTH_CHECK = 'health-check',
-  RETRY_FAILED_GENERATION = 'retry-failed-generation'
+  ANALYTICS_PROCESSING = 'analytics-processing'
 }
 
 @Entity('generation_jobs')
 @Index('idx_generation_job_status', ['status'])
 @Index('idx_generation_job_type', ['job_type'])
 @Index('idx_generation_job_user', ['user_id'])
-@Index('idx_generation_job_queue', ['queue_name'])
 @Index('idx_generation_job_created', ['created_at'])
-@Index('idx_generation_job_priority', ['priority'])
 export class GenerationJob {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -50,9 +43,6 @@ export class GenerationJob {
   @Column({ type: 'varchar', length: 100 })
   queue_name: string;
 
-  @Column({ type: 'int', default: 0 })
-  priority: number;
-
   @Column('uuid', { nullable: true })
   user_id?: string;
 
@@ -67,7 +57,7 @@ export class GenerationJob {
   @Column('jsonb', { nullable: true })
   job_result?: any;
 
-  // Processing metadata
+  // Basic processing metadata
   @Column('jsonb', { nullable: true })
   processing_metadata?: {
     started_at?: string;
@@ -81,9 +71,7 @@ export class GenerationJob {
       estimatedCost: number;
     };
     retry_count?: number;
-    error_count?: number;
     last_error?: string;
-    quality_score?: number;
   };
 
   // Error tracking
@@ -98,9 +86,6 @@ export class GenerationJob {
 
   // Timing information
   @Column({ type: 'timestamp', nullable: true })
-  scheduled_at?: Date;
-
-  @Column({ type: 'timestamp', nullable: true })
   started_at?: Date;
 
   @Column({ type: 'timestamp', nullable: true })
@@ -108,15 +93,6 @@ export class GenerationJob {
 
   @Column({ type: 'int', nullable: true })
   processing_time_ms?: number;
-
-  // Retry and backoff configuration
-  @Column('jsonb', { nullable: true })
-  retry_config?: {
-    backoff_type: 'exponential' | 'fixed';
-    base_delay: number;
-    max_delay: number;
-    jitter: boolean;
-  };
 
   @CreateDateColumn()
   created_at: Date;

@@ -1,14 +1,14 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository } from 'typeorm';
+import { AIService } from '../ai/ai.service';
+import { TokenManagementService } from '../ai/token-management.service';
 import { GenerationPolicy } from '../core/domain/policies/generation.policy';
 import { PlanLimitPolicy } from '../core/domain/policies/plan-limit.policy';
 import { JobQueuePort } from '../core/ports/job-queue.port';
+import { GenerationJob, JobType } from '../entities/generation-job.entity';
 import { Generation } from '../entities/generation.entity';
-import { GenerationJob, JobStatus, JobType } from '../entities/generation-job.entity';
 import { User, UserPlan } from '../entities/user.entity';
-import { AIService } from '../ai/ai.service';
-import { TokenManagementService } from '../ai/token-management.service';
 // import { SimpleQueueService } from '../queues/simple-queue.service'; // Replaced with ProductionQueueService
 import { GenerateVariationsDto } from './dto/generate-variations.dto';
 import { GenerateDto } from './dto/generate.dto';
@@ -54,7 +54,7 @@ export class GenerationQueueService {
     // Check if user can generate content using domain policy
     const usageStatus = this.planLimitPolicy.canUserGenerate(
       user.plan,
-      user.monthly_count,
+      user.monthly_generation_count,
       user.trial_generations_used,
       user.trial_started_at,
       user.trial_ends_at
@@ -107,7 +107,7 @@ export class GenerationQueueService {
         if (user.plan === UserPlan.TRIAL) {
           user.trial_generations_used += 1;
         } else {
-          user.monthly_count += 1;
+          user.monthly_generation_count += 1;
         }
         await this.userRepository.save(user);
 
@@ -162,7 +162,7 @@ export class GenerationQueueService {
     const variationsCount = 3;
     const canGenerateVariations = this.planLimitPolicy.canUserGenerate(
       user.plan,
-      user.monthly_count + variationsCount,
+      user.monthly_generation_count + variationsCount,
       user.trial_generations_used + variationsCount,
       user.trial_started_at,
       user.trial_ends_at
@@ -249,7 +249,7 @@ export class GenerationQueueService {
       if (user.plan === UserPlan.TRIAL) {
         user.trial_generations_used += successCount;
       } else {
-        user.monthly_count += successCount;
+        user.monthly_generation_count += successCount;
       }
       await this.userRepository.save(user);
 

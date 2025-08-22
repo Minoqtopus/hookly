@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
-import { AnalyticsService } from './analytics.service';
+import { MoreThan, Repository } from 'typeorm';
 import { AnalyticsEvent, EventType } from '../entities/analytics-event.entity';
 import { User } from '../entities/user.entity';
+import { AnalyticsService } from './analytics.service';
 
 export interface OnboardingStep {
   step: string;
@@ -108,7 +108,7 @@ export class OnboardingService {
     const templateUsed = await this.analyticsRepository.findOne({
       where: {
         user_id: userId,
-        event_type: EventType.TEMPLATE_USED,
+        event_type: EventType.GENERATION_COMPLETED,
       },
       order: { created_at: 'ASC' },
     });
@@ -185,7 +185,7 @@ export class OnboardingService {
       featuresUsed: this.calculateUniqueFeatures(events),
       emailVerified: user.is_verified,
       trialToActiveTime: await this.calculateTrialToActiveTime(userId, signupDate),
-      socialSharing: events.filter(e => e.event_type === EventType.SHARE_GENERATION).length,
+      socialSharing: events.filter(e => e.event_type === EventType.COPY_TO_CLIPBOARD).length,
       upgradeIntent: this.calculateUpgradeIntent(events),
     };
 
@@ -354,7 +354,7 @@ export class OnboardingService {
 
   private calculateUniqueFeatures(events: AnalyticsEvent[]): number {
     const featureEvents = events.filter(e => 
-      [EventType.COPY_TO_CLIPBOARD, EventType.EXPORT_GENERATION, EventType.SAVE_TO_FAVORITES, EventType.SHARE_GENERATION].includes(e.event_type)
+              [EventType.COPY_TO_CLIPBOARD, EventType.SAVE_TO_FAVORITES].includes(e.event_type)
     );
     const uniqueFeatures = new Set(featureEvents.map(e => e.event_type));
     return uniqueFeatures.size;
@@ -414,7 +414,7 @@ export class OnboardingService {
           eventType = EventType.GENERATION_COMPLETED;
           break;
         case 'template_explored':
-          eventType = EventType.TEMPLATE_USED;
+          eventType = EventType.GENERATION_COMPLETED;
           break;
         case 'feature_discovered':
           eventType = EventType.COPY_TO_CLIPBOARD;

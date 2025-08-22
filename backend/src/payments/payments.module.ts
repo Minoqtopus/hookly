@@ -5,7 +5,6 @@ import { AnalyticsService } from '../analytics/analytics.service';
 import { PlanDeterminationPolicy } from '../core/domain/policies/plan-determination.policy';
 import { User } from '../entities/user.entity';
 import { LemonSqueezyAdapter } from '../infrastructure/adapters/lemon-squeezy.adapter';
-import { BetaManagementService } from './beta-management.service';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
 
@@ -17,7 +16,6 @@ import { PaymentsService } from './payments.service';
   controllers: [PaymentsController],
   providers: [
     PaymentsService, 
-    BetaManagementService,
     {
       provide: 'PaymentProviderPort',
       useClass: LemonSqueezyAdapter,
@@ -28,6 +26,6 @@ import { PaymentsService } from './payments.service';
     },
     PlanDeterminationPolicy,
   ],
-  exports: [PaymentsService, BetaManagementService],
+  exports: [PaymentsService],
 })
 export class PaymentsModule {}

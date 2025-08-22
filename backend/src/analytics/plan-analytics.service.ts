@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Generation } from '../entities/generation.entity';
+import { getPlanFeatures } from '../entities/plan-features.util';
 import { User } from '../entities/user.entity';
 
 export interface PlanComparisonData {
@@ -129,8 +130,9 @@ export class PlanAnalyticsService {
         const recommendedPlan = this.getRecommendedPlan(user);
         const conversionProbability = this.calculateConversionProbability(user, recommendedPlan);
         const estimatedRevenue = this.calculateEstimatedRevenue(recommendedPlan);
-        const usagePercentage = user.monthly_generation_limit 
-          ? (user.monthly_generation_count / user.monthly_generation_limit) * 100 
+        const planFeatures = getPlanFeatures(user.plan);
+        const usagePercentage = planFeatures.monthly_generation_limit 
+          ? (user.monthly_generation_count / planFeatures.monthly_generation_limit) * 100 
           : 0;
 
         // Get last generation activity
@@ -191,8 +193,9 @@ export class PlanAnalyticsService {
       };
     }
 
-    const usagePercentage = user.monthly_generation_limit 
-      ? (user.monthly_generation_count / user.monthly_generation_limit) * 100 
+    const planFeatures = getPlanFeatures(user.plan);
+    const usagePercentage = planFeatures.monthly_generation_limit 
+      ? (user.monthly_generation_count / planFeatures.monthly_generation_limit) * 100 
       : 0;
 
     let urgency: 'low' | 'medium' | 'high' = 'low';
@@ -225,7 +228,8 @@ export class PlanAnalyticsService {
   // Private helper methods
   private getRecommendedPlan(user: User): string {
     const usage = user.monthly_generation_count;
-    const limit = user.monthly_generation_limit || 0;
+    const planFeatures = getPlanFeatures(user.plan);
+    const limit = planFeatures.monthly_generation_limit || 0;
 
     if (limit === 0) return 'AGENCY';
     
@@ -269,8 +273,9 @@ export class PlanAnalyticsService {
 
     // Calculate overage savings if user is exceeding limits
     let overageSavings = 0;
-    if (user.monthly_generation_limit && user.monthly_generation_count > user.monthly_generation_limit) {
-      const overageGenerations = user.monthly_generation_count - user.monthly_generation_limit;
+    const planFeatures = getPlanFeatures(user.plan);
+    if (planFeatures.monthly_generation_limit && user.monthly_generation_count > planFeatures.monthly_generation_limit) {
+      const overageGenerations = user.monthly_generation_count - planFeatures.monthly_generation_limit;
       overageSavings = overageGenerations * 0.15; // $0.15 per overage generation
     }
 
@@ -312,7 +317,8 @@ export class PlanAnalyticsService {
     }
 
     const currentUsage = user.monthly_generation_count;
-    const currentLimit = user.monthly_generation_limit || 0;
+    const planFeatures = getPlanFeatures(user.plan);
+    const currentLimit = planFeatures.monthly_generation_limit || 0;
     const recommendedLimit = this.getPlanLimit(recommendedPlan);
     const usageEfficiency = currentLimit > 0 ? (currentUsage / currentLimit) * 100 : 0;
 
@@ -338,8 +344,9 @@ export class PlanAnalyticsService {
     let probability = 0.3; // Base probability
 
     // Usage-based probability
-    if (user.monthly_generation_limit) {
-      const usageRatio = user.monthly_generation_count / user.monthly_generation_limit;
+    const planFeatures = getPlanFeatures(user.plan);
+    if (planFeatures.monthly_generation_limit) {
+      const usageRatio = user.monthly_generation_count / planFeatures.monthly_generation_limit;
       if (usageRatio >= 1.0) probability += 0.4; // Exceeding limits
       else if (usageRatio >= 0.8) probability += 0.3; // High usage
       else if (usageRatio >= 0.5) probability += 0.2; // Moderate usage
@@ -347,7 +354,8 @@ export class PlanAnalyticsService {
 
     // Activity-based probability
     if (user.total_generations > 20) probability += 0.2; // Active user
-    if (user.first_generation_at && user.first_paid_at) probability += 0.1; // Converted before
+    // Simplified conversion probability calculation
+    if (user.total_generations > 0) probability += 0.1; // Has generated content before
 
     return Math.min(probability, 0.9); // Cap at 90%
   }

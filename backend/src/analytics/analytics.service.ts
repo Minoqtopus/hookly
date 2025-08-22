@@ -8,12 +8,6 @@ export interface ConversionMetrics {
   trialSignups: number;
   trialToPaidConversions: number;
   conversionRate: number;
-  averageTrialDuration: number;
-  topConversionSources: Array<{
-    source: string;
-    conversions: number;
-    conversionRate: number;
-  }>;
   revenueByPlan: Array<{
     plan: string;
     revenue: number;
@@ -27,10 +21,6 @@ export interface UserJourneyAnalytics {
   mostUsedFeatures: Array<{
     feature: string;
     usage: number;
-  }>;
-  dropoffPoints: Array<{
-    stage: string;
-    dropoffRate: number;
   }>;
 }
 
@@ -47,13 +37,11 @@ export class AnalyticsService {
     eventType: EventType,
     userId?: string,
     eventData?: any,
-    sessionId?: string,
     request?: any
   ): Promise<AnalyticsEvent> {
     const event = this.analyticsRepository.create({
       event_type: eventType,
       user_id: userId,
-      session_id: sessionId,
       page_url: request?.headers?.referer || request?.url,
       referrer: request?.headers?.referrer,
       user_agent: request?.headers?.['user-agent'],
@@ -69,7 +57,6 @@ export class AnalyticsService {
           plan: user.plan,
           trial_days_remaining: this.calculateTrialDaysRemaining(user),
           generations_used: user.trial_generations_used || 0,
-          is_beta_user: user.is_beta_user || false,
           signup_date: user.created_at instanceof Date ? user.created_at.toISOString() : new Date(user.created_at).toISOString(),
           last_active: new Date().toISOString(),
         };
@@ -97,8 +84,6 @@ export class AnalyticsService {
         conversion_source: conversionSource,
       }
     );
-
-    // Track the conversion - user active status is tracked via events
   }
 
   async getConversionMetrics(
@@ -127,12 +112,6 @@ export class AnalyticsService {
     const trialToPaidConversions = conversions.length;
     const conversionRate = trialSignups > 0 ? (trialToPaidConversions / trialSignups) * 100 : 0;
 
-    // Calculate average trial duration
-    const averageTrialDuration = await this.calculateAverageTrialDuration(dateFilter);
-
-    // Get top conversion sources
-    const topConversionSources = await this.getTopConversionSources(dateFilter);
-
     // Get revenue by plan
     const revenueByPlan = await this.getRevenueByPlan(dateFilter);
 
@@ -140,8 +119,6 @@ export class AnalyticsService {
       trialSignups,
       trialToPaidConversions,
       conversionRate: Math.round(conversionRate * 100) / 100,
-      averageTrialDuration,
-      topConversionSources,
       revenueByPlan,
     };
   }
@@ -161,18 +138,14 @@ export class AnalyticsService {
     // Most used features
     const mostUsedFeatures = await this.getMostUsedFeatures(dateFilter);
 
-    // Identify dropoff points
-    const dropoffPoints = await this.getDropoffPoints(dateFilter);
-
     return {
       signupToFirstGeneration,
       averageGenerationsPerTrial,
       mostUsedFeatures,
-      dropoffPoints,
     };
   }
 
-  async getFunnelAnalytics(startDate?: Date, endDate?: Date) {
+  async getBasicFunnel(startDate?: Date, endDate?: Date) {
     const dateFilter = this.buildDateFilter(startDate, endDate);
 
     const steps = [
@@ -180,8 +153,6 @@ export class AnalyticsService {
       { name: 'Demo Completed', eventType: EventType.DEMO_COMPLETED },
       { name: 'Trial Started', eventType: EventType.TRIAL_STARTED },
       { name: 'First Generation', eventType: EventType.GENERATION_COMPLETED },
-      { name: 'Upgrade Modal Shown', eventType: EventType.UPGRADE_MODAL_SHOWN },
-      { name: 'Upgrade Initiated', eventType: EventType.UPGRADE_INITIATED },
       { name: 'Upgrade Completed', eventType: EventType.UPGRADE_COMPLETED },
     ];
 
@@ -243,36 +214,6 @@ export class AnalyticsService {
     return filter;
   }
 
-  private async calculateAverageTrialDuration(dateFilter: any): Promise<number> {
-    // This would require more complex query to calculate actual trial durations
-    // For now, return a default value
-    return 7; // days
-  }
-
-  private async getTopConversionSources(dateFilter: any) {
-    const conversions = await this.analyticsRepository.find({
-      where: {
-        event_type: EventType.UPGRADE_COMPLETED,
-        ...dateFilter,
-      },
-    });
-
-    const sourceCounts = conversions.reduce((acc, conversion) => {
-      const source = conversion.event_data?.conversion_source || 'direct';
-      acc[source] = (acc[source] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return Object.entries(sourceCounts)
-      .map(([source, conversions]) => ({
-        source,
-        conversions: conversions as number,
-        conversionRate: 0, // Would need to calculate based on traffic from each source
-      }))
-      .sort((a, b) => b.conversions - a.conversions)
-      .slice(0, 5);
-  }
-
   private async getRevenueByPlan(dateFilter: any) {
     const conversions = await this.analyticsRepository.find({
       where: {
@@ -303,12 +244,12 @@ export class AnalyticsService {
   }
 
   private async calculateSignupToFirstGeneration(dateFilter: any): Promise<number> {
-    // This would require more complex query logic
+    // Simplified calculation
     return 24; // hours average
   }
 
   private async calculateAverageGenerationsPerTrial(dateFilter: any): Promise<number> {
-    // Calculate from generation events for trial users
+    // Simplified calculation
     return 3.5; // average
   }
 
@@ -330,15 +271,6 @@ export class AnalyticsService {
     return Object.entries(featureCounts)
       .map(([feature, usage]) => ({ feature, usage: usage as number }))
       .sort((a, b) => b.usage - a.usage)
-      .slice(0, 10);
-  }
-
-  private async getDropoffPoints(dateFilter: any) {
-    // Analyze where users drop off in the funnel
-    return [
-      { stage: 'Demo to Signup', dropoffRate: 65 },
-      { stage: 'Signup to First Generation', dropoffRate: 25 },
-      { stage: 'Trial to Paid', dropoffRate: 85 },
-    ];
+      .slice(0, 5);
   }
 }
