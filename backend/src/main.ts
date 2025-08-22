@@ -58,6 +58,10 @@ async function bootstrap() {
     forbidNonWhitelisted: true,
   }));
   
+  // CRITICAL: Configure trust proxy for proper IP extraction in production
+  // This is essential for trial abuse prevention and fraud detection
+  app.getHttpAdapter().getInstance().set('trust proxy', true);
+  
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,

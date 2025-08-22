@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Request, Res, UseGuards, Ip } from '@nestjs/common';
+import { Body, Controller, Get, Ip, Post, Request, Res, UseGuards } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiConflictResponse, ApiForbiddenResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { RateLimit, RateLimits } from '../common/decorators/rate-limit.decorator';
@@ -156,8 +156,7 @@ export class AuthController {
       }
     }
   })
-  async register(@Body() registerDto: RegisterDto, @Request() req: any) {
-    const ipAddress = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'];
+  async register(@Body() registerDto: RegisterDto, @Ip() ipAddress: string, @Request() req: any) {
     const userAgent = req.headers['user-agent'];
     return this.authService.register(registerDto, ipAddress, userAgent);
   }
