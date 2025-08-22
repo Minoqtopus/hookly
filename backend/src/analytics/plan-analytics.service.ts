@@ -182,7 +182,7 @@ export class PlanAnalyticsService {
     const currentPlan = user.plan;
     const recommendedPlan = this.getRecommendedPlan(user);
     
-    if (currentPlan === recommendedPlan || currentPlan === 'agency') {
+    if (currentPlan === recommendedPlan) {
       return {
         showUpgradePrompt: false,
         message: '',

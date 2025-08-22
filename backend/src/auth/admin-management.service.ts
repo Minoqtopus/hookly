@@ -18,29 +18,22 @@ export class AdminManagementService {
    * Check if an email should be granted admin access
    * 
    * Security features:
-   * - Uses environment variable for initial admin setup (ADMIN_EMAILS)
-   * - Falls back to database role validation
+   * - Database-only admin role validation for production security
    * - Case-insensitive email comparison
-   * - Returns true if either env var OR database indicates admin status
+   * - Returns true only if user exists and has ADMIN role in database
    * 
    * @param email - Email address to check for admin privileges
-   * @returns True if user should have admin access, false otherwise
+   * @returns True if user exists and has admin role in database, false otherwise
    */
   async isAdminEmail(email: string): Promise<boolean> {
     if (!email) return false;
 
-    // First check environment variable for initial admin setup
-    const adminEmails = this.getAdminEmailsFromEnv();
-    const isEnvAdmin = adminEmails.includes(email.toLowerCase());
-
-    // Check if user is already marked as admin in database
+    // Check if user exists and has admin role in database
     const existingUser = await this.userRepository.findOne({ 
       where: { email: email.toLowerCase() } 
     });
-    const isDatabaseAdmin = existingUser?.role === UserRole.ADMIN;
-
-    // Admin if either env variable says so OR database says so
-    return isEnvAdmin || isDatabaseAdmin;
+    
+    return existingUser?.role === UserRole.ADMIN;
   }
 
   /**

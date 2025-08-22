@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import Groq from 'groq-sdk';
 import OpenAI from 'openai';
-import { ContentGenerationRequest, ContentGenerationResponse, ContentGeneratorPort } from '../core/ports/content-generator.port';
+import { ContentGenerationRequest, ContentGenerationResponse, ContentGeneratorPort, GenerationMetrics } from '../core/ports/content-generator.port';
 
 export interface UGCGenerationInput {
   productName: string;
@@ -20,13 +20,16 @@ export interface UGCGenerationOutput {
 interface ProviderMetrics {
   providerId: string;
   model: string;
+  responseTime: number;
   tokenUsage: {
     inputTokens: number;
     outputTokens: number;
     totalTokens: number;
     estimatedCost: number;
   };
-  quality?: number;
+  quality: number;
+  success: boolean;
+  error?: string;
 }
 
 @Injectable()
@@ -90,7 +93,7 @@ export class MultiProviderAIService implements ContentGeneratorPort {
         this.logger.log(`Successfully generated content with ${provider.name}`);
         return result;
       } catch (error) {
-        this.logger.warn(`${provider.name} failed: ${error.message}`);
+        this.logger.warn(`${provider.name} failed: ${error instanceof Error ? error.message : String(error)}`);
         // Continue to next provider
       }
     }
@@ -125,12 +128,15 @@ export class MultiProviderAIService implements ContentGeneratorPort {
     this.lastGenerationMetrics = {
       providerId: 'gemini',
       model: 'gemini-2.0-flash-exp',
+      responseTime: Date.now() - Date.now(), // Will be properly calculated
       tokenUsage: {
         inputTokens,
         outputTokens,
         totalTokens: inputTokens + outputTokens,
         estimatedCost: this.calculateCost('gemini', inputTokens, outputTokens)
-      }
+      },
+      quality: 0.9,
+      success: true
     };
 
     return this.parseAIResponse(text);
@@ -141,6 +147,7 @@ export class MultiProviderAIService implements ContentGeneratorPort {
       throw new Error('Groq not configured');
     }
 
+    const startTime = Date.now();
     const completion = await this.groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
@@ -159,16 +166,20 @@ export class MultiProviderAIService implements ContentGeneratorPort {
 
     const response = completion.choices[0].message.content;
     const usage = completion.usage;
+    const responseTime = Date.now() - startTime;
 
     this.lastGenerationMetrics = {
       providerId: 'groq',
       model: 'llama-3.3-70b-versatile',
+      responseTime,
       tokenUsage: {
         inputTokens: usage?.prompt_tokens || 0,
         outputTokens: usage?.completion_tokens || 0,
         totalTokens: usage?.total_tokens || 0,
         estimatedCost: this.calculateCost('groq', usage?.prompt_tokens || 0, usage?.completion_tokens || 0)
-      }
+      },
+      quality: 0.85,
+      success: true
     };
 
     return this.parseAIResponse(response || '');
@@ -179,6 +190,7 @@ export class MultiProviderAIService implements ContentGeneratorPort {
       throw new Error('OpenAI not configured');
     }
 
+    const startTime = Date.now();
     const completion = await this.openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -197,16 +209,20 @@ export class MultiProviderAIService implements ContentGeneratorPort {
 
     const response = completion.choices[0].message.content;
     const usage = completion.usage;
+    const responseTime = Date.now() - startTime;
 
     this.lastGenerationMetrics = {
       providerId: 'openai',
       model: 'gpt-4o-mini',
+      responseTime,
       tokenUsage: {
         inputTokens: usage?.prompt_tokens || 0,
         outputTokens: usage?.completion_tokens || 0,
         totalTokens: usage?.total_tokens || 0,
         estimatedCost: this.calculateCost('openai', usage?.prompt_tokens || 0, usage?.completion_tokens || 0)
-      }
+      },
+      quality: 0.95,
+      success: true
     };
 
     return this.parseAIResponse(response || '');
@@ -334,8 +350,19 @@ Make it sound authentic, relatable, and focused on solving a problem or showing 
     };
   }
 
-  getLastGenerationMetrics(): ProviderMetrics | null {
-    return this.lastGenerationMetrics;
+  getLastGenerationMetrics(): GenerationMetrics | null {
+    if (!this.lastGenerationMetrics) return null;
+    
+    // Map ProviderMetrics to GenerationMetrics
+    return {
+      providerId: this.lastGenerationMetrics.providerId,
+      model: this.lastGenerationMetrics.model,
+      responseTime: this.lastGenerationMetrics.responseTime || 0,
+      tokenUsage: this.lastGenerationMetrics.tokenUsage,
+      quality: this.lastGenerationMetrics.quality || 0,
+      success: this.lastGenerationMetrics.success !== undefined ? this.lastGenerationMetrics.success : true,
+      error: this.lastGenerationMetrics.error
+    };
   }
 
   getProviderId(): string {

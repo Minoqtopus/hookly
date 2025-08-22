@@ -2,23 +2,27 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { JWTSecurityUtil } from './common/utils/jwt-security.util';
 
 function validateSecurityConfiguration() {
-  // Critical security validation for JWT secrets
-  const jwtSecret = process.env.JWT_SECRET;
-  const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET;
+  console.log('🔐 Validating production-grade security configuration...');
   
-  if (!jwtSecret || jwtSecret.length < 32) {
-    throw new Error('JWT_SECRET must be at least 32 characters long for security');
-  }
-  
-  if (!jwtRefreshSecret || jwtRefreshSecret.length < 32) {
-    throw new Error('JWT_REFRESH_SECRET must be at least 32 characters long for security');
-  }
-  
-  // Ensure secrets are different
-  if (jwtSecret === jwtRefreshSecret) {
-    throw new Error('JWT_SECRET and JWT_REFRESH_SECRET must be different');
+  // Enhanced JWT secret validation with entropy checking
+  try {
+    const jwtSecret = process.env.JWT_SECRET;
+    const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET;
+    
+    JWTSecurityUtil.validateSecretStrength(jwtSecret, 'JWT_SECRET');
+    JWTSecurityUtil.validateSecretStrength(jwtRefreshSecret, 'JWT_REFRESH_SECRET');
+    
+    // Ensure secrets are different
+    if (jwtSecret === jwtRefreshSecret) {
+      throw new Error('JWT_SECRET and JWT_REFRESH_SECRET must be different for security');
+    }
+  } catch (error) {
+    console.error('❌ JWT Security Validation Failed:', error instanceof Error ? error.message : 'Unknown error');
+    console.log('💡 Generate secure secrets using: JWTSecurityUtil.generateSecureSecret()');
+    throw error;
   }
   
   // Validate webhook secret for payment security

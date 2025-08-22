@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Generation } from './generation.entity';
+import { RefreshToken } from './refresh-token.entity';
 
 export enum UserPlan {
   TRIAL = 'trial',
@@ -52,10 +53,10 @@ export class User {
   monthly_reset_date: Date;
 
   // Trial management fields
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamp' })
   trial_started_at?: Date;
 
-  @Column({ type: 'timestamp', nullable: true })  
+  @Column({ type: 'timestamp' })  
   trial_ends_at?: Date;
 
   @Column({ type: 'int', default: 0 })
@@ -65,11 +66,10 @@ export class User {
   google_id?: string;
 
   @Column({
-    type: 'enum',
-    enum: AuthProvider,
-    default: AuthProvider.EMAIL
+    type: 'simple-array',
+    default: [AuthProvider.EMAIL]
   })
-  auth_provider: AuthProvider;
+  auth_providers: AuthProvider[];
 
   @Column({ nullable: true })
   avatar_url?: string;
@@ -77,14 +77,8 @@ export class User {
   @Column({ default: false })
   is_verified: boolean;
 
-  @Column({ nullable: true, unique: true })
-  referral_code?: string;
-
   @Column({ type: 'int', default: 0 })
   total_generations: number;
-
-  @Column({ type: 'int', default: 0 })
-  referral_count: number;
 
   // Platform access flags (simplified for launch)
   @Column({ default: true })
@@ -118,4 +112,7 @@ export class User {
 
   @OneToMany(() => Generation, generation => generation.user)
   generations: Generation[];
+
+  @OneToMany(() => RefreshToken, refreshToken => refreshToken.user)
+  refresh_tokens: RefreshToken[];
 }

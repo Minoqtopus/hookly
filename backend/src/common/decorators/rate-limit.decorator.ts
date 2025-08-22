@@ -18,10 +18,11 @@ export const RateLimits = {
   GENERATION: { limit: 5, ttl: 60 }, // Reduced from 10 to 5 requests per minute
   GENERATION_GUEST: { limit: 1, ttl: 3600 }, // Hardened: 1 request per hour for guests
   
-  // Auth endpoints - prevent brute force attacks
-  AUTH_LOGIN: { limit: 3, ttl: 900, skipSuccessfulRequests: true }, // Reduced from 5 to 3 attempts per 15 minutes
-  AUTH_REGISTER: { limit: 2, ttl: 3600 }, // Reduced from 3 to 2 registrations per hour
-  AUTH_RESET_PASSWORD: { limit: 2, ttl: 3600 }, // Reduced from 3 to 2 reset attempts per hour
+  // Auth endpoints - enhanced distributed attack protection
+  AUTH_LOGIN: { limit: 5, ttl: 3600, skipSuccessfulRequests: true }, // 5 attempts per hour (enhanced protection)
+  AUTH_REGISTER: { limit: 3, ttl: 86400 }, // 3 registrations per day (prevents enumeration)
+  AUTH_REFRESH: { limit: 20, ttl: 3600 }, // 20 refresh attempts per hour (better UX while secure)
+  AUTH_RESET_PASSWORD: { limit: 2, ttl: 7200 }, // 2 reset attempts per 2 hours (enhanced protection)
   
   // Email endpoints - prevent spam
   EMAIL_VERIFICATION: { limit: 2, ttl: 600 }, // Reduced from 3 to 2 emails per 10 minutes

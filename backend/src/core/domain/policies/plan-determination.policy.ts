@@ -143,7 +143,7 @@ export class PlanDeterminationPolicy {
       'STARTER50': { plan: UserPlan.STARTER, description: 'Launch Special - 50% off Starter', isBeta: false },
       'LAUNCH50': { plan: UserPlan.STARTER, description: 'Launch Special - 50% off Starter', isBeta: false },
       'BETA_PRO': { plan: UserPlan.PRO, description: 'Beta Tester - 30 Days Free PRO Access', isBeta: true, duration: 30 },
-      'AGENCY30': { plan: UserPlan.AGENCY, description: 'Agency Trial - 30 days free', isBeta: false, duration: 30 },
+      // 'AGENCY30': { plan: UserPlan.AGENCY, description: 'Agency Trial - 30 days free', isBeta: false, duration: 30 },
     } as const;
 
     const promo = promoCodes[promoCode.toUpperCase() as keyof typeof promoCodes];

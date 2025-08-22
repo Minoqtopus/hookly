@@ -4,7 +4,7 @@ import { AnalyticsEvent } from './entities/analytics-event.entity';
 import { EmailVerification } from './entities/email-verification.entity';
 import { GenerationJob } from './entities/generation-job.entity';
 import { Generation } from './entities/generation.entity';
-import { SignupControl } from './entities/signup-control.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
 import { User } from './entities/user.entity';
 
 config();
@@ -18,7 +18,7 @@ export const AppDataSource = new DataSource({
     GenerationJob,
     AnalyticsEvent,
     EmailVerification,
-    SignupControl
+    RefreshToken
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,
