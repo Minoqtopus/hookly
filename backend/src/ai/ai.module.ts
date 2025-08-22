@@ -1,41 +1,23 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { GeminiAdapter } from '../infrastructure/adapters/gemini.adapter';
-import { GroqAdapter } from '../infrastructure/adapters/groq.adapter';
-import { OpenAIAdapter } from '../infrastructure/adapters/openai.adapter';
-import { AIConfigService } from './ai-config.service';
 import { AIService } from './ai.service';
-import { ProviderOrchestratorService } from './provider-orchestrator.service';
-import { TokenManagementService } from './token-management.service';
+import { MultiProviderAIService } from './multi-provider-ai.service';
 
 @Module({
   imports: [ConfigModule],
   providers: [
-    AIService,
+    AIService, // Keep existing for compatibility
+    MultiProviderAIService,
     
-    // AI Strategy and Configuration
-    AIConfigService,
-    TokenManagementService,
-    
-    // AI Provider Adapters
-    GeminiAdapter,
-    GroqAdapter,
-    OpenAIAdapter,
-    
-    // Provider Orchestrator
-    ProviderOrchestratorService,
-    
-    // Provide ContentGeneratorPort implementation
+    // Use MultiProviderAIService for content generation
     {
       provide: 'ContentGeneratorPort',
-      useClass: ProviderOrchestratorService,
+      useClass: MultiProviderAIService,
     },
   ],
   exports: [
     AIService,
-    AIConfigService,
-    TokenManagementService,
-    ProviderOrchestratorService,
+    MultiProviderAIService,
     'ContentGeneratorPort',
   ],
 })

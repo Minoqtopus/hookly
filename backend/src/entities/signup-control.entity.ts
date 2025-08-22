@@ -1,6 +1,12 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn, Check } from 'typeorm';
 
 @Entity('signup_control')
+@Check(`"total_signups_completed" <= "total_signups_allowed"`)
+@Check(`"beta_signups_completed" <= "beta_signups_allowed"`)
+@Check(`"total_signups_completed" >= 0`)
+@Check(`"beta_signups_completed" >= 0`)
+@Check(`"total_signups_allowed" >= 0`)
+@Check(`"beta_signups_allowed" >= 0`)
 export class SignupControl {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -66,88 +66,148 @@ export class PaymentsService {
 
   private async handleOrderCreated(data: any, userId?: string): Promise<void> {
     const user = await this.findUserByEmailOrId(data.attributes.user_email, userId);
-    if (!user) return;
+    if (!user) {
+      this.logger.error(`Order created but user not found. Order ID: ${data.id}, Email: ${data.attributes.user_email}, UserId: ${userId}`);
+      return;
+    }
 
-    // For one-time purchases, determine plan from product data
-    if (data.attributes.status === 'paid') {
-      const targetPlan = this.determinePlanFromProductData(data);
-      await this.upgradeUserToPlan(user, targetPlan);
-      this.logger.log(`User ${user.email} upgraded to ${targetPlan} via order ${data.id}`);
+    try {
+      // For one-time purchases, determine plan from product data
+      if (data.attributes.status === 'paid') {
+        const targetPlan = this.determinePlanFromProductData(data);
+        await this.upgradeUserToPlan(user, targetPlan);
+        this.logger.log(`User ${user.email} upgraded to ${targetPlan} via order ${data.id}`);
+      }
+    } catch (error) {
+      this.logger.error(`Error processing order ${data.id} for user ${user.email}:`, error);
+      throw error; // Re-throw to trigger webhook retry
     }
   }
 
   private async handleSubscriptionCreated(data: any, userId?: string): Promise<void> {
     const user = await this.findUserByEmailOrId(data.attributes.user_email, userId);
-    if (!user) return;
+    if (!user) {
+      this.logger.error(`Subscription created but user not found. Subscription ID: ${data.id}, Email: ${data.attributes.user_email}, UserId: ${userId}`);
+      return;
+    }
 
-    if (data.attributes.status === 'active') {
-      const targetPlan = this.determinePlanFromProductData(data);
-      await this.upgradeUserToPlan(user, targetPlan);
-      this.logger.log(`User ${user.email} subscribed to ${targetPlan} ${data.id}`);
+    try {
+      if (data.attributes.status === 'active') {
+        const targetPlan = this.determinePlanFromProductData(data);
+        await this.upgradeUserToPlan(user, targetPlan);
+        this.logger.log(`User ${user.email} subscribed to ${targetPlan} ${data.id}`);
+      }
+    } catch (error) {
+      this.logger.error(`Error processing subscription ${data.id} for user ${user.email}:`, error);
+      throw error; // Re-throw to trigger webhook retry
     }
   }
 
   private async handleSubscriptionUpdated(data: any, userId?: string): Promise<void> {
     const user = await this.findUserByEmailOrId(data.attributes.user_email, userId);
-    if (!user) return;
+    if (!user) {
+      this.logger.error(`Subscription updated but user not found. Subscription ID: ${data.id}, Email: ${data.attributes.user_email}, UserId: ${userId}`);
+      return;
+    }
 
-    if (data.attributes.status === 'active') {
-      const targetPlan = this.determinePlanFromProductData(data);
-      await this.upgradeUserToPlan(user, targetPlan);
-      this.logger.log(`User ${user.email} subscription updated to ${targetPlan}: ${data.attributes.status}`);
-    } else if (['cancelled', 'expired', 'past_due'].includes(data.attributes.status)) {
-      await this.downgradeUserToTrial(user);
-      this.logger.log(`User ${user.email} subscription ${data.attributes.status} - downgraded to TRIAL`);
+    try {
+      if (data.attributes.status === 'active') {
+        const targetPlan = this.determinePlanFromProductData(data);
+        await this.upgradeUserToPlan(user, targetPlan);
+        this.logger.log(`User ${user.email} subscription updated to ${targetPlan}: ${data.attributes.status}`);
+      } else if (['cancelled', 'expired', 'past_due'].includes(data.attributes.status)) {
+        await this.downgradeUserToTrial(user);
+        this.logger.log(`User ${user.email} subscription ${data.attributes.status} - downgraded to TRIAL`);
+      }
+    } catch (error) {
+      this.logger.error(`Error processing subscription update ${data.id} for user ${user.email}:`, error);
+      throw error; // Re-throw to trigger webhook retry
     }
   }
 
   private async handleSubscriptionCancelled(data: any, userId?: string): Promise<void> {
     const user = await this.findUserByEmailOrId(data.attributes.user_email, userId);
-    if (!user) return;
-
-    // Track cancellation event before downgrade
-    try {
-      await this.analyticsService.trackEvent(
-        EventType.UPGRADE_COMPLETED,
-        user.id,
-        {
-          cancelled_plan: user.plan,
-          subscription_id: data.id,
-          cancellation_reason: data.attributes?.cancellation_reason || 'unknown',
-        }
-      );
-    } catch (error) {
-      this.logger.error('Failed to track cancellation analytics:', error);
+    if (!user) {
+      this.logger.error(`Subscription cancelled but user not found. Subscription ID: ${data.id}, Email: ${data.attributes.user_email}, UserId: ${userId}`);
+      return;
     }
 
-    await this.downgradeUserToTrial(user);
-    this.logger.log(`User ${user.email} subscription cancelled ${data.id}`);
+    try {
+      // Track cancellation event before downgrade
+      try {
+        await this.analyticsService.trackEvent(
+          EventType.UPGRADE_COMPLETED,
+          user.id,
+          {
+            cancelled_plan: user.plan,
+            subscription_id: data.id,
+            cancellation_reason: data.attributes?.cancellation_reason || 'unknown',
+          }
+        );
+      } catch (error) {
+        this.logger.error('Failed to track cancellation analytics:', error);
+        // Don't throw - analytics failure shouldn't block the cancellation
+      }
+
+      await this.downgradeUserToTrial(user);
+      this.logger.log(`User ${user.email} subscription cancelled ${data.id}`);
+    } catch (error) {
+      this.logger.error(`Error processing subscription cancellation ${data.id} for user ${user.email}:`, error);
+      throw error; // Re-throw to trigger webhook retry
+    }
   }
 
   private async handleSubscriptionExpired(data: any, userId?: string): Promise<void> {
     const user = await this.findUserByEmailOrId(data.attributes.user_email, userId);
-    if (!user) return;
+    if (!user) {
+      this.logger.error(`Subscription expired but user not found. Subscription ID: ${data.id}, Email: ${data.attributes.user_email}, UserId: ${userId}`);
+      return;
+    }
 
-    await this.downgradeUserToTrial(user);
-    this.logger.log(`User ${user.email} subscription expired ${data.id}`);
+    try {
+      await this.downgradeUserToTrial(user);
+      this.logger.log(`User ${user.email} subscription expired ${data.id}`);
+    } catch (error) {
+      this.logger.error(`Error processing subscription expiration ${data.id} for user ${user.email}:`, error);
+      throw error; // Re-throw to trigger webhook retry
+    }
   }
 
   private async findUserByEmailOrId(email: string, userId?: string): Promise<User | null> {
     let user: User | null = null;
 
+    // Try to find by userId first (more reliable)
     if (userId) {
-      user = await this.userRepository.findOne({ where: { id: userId } });
+      try {
+        user = await this.userRepository.findOne({ where: { id: userId } });
+        if (user) {
+          this.logger.log(`User found by ID: ${userId}`);
+          return user;
+        }
+      } catch (error) {
+        this.logger.error(`Error finding user by ID ${userId}:`, error);
+      }
     }
 
-    if (!user && email) {
-      user = await this.userRepository.findOne({ where: { email } });
+    // Fallback to email lookup
+    if (email) {
+      try {
+        user = await this.userRepository.findOne({ where: { email } });
+        if (user) {
+          this.logger.log(`User found by email: ${email}`);
+          return user;
+        }
+      } catch (error) {
+        this.logger.error(`Error finding user by email ${email}:`, error);
+      }
     }
 
-    if (!user) {
-      this.logger.warn(`User not found for email: ${email}, userId: ${userId}`);
-    }
-
-    return user;
+    // Log detailed information for debugging webhook issues
+    this.logger.error(`User lookup failed - Email: ${email}, UserId: ${userId}. This payment event will be lost.`);
+    
+    // In production, you might want to queue this for retry or manual review
+    // For now, we'll return null and the webhook handler will log the error
+    return null;
   }
 
   private determinePlanFromProductData(data: any): UserPlan {
@@ -228,9 +288,9 @@ export class PaymentsService {
     }
 
     if (validation.isBeta) {
-      // Special handling for beta users
-      (user as any).is_beta_user = true;
-      (user as any).beta_expires_at = new Date(Date.now() + (validation.duration || 30) * 24 * 60 * 60 * 1000);
+      // Special handling for beta users with proper type safety
+      user.is_beta_user = true;
+      user.beta_expires_at = new Date(Date.now() + (validation.duration || 30) * 24 * 60 * 60 * 1000);
       await this.upgradeUserToPlan(user, validation.targetPlan!);
       this.logger.log(`Beta promo code applied: User ${user.email} marked as beta user and upgraded to ${validation.targetPlan} for ${validation.duration || 30} days`);
     } else {

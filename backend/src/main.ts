@@ -3,7 +3,49 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
+function validateSecurityConfiguration() {
+  // Critical security validation for JWT secrets
+  const jwtSecret = process.env.JWT_SECRET;
+  const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET;
+  
+  if (!jwtSecret || jwtSecret.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters long for security');
+  }
+  
+  if (!jwtRefreshSecret || jwtRefreshSecret.length < 32) {
+    throw new Error('JWT_REFRESH_SECRET must be at least 32 characters long for security');
+  }
+  
+  // Ensure secrets are different
+  if (jwtSecret === jwtRefreshSecret) {
+    throw new Error('JWT_SECRET and JWT_REFRESH_SECRET must be different');
+  }
+  
+  // Validate webhook secret for payment security
+  const webhookSecret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET;
+  if (!webhookSecret || webhookSecret.length < 16) {
+    console.warn('WARNING: LEMON_SQUEEZY_WEBHOOK_SECRET should be at least 16 characters for security');
+  }
+  
+  // Validate database URL
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is required');
+  }
+  
+  // Ensure production environment has secure settings
+  if (process.env.NODE_ENV === 'production') {
+    if (!databaseUrl.includes('ssl=true') && !databaseUrl.includes('sslmode=require')) {
+      console.warn('WARNING: Database connection should use SSL in production');
+    }
+  }
+  
+  console.log('✅ Security configuration validated successfully');
+}
+
 async function bootstrap() {
+  // Validate security configuration before starting the application
+  validateSecurityConfiguration();
   const app = await NestFactory.create(AppModule);
   
   app.useGlobalPipes(new ValidationPipe({

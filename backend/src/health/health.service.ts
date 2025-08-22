@@ -45,7 +45,7 @@ export class HealthService {
     
     try {
       // Test database connection with a simple query
-      await this.userRepository.query('SELECT 1');
+      await this.userRepository.manager.query('SELECT 1');
       const responseTime = Date.now() - startTime;
       
       // Get some basic stats
@@ -123,7 +123,7 @@ export class HealthService {
 
   private async checkDatabase(): Promise<boolean> {
     try {
-      await this.userRepository.query('SELECT 1');
+      await this.userRepository.manager.query('SELECT 1');
       return true;
     } catch (error) {
       return false;

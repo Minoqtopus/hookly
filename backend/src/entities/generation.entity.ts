@@ -5,6 +5,7 @@ import { User } from './user.entity';
 @Index('idx_generation_user_created', ['user_id', 'created_at'])
 @Index('idx_generation_featured', ['is_featured'])
 @Index('idx_generation_guest', ['is_guest_generation', 'created_at'])
+@Index('idx_generation_guest_ip', ['guest_ip_address', 'created_at'])
 @Index('idx_generation_favorite_user', ['user_id', 'is_favorite'])
 export class Generation {
   @PrimaryGeneratedColumn('uuid')
@@ -42,6 +43,9 @@ export class Generation {
 
   @Column({ default: false })
   is_guest_generation: boolean;
+
+  @Column({ nullable: true })
+  guest_ip_address?: string;
 
   @Column('jsonb', { nullable: true })
   performance_data?: {

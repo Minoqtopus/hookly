@@ -20,8 +20,10 @@ export class AuthController {
 
   @Post('register')
   @RateLimit(RateLimits.AUTH_REGISTER)
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  async register(@Body() registerDto: RegisterDto, @Request() req: any) {
+    const ipAddress = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'];
+    const userAgent = req.headers['user-agent'];
+    return this.authService.register(registerDto, ipAddress, userAgent);
   }
 
   @Post('login')

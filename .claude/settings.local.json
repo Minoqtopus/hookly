@@ -8,7 +8,8 @@
       "Bash(rm:*)",
       "Bash(npm run build:*)",
       "WebSearch",
-      "Bash(npm test)"
+      "Bash(npm test)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

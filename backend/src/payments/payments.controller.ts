@@ -14,12 +14,29 @@ export class PaymentsController {
     @Body() body: LemonSqueezyWebhookDto,
     @Headers('x-signature') signature: string,
   ) {
-    if (!signature) {
-      throw new BadRequestException('Missing webhook signature');
+    // Critical security fix: Strict signature validation
+    if (!signature || typeof signature !== 'string' || signature.trim().length === 0) {
+      throw new BadRequestException('Missing or invalid webhook signature');
+    }
+
+    // Validate signature format (should be hex string)
+    if (!/^[a-fA-F0-9]+$/.test(signature)) {
+      throw new BadRequestException('Invalid signature format');
     }
 
     const payload = JSON.stringify(body);
-    const isValidSignature = this.paymentsService.verifyWebhookSignature(payload, signature);
+    
+    // Ensure payload is not empty
+    if (!payload || payload.length === 0) {
+      throw new BadRequestException('Empty webhook payload');
+    }
+
+    let isValidSignature: boolean;
+    try {
+      isValidSignature = await this.paymentsService.verifyWebhookSignature(payload, signature);
+    } catch (error) {
+      throw new BadRequestException('Signature verification failed');
+    }
 
     if (!isValidSignature) {
       throw new BadRequestException('Invalid webhook signature');

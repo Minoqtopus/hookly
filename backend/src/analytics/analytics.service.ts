@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { AnalyticsEvent, EventType } from '../entities/analytics-event.entity';
 import { User } from '../entities/user.entity';
 
@@ -197,18 +197,11 @@ export class AnalyticsService {
     const filter: any = {};
     
     if (startDate && endDate) {
-      filter.created_at = {
-        $gte: startDate,
-        $lte: endDate,
-      };
+      filter.created_at = Between(startDate, endDate);
     } else if (startDate) {
-      filter.created_at = {
-        $gte: startDate,
-      };
+      filter.created_at = MoreThanOrEqual(startDate);
     } else if (endDate) {
-      filter.created_at = {
-        $lte: endDate,
-      };
+      filter.created_at = LessThanOrEqual(endDate);
     }
 
     return filter;

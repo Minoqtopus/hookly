@@ -14,20 +14,17 @@ export interface PlanHierarchy {
 
 export class PlanDeterminationPolicy {
   private readonly PRODUCT_PLAN_MAPPING: ProductPlanMapping = {
-    // LemonSqueezy product IDs mapped to user plans
+    // LemonSqueezy product IDs mapped to user plans (3-plan launch structure)
     'starter_monthly': UserPlan.STARTER,
     'starter_yearly': UserPlan.STARTER,
     'pro_monthly': UserPlan.PRO,
     'pro_yearly': UserPlan.PRO,
-    'agency_monthly': UserPlan.AGENCY,
-    'agency_yearly': UserPlan.AGENCY,
   };
 
   private readonly PLAN_HIERARCHY: UserPlan[] = [
     UserPlan.TRIAL,
     UserPlan.STARTER,
     UserPlan.PRO,
-    UserPlan.AGENCY,
   ];
 
   /**
@@ -96,7 +93,6 @@ export class PlanDeterminationPolicy {
       [UserPlan.TRIAL]: 0,
       [UserPlan.STARTER]: 19,
       [UserPlan.PRO]: 59,
-      [UserPlan.AGENCY]: 129,
     };
     return prices[plan] || 0;
   }
@@ -107,43 +103,27 @@ export class PlanDeterminationPolicy {
   getPlanFeatures(plan: UserPlan): {
     monthlyGenerations: number;
     platforms: string[];
-    teamMembers: number;
-    apiAccess: boolean;
-    prioritySupport: boolean;
-    customBranding: boolean;
+    premiumAI: boolean;
+    watermarks: boolean;
   } {
     const features = {
       [UserPlan.TRIAL]: {
-        monthlyGenerations: 15,
+        monthlyGenerations: 7,
         platforms: ['TikTok'],
-        teamMembers: 0,
-        apiAccess: false,
-        prioritySupport: false,
-        customBranding: false,
+        premiumAI: false,
+        watermarks: true,
       },
       [UserPlan.STARTER]: {
         monthlyGenerations: 50,
         platforms: ['TikTok', 'Instagram'],
-        teamMembers: 0,
-        apiAccess: false,
-        prioritySupport: false,
-        customBranding: false,
+        premiumAI: false,
+        watermarks: false,
       },
       [UserPlan.PRO]: {
-        monthlyGenerations: 200,
+        monthlyGenerations: 150,
         platforms: ['TikTok', 'Instagram', 'X'],
-        teamMembers: 3,
-        apiAccess: false,
-        prioritySupport: false,
-        customBranding: false,
-      },
-      [UserPlan.AGENCY]: {
-        monthlyGenerations: 500,
-        platforms: ['TikTok', 'Instagram', 'X', 'YouTube'],
-        teamMembers: 10,
-        apiAccess: true,
-        prioritySupport: true,
-        customBranding: true,
+        premiumAI: true,
+        watermarks: false,
       },
     };
     return features[plan] || features[UserPlan.TRIAL];

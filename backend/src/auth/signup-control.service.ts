@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { SignupControl } from '../entities/signup-control.entity';
 
 export interface SignupAvailability {
@@ -33,6 +33,7 @@ export class SignupControlService {
   constructor(
     @InjectRepository(SignupControl)
     private signupControlRepository: Repository<SignupControl>,
+    private dataSource: DataSource,
   ) {}
 
   /**
@@ -104,45 +105,73 @@ export class SignupControlService {
   /**
    * Increment signup count when a user successfully signs up
    * This is called after successful user creation
+   * Uses database transaction to prevent race conditions
    */
   async incrementSignupCount(): Promise<void> {
-    try {
-      const signupControl = await this.getOrCreateSignupControl();
+    return this.dataSource.transaction(async manager => {
+      // Lock the row for update to prevent race conditions
+      const signupControl = await manager
+        .createQueryBuilder(SignupControl, 'sc')
+        .setLock('pessimistic_write')
+        .getOne();
+      
+      if (!signupControl) {
+        throw new BadRequestException('Signup control not found');
+      }
       
       if (!signupControl.canSignup()) {
         throw new BadRequestException('Signup limit reached');
       }
 
-      signupControl.incrementSignup();
-      await this.signupControlRepository.save(signupControl);
+      // Increment with database constraint enforcement
+      await manager
+        .createQueryBuilder()
+        .update(SignupControl)
+        .set({ 
+          total_signups_completed: () => 'total_signups_completed + 1',
+          last_updated: new Date()
+        })
+        .where('id = :id', { id: signupControl.id })
+        .execute();
       
-      this.logger.log(`Signup count incremented. New total: ${signupControl.total_signups_completed}`);
-    } catch (error) {
-      this.logger.error('Failed to increment signup count:', error);
-      throw error;
-    }
+      this.logger.log(`Signup count incremented. New total: ${signupControl.total_signups_completed + 1}`);
+    });
   }
 
   /**
    * Increment beta signup count when a user joins beta
    * This is called after successful beta application approval
+   * Uses database transaction to prevent race conditions
    */
   async incrementBetaSignupCount(): Promise<void> {
-    try {
-      const signupControl = await this.getOrCreateSignupControl();
+    return this.dataSource.transaction(async manager => {
+      // Lock the row for update to prevent race conditions
+      const signupControl = await manager
+        .createQueryBuilder(SignupControl, 'sc')
+        .setLock('pessimistic_write')
+        .getOne();
+      
+      if (!signupControl) {
+        throw new BadRequestException('Signup control not found');
+      }
       
       if (!signupControl.canBetaSignup()) {
         throw new BadRequestException('Beta signup limit reached');
       }
 
-      signupControl.incrementBetaSignup();
-      await this.signupControlRepository.save(signupControl);
+      // Increment with database constraint enforcement
+      await manager
+        .createQueryBuilder()
+        .update(SignupControl)
+        .set({ 
+          beta_signups_completed: () => 'beta_signups_completed + 1',
+          last_updated: new Date()
+        })
+        .where('id = :id', { id: signupControl.id })
+        .execute();
       
-      this.logger.log(`Beta signup count incremented. New total: ${signupControl.beta_signups_completed}`);
-    } catch (error) {
-      this.logger.error('Failed to increment beta signup count:', error);
-      throw error;
-    }
+      this.logger.log(`Beta signup count incremented. New total: ${signupControl.beta_signups_completed + 1}`);
+    });
   }
 
   /**

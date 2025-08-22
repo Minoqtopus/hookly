@@ -4,8 +4,7 @@ import { Generation } from './generation.entity';
 export enum UserPlan {
   TRIAL = 'trial',
   STARTER = 'starter',
-  PRO = 'pro',
-  AGENCY = 'agency'
+  PRO = 'pro'
 }
 
 export enum UserRole {
@@ -49,7 +48,7 @@ export class User {
   @Column({ type: 'int', default: 0 })
   monthly_generation_count: number;
 
-  @Column({ type: 'date', default: () => 'CURRENT_DATE' })
+  @Column({ type: 'date', nullable: true })
   monthly_reset_date: Date;
 
   // Trial management fields
@@ -87,14 +86,7 @@ export class User {
   @Column({ type: 'int', default: 0 })
   referral_count: number;
 
-  // Basic plan features only
-  @Column({ default: false })
-  has_batch_generation: boolean;
-
-  @Column({ default: false })
-  has_advanced_analytics: boolean;
-
-  // Platform access flags
+  // Platform access flags (simplified for launch)
   @Column({ default: true })
   has_tiktok_access: boolean;
 
@@ -104,8 +96,19 @@ export class User {
   @Column({ default: false })
   has_instagram_access: boolean;
 
+  // Beta user fields for promo codes
   @Column({ default: false })
-  has_youtube_access: boolean;
+  is_beta_user: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  beta_expires_at?: Date;
+
+  // Trial abuse prevention fields
+  @Column({ nullable: true, length: 45 })
+  registration_ip?: string;
+
+  @Column({ nullable: true, length: 500 })
+  registration_user_agent?: string;
 
   @CreateDateColumn()
   created_at: Date;

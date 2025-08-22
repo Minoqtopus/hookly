@@ -26,11 +26,11 @@ export class PlanLimitPolicy {
   private readonly PLAN_LIMITS: Record<UserPlan, PlanLimits> = {
     [UserPlan.TRIAL]: {
       monthlyGenerations: 0, // Not applicable for trial
-      trialGenerations: 15,
+      trialGenerations: 7,
       trialDuration: 7,
       teamMembers: 0,
       platforms: ['TikTok'],
-      features: ['basic_generation', 'basic_templates'],
+      features: ['basic_generation'],
     },
     [UserPlan.STARTER]: {
       monthlyGenerations: 50,
@@ -38,44 +38,66 @@ export class PlanLimitPolicy {
       trialDuration: 0,
       teamMembers: 0,
       platforms: ['TikTok', 'Instagram'],
-      features: ['basic_generation', 'basic_templates', 'advanced_templates', 'export_formats'],
+      features: ['basic_generation', 'no_watermarks'],
     },
     [UserPlan.PRO]: {
-      monthlyGenerations: 200,
+      monthlyGenerations: 150,
       trialGenerations: 0,
       trialDuration: 0,
-      teamMembers: 3,
+      teamMembers: 0,
       platforms: ['TikTok', 'Instagram', 'X'],
-      features: ['basic_generation', 'basic_templates', 'advanced_templates', 'export_formats', 'batch_generation', 'team_collaboration', 'performance_analytics'],
-    },
-    [UserPlan.AGENCY]: {
-      monthlyGenerations: 500,
-      trialGenerations: 0,
-      trialDuration: 0,
-      teamMembers: 10,
-      platforms: ['TikTok', 'Instagram', 'X', 'YouTube'],
-      features: ['basic_generation', 'basic_templates', 'advanced_templates', 'export_formats', 'batch_generation', 'team_collaboration', 'performance_analytics', 'api_access', 'white_label', 'priority_support'],
+      features: ['basic_generation', 'no_watermarks', 'premium_ai'],
     },
   };
 
   /**
    * Check if user can generate content based on their plan and usage
+   * SINGLE SOURCE OF TRUTH for all generation limits
    */
   canUserGenerate(
     userPlan: UserPlan,
     monthlyCount: number,
     trialGenerationsUsed: number,
     trialStartedAt?: Date,
-    trialEndsAt?: Date
+    trialEndsAt?: Date,
+    isBetaUser?: boolean,
+    betaExpiresAt?: Date
   ): UsageStatus {
     const limits = this.PLAN_LIMITS[userPlan];
     const now = new Date();
+
+    // Check beta expiration first
+    if (isBetaUser && betaExpiresAt && now > betaExpiresAt) {
+      return {
+        canGenerate: false,
+        remainingGenerations: 0,
+        limitType: 'monthly',
+        resetDate: betaExpiresAt,
+        upgradeMessage: 'Beta access has expired. Please upgrade to continue.',
+      };
+    }
 
     if (userPlan === UserPlan.TRIAL) {
       return this.checkTrialLimits(trialGenerationsUsed, limits, trialStartedAt, trialEndsAt);
     }
 
     return this.checkMonthlyLimits(monthlyCount, limits, userPlan);
+  }
+
+  /**
+   * Get the appropriate generation count for a user based on their plan
+   * This ensures we always check the right counter
+   */
+  getRelevantGenerationCount(userPlan: UserPlan, monthlyCount: number, trialGenerationsUsed: number): number {
+    return userPlan === UserPlan.TRIAL ? trialGenerationsUsed : monthlyCount;
+  }
+
+  /**
+   * Get the generation limit for a user's plan
+   */
+  getGenerationLimit(userPlan: UserPlan): number {
+    const limits = this.PLAN_LIMITS[userPlan];
+    return userPlan === UserPlan.TRIAL ? limits.trialGenerations : limits.monthlyGenerations;
   }
 
   /**

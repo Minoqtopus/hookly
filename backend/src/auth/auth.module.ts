@@ -9,6 +9,8 @@ import { SignupControl } from '../entities/signup-control.entity';
 import { User } from '../entities/user.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { AdminManagementService } from './admin-management.service';
+import { TrialAbusePreventionService } from './trial-abuse-prevention.service';
 import { AdminGuard } from './guards/admin.guard';
 import { SignupControlService } from './signup-control.service';
 import { GoogleStrategy } from './strategies/google.strategy';
@@ -23,7 +25,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     forwardRef(() => AnalyticsModule),
   ],
   controllers: [AuthController],
-  providers: [AuthService, SignupControlService, JwtStrategy, GoogleStrategy, AdminGuard],
-  exports: [AuthService, SignupControlService, AdminGuard],
+  providers: [AuthService, AdminManagementService, TrialAbusePreventionService, SignupControlService, JwtStrategy, GoogleStrategy, AdminGuard],
+  exports: [AuthService, AdminManagementService, TrialAbusePreventionService, SignupControlService, AdminGuard],
 })
 export class AuthModule {}
