@@ -118,6 +118,12 @@ async function bootstrap() {
       operationsSorter: 'alpha',
     },
   });
+
+  // Expose JSON API spec endpoint
+  app.getHttpAdapter().get('/api/docs/json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(document);
+  });
   
   const port = process.env.PORT || 3001;
   await app.listen(port);
