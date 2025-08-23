@@ -12,7 +12,8 @@
       "Bash(find:*)",
       "Bash(npm run start:dev:*)",
       "Bash(npm uninstall:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []

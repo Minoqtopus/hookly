@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/app/lib/AppContext';
+import { useAuth } from '@/app/lib/context/AppContext';
 import { AuthService } from '@/app/lib/auth';
 import { toast } from '../lib/toast';
 import { ArrowRight, CheckCircle, Copy, Crown, Download, Heart, RefreshCw, Target, TrendingUp, Users } from 'lucide-react';

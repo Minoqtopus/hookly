@@ -1,6 +1,6 @@
 'use client';
 
-import { AppProvider } from '@/app/lib/AppContext';
+import { AppProvider } from '@/app/lib/context/AppContext';
 import { ReactNode } from 'react';
 
 interface ConditionalProvidersProps {

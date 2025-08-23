@@ -1,9 +1,9 @@
 'use client';
 
-import AuthModal from '@/app/components/AuthModal';
+import AuthModal from '@/app/components/modals/AuthModal';
 import { ApiClient, Generation } from '@/app/lib/api';
-import { useAuth } from '@/app/lib/AppContext';
-import { toast } from '@/app/lib/toast';
+import { useAuth } from '@/app/lib/context/AppContext';
+import { toast } from '@/app/lib/utils/toast';
 import { useAnalytics } from '@/app/lib/useAnalytics';
 import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import {

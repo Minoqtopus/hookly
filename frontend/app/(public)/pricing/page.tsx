@@ -1,6 +1,6 @@
 'use client';
 
-import AuthModal from '@/app/components/AuthModal';
+import AuthModal from '@/app/components/modals/AuthModal';
 import { pricingPage, pricingPlans, trialLimit, costPerGeneration, comparison, getProcessedFaqItems } from '@/app/lib/copy/pages/pricing';
 import { Check, Zap } from 'lucide-react';
 import Link from 'next/link';

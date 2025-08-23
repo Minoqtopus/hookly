@@ -8,9 +8,9 @@ import UpgradeModal from '@/app/components/UpgradeModal';
 import ViralGrowthDashboard from '@/app/components/ViralGrowthDashboard';
 import ContentMarketingDashboard from '@/app/components/ContentMarketingDashboard';
 import { ApiClient } from '@/app/lib/api';
-import { useApp, useAuth, useRecentGenerations, useUserStats } from '@/app/lib/AppContext';
+import { useApp, useAuth, useRecentGenerations, useUserStats } from '@/app/lib/context/AppContext';
 import { getPlanConfig } from '@/app/lib/plans';
-import { toast } from '@/app/lib/toast';
+import { toast } from '@/app/lib/utils/toast';
 import { useAnalytics } from '@/app/lib/useAnalytics';
 import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import {
