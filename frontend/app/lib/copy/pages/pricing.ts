@@ -55,6 +55,11 @@ export const pricingPage = {
     }
   },
   
+  buttons: {
+    trial: 'Start Free Trial',
+    demo: 'Try Free Demo',
+  },
+  
   finalCta: {
     title: 'Ready to Create Viral Ads?',
     subtitle: 'Join thousands of creators and marketers who trust Hookly to generate high-converting ad scripts',

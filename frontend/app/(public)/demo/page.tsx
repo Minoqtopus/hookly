@@ -149,14 +149,14 @@ export default function DemoPage() {
 
             {/* Quick Suggestions */}
             <div className="max-w-4xl mx-auto mb-8">
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl border-2 border-blue-200 shadow-sm p-8">
                 <h3 className="font-semibold text-gray-900 mb-4 text-center">{copy.form.quickStart.title}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {copy.form.quickStart.suggestions.map((suggestion, index) => (
                     <button
                       key={index}
                       onClick={() => setFormData(suggestion)}
-                      className="text-left p-3 border border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all duration-200"
+                      className="text-left p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 hover:shadow-md transition-all duration-200 shadow-sm hover:scale-[1.02] cursor-pointer"
                     >
                       <div className="font-medium text-gray-900">{suggestion.productName}</div>
                       <div className="text-sm text-gray-600">{suggestion.niche} • {suggestion.targetAudience}</div>
@@ -168,7 +168,7 @@ export default function DemoPage() {
 
             {/* Form */}
             <div className="max-w-4xl mx-auto">
-              <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+              <form onSubmit={handleSubmit} className="bg-gradient-to-br from-white to-gray-50 rounded-2xl border-2 border-gray-300 hover:border-primary-300 shadow-sm hover:shadow-md transition-all duration-200 p-8">
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-3">
@@ -288,7 +288,7 @@ export default function DemoPage() {
             {/* Generated Content */}
             <div className="space-y-6">
               {/* Hook */}
-              <div className="card">
+              <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl border-2 border-green-200 shadow-sm p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-gray-900 flex items-center">
                     <Target className="h-5 w-5 text-primary-600 mr-2" />
@@ -312,7 +312,7 @@ export default function DemoPage() {
               </div>
 
               {/* Script */}
-              <div className="card">
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200 shadow-sm p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-gray-900">
                     {copy.results.sections.script}
@@ -335,7 +335,7 @@ export default function DemoPage() {
               </div>
 
               {/* Visual Suggestions */}
-              <div className="card">
+              <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl border-2 border-yellow-200 shadow-sm p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">
                   {copy.results.sections.visuals}
                 </h3>
@@ -353,7 +353,7 @@ export default function DemoPage() {
             </div>
 
             {/* Demo to Trial Conversion */}
-            <div className="card bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-300 shadow-sm p-6">
               <div className="text-center">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="h-8 w-8 text-green-600" />

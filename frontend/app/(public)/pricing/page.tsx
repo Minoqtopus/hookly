@@ -59,10 +59,10 @@ export default function PricingPage() {
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`relative bg-white rounded-2xl shadow-lg border-2 p-8 flex flex-col ${
+              className={`relative rounded-2xl border-2 p-8 flex flex-col transition-all duration-200 hover:scale-[1.02] shadow-sm hover:shadow-md ${
                 plan.popular 
-                  ? 'border-primary-500 ring-4 ring-primary-100' 
-                  : 'border-gray-200'
+                  ? 'bg-gradient-to-br from-primary-50 to-purple-50 border-primary-300 hover:border-primary-400' 
+                  : 'bg-gray-50 border-gray-300 hover:border-gray-400 hover:bg-white'
               }`}
             >
               {plan.popular && (
@@ -110,7 +110,7 @@ export default function PricingPage() {
                     : 'bg-gray-900 text-white hover:bg-gray-800'
                 }`}
               >
-                {plan.name} Plan
+                {pricingPage.buttons.trial}
               </button>
               
               <p className="text-center text-sm text-gray-500 mt-3">
@@ -121,7 +121,7 @@ export default function PricingPage() {
         </div>
 
         {/* Cost Breakdown */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-16 max-w-4xl mx-auto">
+        <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl border-2 border-gray-200 shadow-sm p-8 mb-16 max-w-4xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               {pricingPage.costBreakdown.title}
@@ -165,7 +165,7 @@ export default function PricingPage() {
           
           <div className="space-y-6">
             {faqData.map((faq, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div key={index} className="bg-gray-50 hover:bg-white rounded-lg border-2 border-gray-200 hover:border-primary-200 shadow-sm hover:shadow-md p-6 transition-all duration-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
                   {faq.question}
                 </h3>
