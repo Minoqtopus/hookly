@@ -13,7 +13,7 @@ import {
   Target
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface DemoAd {
   hook: string;
@@ -37,6 +37,8 @@ export default function DemoPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const [stickyBarDismissed, setStickyBarDismissed] = useState(false);
 
   // Get processed copy with dynamic values
   const copy = getProcessedDemoContent();
@@ -83,6 +85,23 @@ export default function DemoPage() {
     setGeneratedAd(null);
     setFormData({ productName: '', niche: '', targetAudience: '' });
     setError(null);
+    setShowStickyBar(false);
+  };
+
+  // Show sticky bar after user interacts with page
+  useEffect(() => {
+    if (!stickyBarDismissed && !showAuthModal) {
+      const timer = setTimeout(() => {
+        setShowStickyBar(true);
+      }, 10000); // Show after 10 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [stickyBarDismissed, showAuthModal]);
+
+  const handleDismissStickyBar = () => {
+    setShowStickyBar(false);
+    setStickyBarDismissed(true);
   };
 
   return (
@@ -384,6 +403,30 @@ export default function DemoPage() {
           </div>
         )}
       </div>
+
+      {/* Subtle CTA Bar */}
+      {showStickyBar && (
+        <div className="fixed bottom-4 right-4 bg-white border border-gray-200 shadow-lg rounded-lg p-4 max-w-xs z-50 transform transition-all duration-300">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="text-sm text-gray-700 mb-2">{copy.stickyBar.title}</p>
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="text-primary-600 hover:text-primary-700 text-sm font-medium underline"
+              >
+                {copy.stickyBar.button}
+              </button>
+            </div>
+            <button
+              onClick={handleDismissStickyBar}
+              className="text-gray-400 hover:text-gray-600 ml-2"
+              aria-label="Close"
+            >
+              {copy.stickyBar.closeButton}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Auth Modal */}
       <AuthModal

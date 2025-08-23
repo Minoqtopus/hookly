@@ -1,14 +1,11 @@
 import ConditionalProviders from '@/app/components/ConditionalProviders';
-import { Metadata } from 'next';
+import { generateMetadata as getMetadata } from '@/app/lib/copy/brand/meta';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export const metadata: Metadata = {
-  title: 'Hookly - AI-Powered Viral Social Ads',
-  description: 'Create viral UGC content for TikTok, Instagram, and X in 30 seconds',
-};
+export const metadata = getMetadata();
 
 export default function RootLayout({
   children,

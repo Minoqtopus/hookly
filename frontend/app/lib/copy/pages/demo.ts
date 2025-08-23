@@ -105,6 +105,18 @@ export const demoPage = {
       generalError: 'An error occurred',
       copyFailed: 'Failed to copy'
     }
+  },
+  
+  stickyBar: {
+    title: 'Ready to create more viral ads?',
+    subtitle: 'Start your free trial - no credit card required',
+    button: 'Start Free Trial',
+    closeButton: '×',
+    features: [
+      '✅ {{trialLimit}} generations',
+      '✅ Save & export ads',
+      '✅ Advanced analytics'
+    ]
   }
 } as const;
 
@@ -136,6 +148,12 @@ export const getProcessedDemoContent = () => {
           )
         }
       }
+    },
+    stickyBar: {
+      ...demoPage.stickyBar,
+      features: demoPage.stickyBar.features.map(feature => 
+        feature.replace('{{trialLimit}}', trialLimit.toString())
+      )
     }
   };
 };
