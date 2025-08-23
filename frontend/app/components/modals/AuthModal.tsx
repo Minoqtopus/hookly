@@ -1,9 +1,12 @@
 'use client';
 
-// Remove AuthService import
 import { modals } from '@/app/lib/copy';
 import { Sparkles, X } from 'lucide-react';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { authAPI, ApiClientError } from '@/app/lib/api';
+import { useApp } from '@/app/lib/context';
+import type { RegisterRequest, LoginRequest } from '@/app/lib/contracts';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,6 +21,8 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose, demoData, triggerSource = 'demo_save' }: AuthModalProps) {
+  const router = useRouter();
+  const { actions } = useApp();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,46 +42,130 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
       sessionStorage.setItem('pendingDemoData', JSON.stringify(demoData));
     }
     
-    if (isSignUp) {
-      // Mock registration for now
-      await new Promise(resolve => setTimeout(resolve, 1000))
-        .then(() => {
-          setIsLoading(false);
-          onClose();
-          
-          // Redirect to dashboard or continue flow
-          const pendingDemo = sessionStorage.getItem('pendingDemoData');
-          if (pendingDemo) {
-            sessionStorage.removeItem('pendingDemoData');
-            window.location.href = '/generate?restored=true';
-          } else {
-            window.location.href = '/dashboard';
-          }
-        })
-        .catch(error => {
-          setIsLoading(false);
-          setError(error instanceof Error ? error.message : modals.auth.errors.fallback);
-        });
-    } else {
-      // Mock login for now
-      await new Promise(resolve => setTimeout(resolve, 1000))
-        .then(() => {
-          setIsLoading(false);
-          onClose();
-          
-          // Redirect to dashboard or continue flow
-          const pendingDemo = sessionStorage.getItem('pendingDemoData');
-          if (pendingDemo) {
-            sessionStorage.removeItem('pendingDemoData');
-            window.location.href = '/generate?restored=true';
-          } else {
-            window.location.href = '/dashboard';
-          }
-        })
-        .catch(error => {
-          setIsLoading(false);
-          setError(error instanceof Error ? error.message : modals.auth.errors.fallback);
-        });
+    try {
+      if (isSignUp) {
+        const registerData: RegisterRequest = { email, password };
+        const response = await authAPI.register(registerData);
+        
+        // Store tokens in localStorage and cookies
+        localStorage.setItem('access_token', response.access_token);
+        localStorage.setItem('refresh_token', response.refresh_token);
+        
+        // Set access token as cookie for middleware authentication
+        document.cookie = `access_token=${response.access_token}; path=/; max-age=${15 * 60}; SameSite=Strict`; // 15 minutes
+        
+        // Update context with user data (extract from response or create mock data)
+        const userData = response.user || {
+          id: '1', // TODO: Get from JWT or API response
+          email: email,
+          plan: 'trial',
+          trial_generations_used: 0,
+          is_beta_user: false,
+          email_verified: true,
+          trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        };
+        
+        const userStatsData = {
+          generationsUsed: 0,
+          generationsThisMonth: 0,
+          totalGenerations: 0,
+          isTrialUser: true,
+          monthlyLimit: 15,
+          streak: 0,
+          totalViews: 0,
+          avgCTR: 0,
+          generationsToday: 0,
+          trialGenerationsUsed: 0,
+        };
+        
+        // Update context state immediately
+        actions.login(userData, userStatsData);
+        
+        // Success - close modal and redirect
+        setIsLoading(false);
+        onClose();
+        
+        // Redirect to dashboard or continue flow
+        const pendingDemo = sessionStorage.getItem('pendingDemoData');
+        if (pendingDemo) {
+          sessionStorage.removeItem('pendingDemoData');
+          router.push('/generate?restored=true');
+        } else {
+          router.push('/dashboard');
+        }
+      } else {
+        const loginData: LoginRequest = { email, password };
+        const response = await authAPI.login(loginData);
+        
+        // Store tokens in localStorage and cookies
+        localStorage.setItem('access_token', response.access_token);
+        localStorage.setItem('refresh_token', response.refresh_token);
+        
+        // Set access token as cookie for middleware authentication
+        document.cookie = `access_token=${response.access_token}; path=/; max-age=${15 * 60}; SameSite=Strict`; // 15 minutes
+        
+        // Update context with user data (extract from response or create mock data)
+        const userData = response.user || {
+          id: '1', // TODO: Get from JWT or API response
+          email: email,
+          plan: 'trial',
+          trial_generations_used: 0,
+          is_beta_user: false,
+          email_verified: true,
+          trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        };
+        
+        const userStatsData = {
+          generationsUsed: 0,
+          generationsThisMonth: 0,
+          totalGenerations: 0,
+          isTrialUser: true,
+          monthlyLimit: 15,
+          streak: 0,
+          totalViews: 0,
+          avgCTR: 0,
+          generationsToday: 0,
+          trialGenerationsUsed: 0,
+        };
+        
+        // Update context state immediately
+        actions.login(userData, userStatsData);
+        
+        // Success - close modal and redirect
+        setIsLoading(false);
+        onClose();
+        
+        // Redirect to dashboard or continue flow
+        const pendingDemo = sessionStorage.getItem('pendingDemoData');
+        if (pendingDemo) {
+          sessionStorage.removeItem('pendingDemoData');
+          router.push('/generate?restored=true');
+        } else {
+          router.push('/dashboard');
+        }
+      }
+    } catch (error) {
+      setIsLoading(false);
+      
+      if (error instanceof ApiClientError) {
+        // Handle specific error types with user-friendly messages
+        if (error.isValidationError) {
+          const validationMessage = Array.isArray(error.apiError.message) 
+            ? error.apiError.message.join(', ')
+            : error.apiError.message;
+          setError(validationMessage);
+        } else if (error.isAuthError) {
+          setError(isSignUp ? 'Registration failed. Please try again.' : 'Invalid email or password.');
+        } else if (error.isConflictError) {
+          setError('An account with this email already exists. Please sign in instead.');
+        } else if (error.isRateLimitError) {
+          setError('Too many attempts. Please wait a moment and try again.');
+        } else {
+          setError(error.toUserMessage());
+        }
+      } else {
+        setError(modals.auth.errors.fallback);
+      }
     }
   };
 
@@ -175,15 +264,13 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                 {/* Google Sign Up */}
                 <button
                   onClick={() => {
-                    setIsLoading(true);
-                    
                     // Store demo data to preserve it through auth flow
                     if (demoData) {
                       sessionStorage.setItem('pendingDemoData', JSON.stringify(demoData));
                     }
                     
-                    // Mock Google auth for now
-                    console.log('Google auth clicked');
+                    // Initiate Google OAuth flow
+                    authAPI.initiateGoogleAuth();
                   }}
                   disabled={isLoading}
                   className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-4 px-6 rounded-xl flex items-center justify-center transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
@@ -287,15 +374,13 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                 {/* Google Sign In */}
                 <button
                   onClick={() => {
-                    setIsLoading(true);
-                    
                     // Store demo data to preserve it through auth flow
                     if (demoData) {
                       sessionStorage.setItem('pendingDemoData', JSON.stringify(demoData));
                     }
                     
-                    // Mock Google auth for now
-                    console.log('Google auth clicked');
+                    // Initiate Google OAuth flow
+                    authAPI.initiateGoogleAuth();
                   }}
                   disabled={isLoading}
                   className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-4 px-6 rounded-xl flex items-center justify-center transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"

@@ -108,10 +108,12 @@ function addSecurityHeaders(response: NextResponse) {
   response.headers.set('X-XSS-Protection', '1; mode=block');
   
   // CSP for additional security (adjust as needed for your app)
-  response.headers.set(
-    'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.vercel-analytics.com *.vercel.app; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' *.vercel.app *.supabase.co;"
-  );
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const cspPolicy = isDevelopment
+    ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.vercel-analytics.com *.vercel.app; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' *.vercel.app *.supabase.co http://localhost:3001;"
+    : "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.vercel-analytics.com *.vercel.app; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' *.vercel.app *.supabase.co;";
+  
+  response.headers.set('Content-Security-Policy', cspPolicy);
   
   // Referrer policy
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');

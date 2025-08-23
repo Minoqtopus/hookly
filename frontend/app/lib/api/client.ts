@@ -49,6 +49,16 @@ export class ApiClient {
     this.onForbidden = config.onForbidden;
     this.onNetworkError = config.onNetworkError;
     
+    // Development logging to verify configuration
+    if (process.env.NEXT_PUBLIC_NODE_ENV === 'development') {
+      console.log('🔧 API Client Configuration:', {
+        baseURL: this.baseURL,
+        timeout: this.timeout,
+        retryConfig: this.retryConfig,
+        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL
+      });
+    }
+    
     this.getAuthToken = config.tokenProvider || (() => {
       if (typeof window !== 'undefined') {
         return localStorage.getItem('access_token');
@@ -104,6 +114,7 @@ export class ApiClient {
         try {
           response = await fetch(`${this.baseURL}/auth/refresh`, {
             method: 'POST',
+            credentials: 'include', // Important for CORS with backend
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
@@ -122,18 +133,23 @@ export class ApiClient {
           if (typeof window !== 'undefined') {
             localStorage.removeItem('access_token');
             localStorage.removeItem('refresh_token');
+            // Clear access token cookie
+            document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
           }
           return null;
         }
 
         const data: RefreshResponse = await response.json();
         
-        // Store new tokens
+        // Store new tokens in localStorage and cookies
         if (typeof window !== 'undefined') {
           localStorage.setItem('access_token', data.access_token);
           if (data.refresh_token) {
             localStorage.setItem('refresh_token', data.refresh_token);
           }
+          
+          // Update access token cookie for middleware authentication
+          document.cookie = `access_token=${data.access_token}; path=/; max-age=${15 * 60}; SameSite=Strict`; // 15 minutes
         }
 
         return data.access_token;
@@ -143,6 +159,8 @@ export class ApiClient {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
+          // Clear access token cookie
+          document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         }
         return null;
       } finally {
@@ -273,6 +291,21 @@ export class ApiClient {
     let lastError: ApiClientError | NetworkError;
     
     for (let attempt = 0; attempt <= this.retryConfig.maxRetries; attempt++) {
+      // Development logging
+      if (process.env.NEXT_PUBLIC_NODE_ENV === 'development') {
+        console.log(`🚀 API Request: ${options.method || 'GET'} ${url}`, {
+          headers: this.getDefaultHeaders(),
+          body: options.body ? JSON.parse(options.body as string) : undefined,
+          attempt: `${attempt + 1}/${this.retryConfig.maxRetries + 1}`,
+          isRetryAfterRefresh,
+          fullConfig: {
+            method: options.method || 'GET',
+            credentials: 'include',
+            headers: { ...this.getDefaultHeaders(), ...options.headers },
+            body: options.body
+          }
+        });
+      }
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), this.timeout);
@@ -280,6 +313,7 @@ export class ApiClient {
         const config: RequestInit = {
           ...options,
           signal: controller.signal,
+          credentials: 'include', // Important for CORS with backend
           headers: {
             ...this.getDefaultHeaders(),
             ...options.headers,
@@ -296,12 +330,28 @@ export class ApiClient {
           
           if (controller.signal.aborted) {
             lastError = new TimeoutError(`Request timeout after ${this.timeout}ms`, url);
+            if (process.env.NEXT_PUBLIC_NODE_ENV === 'development') {
+              console.error(`⏱️ Request Timeout: ${options.method || 'GET'} ${url}`, {
+                timeout: this.timeout,
+                attempt: attempt + 1
+              });
+            }
           } else {
             lastError = new NetworkError(
               `Network request failed: ${fetchError instanceof Error ? fetchError.message : 'Unknown network error'}`,
               url,
               fetchError
             );
+            if (process.env.NEXT_PUBLIC_NODE_ENV === 'development') {
+              console.error(`🌐 Network Error: ${options.method || 'GET'} ${url}`, {
+                error: fetchError instanceof Error ? fetchError.constructor.name : 'Unknown',
+                message: fetchError instanceof Error ? fetchError.message : 'Unknown network error',
+                stack: fetchError instanceof Error ? fetchError.stack : undefined,
+                fetchError: fetchError,
+                attempt: attempt + 1,
+                requestConfig: config
+              });
+            }
           }
           
           if (this.onNetworkError && lastError instanceof NetworkError) {
@@ -322,7 +372,19 @@ export class ApiClient {
           throw lastError;
         }
 
-        return await this.handleResponse<T>(response, url);
+        const result = await this.handleResponse<T>(response, url);
+        
+        // Development logging for successful responses
+        if (process.env.NEXT_PUBLIC_NODE_ENV === 'development') {
+          console.log(`✅ API Response: ${response.status} ${options.method || 'GET'} ${url}`, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: Object.fromEntries(response.headers.entries()),
+            data: result
+          });
+        }
+        
+        return result;
         
       } catch (error) {
         // Handle 401 with automatic token refresh (only on first attempt and if not already a retry)
@@ -369,14 +431,36 @@ export class ApiClient {
         if (error instanceof ApiClientError || error instanceof NetworkError) {
           lastError = error;
           
+          // Development logging for API errors
+          if (process.env.NEXT_PUBLIC_NODE_ENV === 'development') {
+            console.error(`❌ API Error: ${options.method || 'GET'} ${url}`, {
+              error: error.constructor.name,
+              statusCode: error instanceof ApiClientError ? error.statusCode : 'N/A',
+              message: error.message,
+              url: error instanceof ApiClientError ? error.url : url,
+              attempt: attempt + 1,
+              willRetry: this.shouldRetry(error instanceof ApiClientError ? error : new ApiClientError('Network Error', 0, { statusCode: 0, message: error.message, error: 'Network Error' }, url), attempt)
+            });
+          }
+          
           if (this.shouldRetry(error instanceof ApiClientError ? error : new ApiClientError('Network Error', 0, { statusCode: 0, message: error.message, error: 'Network Error' }, url), attempt)) {
             const delay = this.retryConfig.retryDelay * Math.pow(this.retryConfig.retryMultiplier, attempt);
-            console.warn(`Request failed, retrying in ${delay}ms (attempt ${attempt + 1}/${this.retryConfig.maxRetries}):`, error.message);
+            if (process.env.NEXT_PUBLIC_NODE_ENV === 'development') {
+              console.warn(`🔄 Retrying request in ${delay}ms (attempt ${attempt + 1}/${this.retryConfig.maxRetries}):`, error.message);
+            }
             await this.sleep(delay);
             continue;
           }
         } else {
           // Unexpected error type
+          if (process.env.NEXT_PUBLIC_NODE_ENV === 'development') {
+            console.error(`💥 Unexpected Error: ${options.method || 'GET'} ${url}`, {
+              error: error instanceof Error ? error.constructor.name : 'Unknown',
+              message: error instanceof Error ? error.message : 'Unknown error',
+              stack: error instanceof Error ? error.stack : undefined
+            });
+          }
+          
           lastError = new NetworkError(
             `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
             url,
@@ -562,6 +646,8 @@ export const apiClient = new ApiClient({
     if (typeof window !== 'undefined') {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      // Clear access token cookie
+      document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       // Could dispatch logout action here
     }
   },

@@ -2,6 +2,7 @@
 
 import { 
   LocalSavesViewer,
+  PrivateNavbar,
   TrialCountdown,
   UpgradeModal,
   ViralGrowthDashboard,
@@ -17,9 +18,7 @@ import {
   Flame,
   Gift,
   Heart,
-  LogOut,
   Plus,
-  Settings,
   Share2,
   Sparkles,
   Target,
@@ -46,8 +45,8 @@ export default function DashboardPage() {
 
   // Route guard handles authentication redirects - no need for modal
 
-  const handleLogout = () => {
-    actions.logout();
+  const handleLogout = async () => {
+    await actions.logout();
   };
 
   const handleShowUpgradeModal = (source: string) => {
@@ -178,51 +177,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Sparkles className="h-8 w-8 text-primary-600" />
-              <span className="text-xl font-bold text-gray-900">Hookly</span>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              
-              {/* Plan Badge */}
-              <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                user.plan === 'agency'
-                  ? 'bg-gradient-to-r from-purple-500 to-purple-700 text-white'
-                  : user.plan === 'starter' || user.plan === 'pro'
-                  ? 'bg-gradient-to-r from-blue-500 to-blue-700 text-white'
-                  : 'bg-gray-100 text-gray-700'
-              }`}>
-                {user.plan === 'agency' ? (
-                  <div className="flex items-center">
-                    <Crown className="h-3 w-3 mr-1" />
-                    {user.is_beta_user ? 'AGENCY (FREE)' : 'AGENCY'}
-                  </div>
-                ) : user.plan === 'starter' || user.plan === 'pro' ? (
-                  <div className="flex items-center">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    {user.plan === 'starter' ? 'STARTER' : 'PRO'}
-                  </div>
-                ) : 'TRIAL'}
-              </div>
-              
-              <Link href="/settings" className="p-2 text-gray-400 hover:text-gray-600">
-                <Settings className="h-5 w-5" />
-              </Link>
-              
-              <button 
-                onClick={handleLogout}
-                className="p-2 text-gray-400 hover:text-gray-600"
-              >
-                <LogOut className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PrivateNavbar onLogout={handleLogout} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}

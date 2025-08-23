@@ -171,7 +171,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
 interface AppActions {
   initialize: () => Promise<void>;
   login: (user: User, userStats: UserStats) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateUserStats: (stats: UserStats) => void;
   addGeneration: (generation: Generation) => void;
   updateRecentGenerations: (generations: Generation[]) => void;
@@ -201,15 +201,54 @@ export function AppProvider({ children }: AppProviderProps) {
     initialize: async () => {
       dispatch({ type: 'INITIALIZE_START' });
       try {
-        // Mock initialization - just set as not authenticated for now
-        dispatch({
-          type: 'INITIALIZE_SUCCESS',
-          payload: {
-            user: null,
-            userStats: null,
-            recentGenerations: [],
-          },
-        });
+        // Check if user is authenticated by looking for access token
+        const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+        
+        if (token) {
+          // TODO: Replace with actual API call to get user profile
+          // For now, create a mock user from token (basic JWT decode could work)
+          const mockUser: User = {
+            id: '1',
+            email: 'user@example.com', // TODO: Extract from JWT or API call
+            plan: 'trial',
+            trial_generations_used: 0,
+            is_beta_user: false,
+            email_verified: true,
+            trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          };
+          
+          const mockUserStats: UserStats = {
+            generationsUsed: 0,
+            generationsThisMonth: 0,
+            totalGenerations: 0,
+            isTrialUser: true,
+            monthlyLimit: 15,
+            streak: 0,
+            totalViews: 0,
+            avgCTR: 0,
+            generationsToday: 0,
+            trialGenerationsUsed: 0,
+          };
+          
+          dispatch({
+            type: 'INITIALIZE_SUCCESS',
+            payload: {
+              user: mockUser,
+              userStats: mockUserStats,
+              recentGenerations: [],
+            },
+          });
+        } else {
+          // No token, user is not authenticated
+          dispatch({
+            type: 'INITIALIZE_SUCCESS',
+            payload: {
+              user: null,
+              userStats: null,
+              recentGenerations: [],
+            },
+          });
+        }
       } catch (error) {
         dispatch({
           type: 'INITIALIZE_FAILURE',
@@ -222,8 +261,41 @@ export function AppProvider({ children }: AppProviderProps) {
       dispatch({ type: 'LOGIN_SUCCESS', payload: { user, userStats } });
     },
 
-    logout: () => {
+    logout: async () => {
+      try {
+        // Get refresh token for backend logout
+        const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
+        
+        if (refreshToken) {
+          // Import logout API dynamically to avoid circular dependency
+          const { authAPI } = await import('../api');
+          
+          try {
+            // Call backend logout to invalidate refresh token
+            await authAPI.logout({ refresh_token: refreshToken });
+          } catch (error) {
+            // Continue with logout even if backend call fails
+            console.warn('Backend logout failed:', error);
+          }
+        }
+      } catch (error) {
+        console.warn('Logout API import failed:', error);
+      }
+      
+      // Clear tokens from localStorage and cookies
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        // Clear access token cookie
+        document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      }
+      
       dispatch({ type: 'LOGOUT' });
+      
+      // Redirect to home page after logout
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     },
 
     updateUserStats: (stats: UserStats) => {
