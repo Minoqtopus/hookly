@@ -1,7 +1,8 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import session from 'express-session';
+import { AppModule } from './app.module';
 import { JWTSecurityUtil } from './common/utils/jwt-security.util';
 
 function validateSecurityConfiguration() {
@@ -57,6 +58,20 @@ async function bootstrap() {
     whitelist: true,
     forbidNonWhitelisted: true,
   }));
+  
+  // Add session middleware for OAuth support
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || 'temporary-session-secret',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      },
+    }),
+  );
   
   // CRITICAL: Configure trust proxy for proper IP extraction in production
   // This is essential for trial abuse prevention and fraud detection

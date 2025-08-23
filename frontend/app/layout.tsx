@@ -1,30 +1,27 @@
-import type { Metadata } from 'next'
-import './globals.css'
-import { AppProvider } from './lib/AppContext'
+import { AppProvider } from '@/app/lib/AppContext';
+import { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Hookly - Create Viral TikTok Ads in 30 Seconds',
-  description: 'Generate high-converting UGC ad scripts, hooks, and visual prompts for TikTok with AI. Start your 7-day free trial today!',
-  keywords: 'Hookly ads, TikTok ad generator, viral content, ad scripts, marketing automation, Hookly',
-  openGraph: {
-    title: 'Hookly - Create Viral TikTok Ads in 30 Seconds',
-    description: 'Generate high-converting UGC ad scripts with AI. Start your 7-day free trial today!',
-    type: 'website',
-  },
-}
+  title: 'Hookly - AI-Powered Viral Social Ads',
+  description: 'Create viral UGC content for TikTok, Instagram, and X in 30 seconds',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full">
-      <body className="h-full antialiased">
+    <html lang="en">
+      <body className={inter.className}>
         <AppProvider>
           {children}
         </AppProvider>
       </body>
     </html>
-  )
+  );
 }

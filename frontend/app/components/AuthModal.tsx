@@ -1,8 +1,8 @@
 'use client';
 
 import { AuthService } from '@/app/lib/auth';
-import { useSignupAvailability } from '@/app/lib/useSignupAvailability';
-import { AlertCircle, Sparkles, X } from 'lucide-react';
+import { modals } from '@/app/lib/copy/components/modals';
+import { Sparkles, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface AuthModalProps {
@@ -23,7 +23,6 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(true);
   const [error, setError] = useState('');
-  const { availability, loading: availabilityLoading } = useSignupAvailability();
   
   // Set default auth mode based on trigger source
   useEffect(() => {
@@ -45,13 +44,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
 
   const handleEmailAuth = () => {
     if (!email || !password) return;
-    
-    // Check signup availability before proceeding
-    if (isSignUp && availability && !availability.canSignup) {
-      setError('Signups are currently limited. Please join our waitlist or try again later.');
-      return;
-    }
-    
+        
     setIsLoading(true);
     setError('');
     
@@ -77,7 +70,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
         })
         .catch(error => {
           setIsLoading(false);
-          setError(error instanceof Error ? error.message : 'Authentication failed. Please try again.');
+          setError(error instanceof Error ? error.message : modals.auth.errors.fallback);
         });
     } else {
       AuthService.loginWithEmail(email, password)
@@ -96,7 +89,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
         })
         .catch(error => {
           setIsLoading(false);
-          setError(error instanceof Error ? error.message : 'Authentication failed. Please try again.');
+          setError(error instanceof Error ? error.message : modals.auth.errors.fallback);
         });
     }
   };
@@ -125,22 +118,22 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                 <Sparkles className="h-8 w-8 text-primary-600" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {isSignUp ? 'Get Started' : 'Welcome Back'}
+                {isSignUp ? modals.auth.titles.signup : modals.auth.titles.login}
               </h2>
               <p className="text-gray-600">
-                {isSignUp ? 'Create an account to start building' : 'Sign in to continue creating'}
+                {isSignUp ? modals.auth.subtitles.signup : modals.auth.subtitles.login}
               </p>
             </div>
 
             {/* Demo Preview (if available) */}
             {demoData && triggerSource === 'demo_save' && (
               <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Your Generated Ad:</h4>
+                <h4 className="font-medium text-gray-900 mb-2">{modals.auth.demo.title}</h4>
                 <p className="text-sm text-gray-600 italic">
                   "{demoData.generatedAd?.hook || 'Your amazing hook...'}"
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  For: {demoData.productName} • {demoData.niche}
+                  {modals.auth.demo.productPrefix} {demoData.productName} • {demoData.niche}
                 </p>
               </div>
             )}
@@ -159,7 +152,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  Sign In
+                  {modals.auth.tabs.signin}
                 </button>
                 <button
                   onClick={() => {
@@ -172,7 +165,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  Sign Up
+                  {modals.auth.tabs.signup}
                 </button>
               </div>
             </div>
@@ -183,37 +176,13 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
               <div className="space-y-4">
                 {error && (
                   <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    <strong className="font-bold">Error!</strong>
+                    <strong className="font-bold">{modals.auth.errors.title}</strong>
                     <span className="block sm:inline"> {error}</span>
                     <span className="absolute top-0 bottom-0 right-0 px-4 py-3">
                       <button onClick={() => setError('')} className="text-red-700">
                         <span className="text-2xl">&times;</span>
                       </button>
                     </span>
-                  </div>
-                )}
-
-                {/* Signup Availability Alert */}
-                {isSignUp && availability && !availability.canSignup && (
-                  <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded relative" role="alert">
-                    <div className="flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-2" />
-                      <span className="text-sm">
-                        <strong>Signups Limited:</strong> {availability.signupMessage || 'We\'re currently limiting new signups. Please join our waitlist or try again later.'}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Signup Availability Info */}
-                {isSignUp && availability && availability.canSignup && availability.remainingSignups <= 25 && (
-                  <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded relative" role="alert">
-                    <div className="flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-2" />
-                      <span className="text-sm">
-                        <strong>Limited Spots:</strong> Only {availability.remainingSignups} signup spots remaining!
-                      </span>
-                    </div>
                   </div>
                 )}
                 
@@ -229,13 +198,13 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                     
                     AuthService.initiateGoogleAuth();
                   }}
-                  disabled={isLoading || (isSignUp && availability ? !availability.canSignup : false)}
+                  disabled={isLoading}
                   className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-4 px-6 rounded-xl flex items-center justify-center transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400 mr-3"></div>
-                      Connecting...
+                      {modals.auth.google.loading}
                     </div>
                   ) : (
                     <>
@@ -245,7 +214,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                       </svg>
-                      Continue with Google
+                      {modals.auth.google.text}
                     </>
                   )}
                 </button>
@@ -256,7 +225,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                     <div className="w-full border-t border-gray-300" />
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">or</span>
+                    <span className="px-2 bg-white text-gray-500">{modals.auth.divider}</span>
                   </div>
                 </div>
                 
@@ -268,7 +237,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                 <div>
                   <input
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder={modals.auth.form.emailPlaceholder}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -278,7 +247,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                 <div>
                   <input
                     type="password"
-                    placeholder="Enter your password"
+                    placeholder={modals.auth.form.passwordPlaceholder}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -287,16 +256,16 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                 </div>
                                 <button
                   type="submit"
-                  disabled={isLoading || !email || !password || (isSignUp && availability ? !availability.canSignup : false)}
+                  disabled={isLoading || !email || !password}
                   className="w-full btn-primary py-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                          Creating Account...
+                          {modals.auth.form.loading.signup}
                         </>
                       ) : (
-                        'Create Account'
+                        <>{modals.auth.form.signupButton}</>
                       )}
                     </button>
                   </div>
@@ -309,7 +278,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                     }}
                     className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                   >
-                    Already have an account? Sign in
+                    {modals.auth.links.switchToSignin}
                   </button>
                 </div>
               </div>
@@ -318,7 +287,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
               <div className="space-y-4">
                 {error && (
                   <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    <strong className="font-bold">Error!</strong>
+                    <strong className="font-bold">{modals.auth.errors.title}</strong>
                     <span className="block sm:inline"> {error}</span>
                     <span className="absolute top-0 bottom-0 right-0 px-4 py-3">
                       <button onClick={() => setError('')} className="text-red-700">
@@ -346,7 +315,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                   {isLoading ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400 mr-3"></div>
-                      Connecting...
+                      {modals.auth.google.loading}
                     </div>
                   ) : (
                     <>
@@ -356,7 +325,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                       </svg>
-                      Continue with Google
+                      {modals.auth.google.text}
                     </>
                   )}
                 </button>
@@ -367,7 +336,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                     <div className="w-full border-t border-gray-300" />
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">or</span>
+                    <span className="px-2 bg-white text-gray-500">{modals.auth.divider}</span>
                   </div>
                 </div>
                 
@@ -380,7 +349,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                     <div>
                       <input
                         type="email"
-                        placeholder="Enter your email"
+                        placeholder={modals.auth.form.emailPlaceholder}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -390,7 +359,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                     <div>
                       <input
                         type="password"
-                        placeholder="Enter your password"
+                        placeholder={modals.auth.form.passwordPlaceholder}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -405,10 +374,10 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                       {isLoading ? (
                         <div className="flex items-center justify-center">
                           <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                          {isSignUp ? 'Creating Account...' : 'Signing In...'}
+                          {isSignUp ? modals.auth.form.loading.signup : modals.auth.form.loading.signin}
                         </div>
                       ) : (
-                        isSignUp ? 'Create Account' : 'Sign In'
+                        isSignUp ? modals.auth.form.signupButton : modals.auth.form.signinButton
                       )}
                     </button>
 
@@ -419,7 +388,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                           href="/auth/forgot-password"
                           className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                         >
-                          Forgot your password?
+                          {modals.auth.links.forgotPassword}
                         </a>
                       </div>
                     )}
@@ -434,7 +403,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                     }}
                     className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                   >
-                    Need an account? Sign up
+                    {modals.auth.links.switchToSignup}
                   </button>
                 </div>
               </div>

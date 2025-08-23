@@ -10,7 +10,9 @@
       "WebSearch",
       "Bash(npm test)",
       "Bash(find:*)",
-      "Bash(npm run start:dev:*)"
+      "Bash(npm run start:dev:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(touch:*)"
     ],
     "deny": [],
     "ask": []

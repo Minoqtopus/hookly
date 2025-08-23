@@ -32,4 +32,8 @@
   .gradient-bg {
     @apply bg-gradient-to-br from-primary-50 via-white to-secondary-50;
   }
+  
+  .hero-gradient-bg {
+    @apply bg-gradient-to-br from-primary-50 via-white to-secondary-50 min-h-screen;
+  }
 }
