@@ -13,7 +13,8 @@
       "Bash(npm run start:dev:*)",
       "Bash(npm uninstall:*)",
       "Bash(touch:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(rg:*)"
     ],
     "deny": [],
     "ask": []

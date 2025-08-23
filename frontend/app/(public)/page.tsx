@@ -1,7 +1,7 @@
 'use client';
 
-import AuthModal from '@/app/components/modals/AuthModal';
-import ScarcityIndicator from '@/app/components/public/ScarcityIndicator';
+import { AuthModal } from '@/app/components/modals';
+import { ScarcityIndicator } from '@/app/components/public';
 import { landingPage } from '@/app/lib/copy';
 import { CheckCircle, Play, Sparkles, Star, TrendingUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';

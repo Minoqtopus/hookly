@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/app/lib/context/AppContext';
+import { useAuth } from '@/app/lib/context';
 import { getTrialLimit } from '@/app/lib/plans';
 import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import {

@@ -1,13 +1,13 @@
 'use client';
 
-import AuthModal from '@/app/components/modals/AuthModal';
+import { AuthModal } from '@/app/components/modals';
 import ExportModal from '@/app/components/ExportModal';
-import ScarcityIndicator from '@/app/components/public/ScarcityIndicator';
+import { ScarcityIndicator } from '@/app/components/public';
 import SocialProofLoader from '@/app/components/SocialProofLoader';
 import TemplateLibrary from '@/app/components/TemplateLibrary';
 import UpgradeModal from '@/app/components/UpgradeModal';
 import VariationsGenerator from '@/app/components/VariationsGenerator';
-import { useAuth, useUserStats } from '@/app/lib/context/AppContext';
+import { useAuth, useUserStats } from '@/app/lib/context';
 import { AuthService } from '@/app/lib/auth';
 import { LocalSaveService } from '@/app/lib/localSaves';
 import { getPlanConfig, getTrialLimit } from '@/app/lib/plans';

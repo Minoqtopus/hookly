@@ -1,7 +1,7 @@
 'use client';
 
-import AuthModal from '@/app/components/modals/AuthModal';
-import { navbar } from '@/app/lib/copy/components/navbar';
+import { AuthModal } from '@/app/components/modals';
+import { navbar } from '@/app/lib/copy';
 import { Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';

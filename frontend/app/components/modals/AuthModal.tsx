@@ -1,7 +1,7 @@
 'use client';
 
 import { AuthService } from '@/app/lib/auth';
-import { modals } from '@/app/lib/copy/components/modals';
+import { modals } from '@/app/lib/copy';
 import { Sparkles, X } from 'lucide-react';
 import { useState } from 'react';
 

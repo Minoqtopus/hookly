@@ -1,7 +1,7 @@
 'use client';
 
-import AuthModal from '@/app/components/modals/AuthModal';
-import { getProcessedDemoContent } from '@/app/lib/copy/pages/demo';
+import { AuthModal } from '@/app/components/modals';
+import { getProcessedDemoContent } from '@/app/lib/copy';
 import {
   ArrowRight,
   CheckCircle,

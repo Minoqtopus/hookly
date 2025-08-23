@@ -1,16 +1,16 @@
 'use client';
 
-import BetaBadge from '@/app/components/BetaBadge';
-import LocalSavesViewer from '@/app/components/LocalSavesViewer';
-import TemplateLibrary from '@/app/components/TemplateLibrary';
-import TrialCountdown from '@/app/components/TrialCountdown';
-import UpgradeModal from '@/app/components/UpgradeModal';
-import ViralGrowthDashboard from '@/app/components/ViralGrowthDashboard';
-import ContentMarketingDashboard from '@/app/components/ContentMarketingDashboard';
+import { 
+  LocalSavesViewer,
+  TrialCountdown,
+  UpgradeModal,
+  ViralGrowthDashboard,
+  ContentMarketingDashboard
+} from '@/app/components';
 import { ApiClient } from '@/app/lib/api';
-import { useApp, useAuth, useRecentGenerations, useUserStats } from '@/app/lib/context/AppContext';
+import { useApp, useAuth, useRecentGenerations, useUserStats } from '@/app/lib/context';
 import { getPlanConfig } from '@/app/lib/plans';
-import { toast } from '@/app/lib/utils/toast';
+import { toast } from '@/app/lib/utils';
 import { useAnalytics } from '@/app/lib/useAnalytics';
 import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import {

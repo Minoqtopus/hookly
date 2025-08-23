@@ -1,5 +1,5 @@
-import ConditionalProviders from '@/app/components/providers/ConditionalProviders';
-import { generateMetadata as getMetadata } from '@/app/lib/copy/brand/meta';
+import { ConditionalProviders } from '@/app/components/providers';
+import { generateMetadata as getMetadata } from '@/app/lib/copy';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
