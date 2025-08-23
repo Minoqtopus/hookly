@@ -1,4 +1,5 @@
 import { apiClient } from '../client';
+import { authenticatedApiClient } from '../authenticated-client';
 import type {
   LogoutRequest,
   LogoutResponse,
@@ -7,8 +8,8 @@ import type {
 
 /**
  * Logout APIs
- * POST /auth/logout
- * POST /auth/logout-all
+ * POST /auth/logout - Uses refresh token in body (no auth header needed)
+ * POST /auth/logout-all - Requires authorization header (access token)
  */
 
 export const logout = async (data: LogoutRequest): Promise<LogoutResponse> => {
@@ -16,7 +17,7 @@ export const logout = async (data: LogoutRequest): Promise<LogoutResponse> => {
 };
 
 export const logoutAll = async (): Promise<LogoutAllResponse> => {
-  return apiClient.post<LogoutAllResponse>('/auth/logout-all');
+  return authenticatedApiClient.post<LogoutAllResponse>('/auth/logout-all');
 };
 
 export const logoutAPI = {

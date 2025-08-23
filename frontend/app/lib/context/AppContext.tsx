@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, ReactNode, useContext, useEffect, useReducer } from 'react';
+import { setLogoutAction, validateSession } from '../api/authenticated-client';
 
 // Simple types
 export type User = {
@@ -205,7 +206,7 @@ export function AppProvider({ children }: AppProviderProps) {
         const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
         
         if (token) {
-          // TODO: Replace with actual API call to get user profile
+          // TODO: Replace with actual API call to get user profile when backend endpoint available
           // For now, create a mock user from token (basic JWT decode could work)
           const mockUser: User = {
             id: '1',
@@ -330,8 +331,12 @@ export function AppProvider({ children }: AppProviderProps) {
     },
   };
 
-  // Initialize on mount
+  // Initialize on mount and register logout action
   useEffect(() => {
+    // Register the logout action with the authenticated API client
+    setLogoutAction(actions.logout);
+    
+    // Initialize the app
     actions.initialize();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

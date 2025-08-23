@@ -1,26 +1,8 @@
 'use client';
 
 import { AuthModal, ExportModal } from '@/app/components/modals';
-import { ScarcityIndicator } from '@/app/components/public';
-import { useAuth, useUserStats } from '@/app/lib/context';
-import {
-  AlertCircle,
-  ArrowLeft,
-  CheckCircle,
-  Copy,
-  Crown,
-  Download,
-  Heart,
-  RefreshCw,
-  Share2,
-  Sparkles,
-  Target,
-  TrendingUp,
-  Users,
-  Wand2,
-  Zap
-} from 'lucide-react';
-import Link from 'next/link';
+import { useAuth } from '@/app/lib/context';
+import { RefreshCw, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from '@/app/lib/utils';
@@ -34,7 +16,6 @@ export default function GeneratePage() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const { user, isAuthenticated } = useAuth();
-  const userStats = useUserStats();
   const router = useRouter();
 
   const handleGenerate = async () => {
@@ -61,35 +42,7 @@ export default function GeneratePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Link 
-                href="/dashboard" 
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <ArrowLeft className="h-5 w-5" />
-                <span>Back to Dashboard</span>
-              </Link>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <ScarcityIndicator />
-              {isAuthenticated && userStats && (
-                <div className="text-sm text-gray-600">
-                  {userStats.generationsUsed || 0} generations used
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Generate Viral Social Media Ads
@@ -174,21 +127,20 @@ export default function GeneratePage() {
             Fill out the form above and click generate to create compelling social media ad content
           </p>
         </div>
+
+        {/* Modals */}
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          triggerSource="nav_signup"
+        />
+
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          content=""
+          title=""
+        />
       </div>
-
-      {/* Modals */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        triggerSource="nav_signup"
-      />
-
-      <ExportModal
-        isOpen={showExportModal}
-        onClose={() => setShowExportModal(false)}
-        content=""
-        title=""
-      />
-    </div>
   );
 }

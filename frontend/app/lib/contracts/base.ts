@@ -30,10 +30,11 @@ export interface TokenPair {
   refresh_token: string;
 }
 
+// Full user object returned by login/register
 export interface User {
   id: string;
   email: string;
-  plan: 'trial' | 'starter' | 'pro' | 'agency';
+  plan: 'trial' | 'starter' | 'pro';
   auth_providers: ('email' | 'google')[];
   is_verified: boolean;
   trial_ends_at?: string;
@@ -41,6 +42,13 @@ export interface User {
   has_tiktok_access?: boolean;
   has_instagram_access?: boolean;
   has_x_access?: boolean;
+}
+
+// Minimal user object returned by refresh endpoint
+export interface RefreshUser {
+  id: string;
+  email: string;
+  plan: 'trial' | 'starter' | 'pro';
 }
 
 export interface AuthResponse extends TokenPair {

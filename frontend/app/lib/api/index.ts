@@ -1,6 +1,8 @@
 // Main API barrel exports
 export * from './client';
+export * from './authenticated-client';
 export * from './auth';
 
 // Re-export for convenience
-export { ApiClient, apiClient, ApiClientError } from './client';
+export { ApiClient, apiClient, ApiClientError, createApiClient } from './client';
+export { authenticatedApiClient, validateSession } from './authenticated-client';

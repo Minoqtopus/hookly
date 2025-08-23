@@ -3,7 +3,6 @@
 import { useAuth } from '@/app/lib/context';
 import {
   AlertCircle,
-  ArrowLeft,
   Bell,
   Calendar,
   CheckCircle,
@@ -44,23 +43,7 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Link href="/dashboard" className="flex items-center text-gray-600 hover:text-gray-900 mr-6">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Link>
-              <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="lg:grid lg:grid-cols-12 lg:gap-x-8">
           {/* Sidebar */}
           <div className="lg:col-span-3">
@@ -414,6 +397,5 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-    </div>
   );
 }

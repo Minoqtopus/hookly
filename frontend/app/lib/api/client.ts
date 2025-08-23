@@ -632,27 +632,32 @@ export class TimeoutError extends NetworkError {
   }
 }
 
-// Export configured singleton instance
-export const apiClient = new ApiClient({
-  timeout: 30000,
-  retryConfig: {
-    maxRetries: 3,
-    retryDelay: 1000,
-    retryMultiplier: 2,
-    retryableStatuses: [408, 429, 500, 502, 503, 504]
-  },
-  onUnauthorized: () => {
-    // Clear auth tokens when unauthorized
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      // Clear access token cookie
-      document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      // Could dispatch logout action here
-    }
-  },
-  onNetworkError: (error) => {
-    console.warn('Network error occurred:', error.message);
-    // Could show offline indicator here
-  }
-});
+// Create a configurable API client factory
+export function createApiClient(config?: {
+  onUnauthorized?: () => void;
+  onNetworkError?: (error: NetworkError) => void;
+}) {
+  return new ApiClient({
+    timeout: 30000,
+    retryConfig: {
+      maxRetries: 3,
+      retryDelay: 1000,
+      retryMultiplier: 2,
+      retryableStatuses: [408, 429, 500, 502, 503, 504]
+    },
+    onUnauthorized: config?.onUnauthorized || (() => {
+      // Default behavior: clear auth tokens when unauthorized
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      }
+    }),
+    onNetworkError: config?.onNetworkError || ((error) => {
+      console.warn('Network error occurred:', error.message);
+    })
+  });
+}
+
+// Export default singleton instance
+export const apiClient = createApiClient();

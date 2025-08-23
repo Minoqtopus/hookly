@@ -1,4 +1,4 @@
-import type { TokenPair } from '../base';
+import type { TokenPair, RefreshUser } from '../base';
 
 /**
  * Token Refresh Contract
@@ -10,11 +10,7 @@ export interface RefreshRequest {
 }
 
 export interface RefreshResponse extends TokenPair {
-  user: {
-    id: string;
-    email: string;
-    plan: 'trial' | 'starter' | 'pro' | 'agency';
-  };
+  user: RefreshUser;
 }
 
 export interface RefreshErrorResponse {
