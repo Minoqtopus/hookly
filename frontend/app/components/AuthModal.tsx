@@ -3,7 +3,7 @@
 import { AuthService } from '@/app/lib/auth';
 import { modals } from '@/app/lib/copy/components/modals';
 import { Sparkles, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -21,24 +21,8 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(true);
+  const [isSignUp, setIsSignUp] = useState(triggerSource !== 'login');
   const [error, setError] = useState('');
-  
-  // Set default auth mode based on trigger source
-  useEffect(() => {
-    if (triggerSource === 'login') {
-      setIsSignUp(false);
-    } else {
-      setIsSignUp(true);
-    }
-  }, [triggerSource]);
-
-  // Clear errors when modal opens/closes
-  useEffect(() => {
-    if (isOpen) {
-      setError('');
-    }
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -95,13 +79,13 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto transition-opacity duration-200 opacity-100">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-200" onClick={onClose} />
       
       {/* Modal */}
       <div className="relative min-h-screen flex items-end sm:items-center justify-center p-4">
-        <div className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md mx-auto shadow-2xl">
+        <div className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md mx-auto shadow-2xl transform transition-all duration-200 scale-100 translate-y-0">
           {/* Close Button */}
           <button
             onClick={onClose}

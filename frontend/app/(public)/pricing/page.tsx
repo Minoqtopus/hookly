@@ -1,8 +1,6 @@
 'use client';
 
 import AuthModal from '@/app/components/AuthModal';
-import BetaBadge from '@/app/components/BetaBadge';
-import { useAuth } from '@/app/lib/AppContext';
 import { pricingPage, pricingPlans, trialLimit, costPerGeneration, comparison, getProcessedFaqItems } from '@/app/lib/copy/pages/pricing';
 import { Check, Zap } from 'lucide-react';
 import Link from 'next/link';
@@ -11,7 +9,6 @@ import { useState } from 'react';
 export default function PricingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'STARTER' | 'PRO'>('STARTER');
-  const { isAuthenticated, user } = useAuth();
 
   // Use centralized pricing data
   const plans = pricingPlans;
@@ -21,20 +18,7 @@ export default function PricingPage() {
 
   const handleSelectPlan = (planId: 'STARTER' | 'PRO') => {
     setSelectedPlan(planId);
-    
-    if (!isAuthenticated) {
-      setShowAuthModal(true);
-      return;
-    }
-    
-    // Beta users already have Agency plan for free
-    if (user?.is_beta_user && planId === 'PRO') {
-      window.location.href = '/dashboard?welcome=beta';
-      return;
-    }
-    
-    // Redirect to upgrade flow for authenticated users
-    window.location.href = `/upgrade?plan=${planId.toLowerCase()}`;
+    setShowAuthModal(true);
   };
 
   const getTriggerSource = () => {
@@ -42,8 +26,6 @@ export default function PricingPage() {
       return 'starter_plan_signup';
     } else if (selectedPlan === 'PRO') {
       return 'pro_plan_signup';
-    } else if (selectedPlan === 'PRO') {
-      return 'agency_plan_signup';
     }
     return 'pricing_page';
   };
@@ -52,10 +34,7 @@ export default function PricingPage() {
     <div className="min-h-screen">
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        {/* Beta User Banner */}
-        {user?.is_beta_user && (
-          <BetaBadge variant="banner" className="max-w-4xl mx-auto" />
-        )}
+        {/* Banner removed - no user context in public page */}
 
         {/* Header Section */}
         <div className="text-center mb-20">
@@ -67,14 +46,12 @@ export default function PricingPage() {
           </p>
           
           {/* Trial CTA */}
-          {!user?.is_beta_user && (
-            <div className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-              <Zap className="h-5 w-5 text-blue-600 mr-2" />
-              <span className="text-blue-800 font-medium">
-                Start with a 7-day free trial ({trialLimit} generations) • No credit card required
-              </span>
-            </div>
-          )}
+          <div className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+            <Zap className="h-5 w-5 text-blue-600 mr-2" />
+            <span className="text-blue-800 font-medium">
+              Start with a 7-day free trial ({trialLimit} generations) • No credit card required
+            </span>
+          </div>
         </div>
 
         {/* Pricing Cards */}
@@ -82,7 +59,7 @@ export default function PricingPage() {
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`relative bg-white rounded-2xl shadow-lg border-2 p-8 ${
+              className={`relative bg-white rounded-2xl shadow-lg border-2 p-8 flex flex-col ${
                 plan.popular 
                   ? 'border-primary-500 ring-4 ring-primary-100' 
                   : 'border-gray-200'
@@ -104,29 +81,18 @@ export default function PricingPage() {
 
               {/* Price */}
               <div className="text-center mb-8">
-                {user?.is_beta_user && plan.name === 'PRO' ? (
-                  <div>
-                    <div className="flex items-baseline justify-center">
-                      <span className="text-4xl font-bold text-green-600">FREE</span>
-                    </div>
-                    <p className="text-sm text-green-600 mt-1 font-medium">
-                      🎉 Beta Tester Exclusive
-                    </p>
+                <div>
+                  <div className="flex items-baseline justify-center">
+                    <span className="text-4xl font-bold text-gray-900">
+                      {plan.price}
+                    </span>
+                    <span className="text-gray-500 ml-1">{plan.period}</span>
                   </div>
-                ) : (
-                  <div>
-                    <div className="flex items-baseline justify-center">
-                      <span className="text-4xl font-bold text-gray-900">
-                        {plan.price}
-                      </span>
-                      <span className="text-gray-500 ml-1">{plan.period}</span>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
 
               {/* Features */}
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-3 mb-8 flex-grow">
                 {plan.features.map((feature, index) => (
                   <li key={index} className="flex items-start">
                     <Check className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
@@ -167,19 +133,19 @@ export default function PricingPage() {
           
           <div className="grid md:grid-cols-3 gap-6 text-center">
             <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-2">Freelance Copywriter</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">{pricingPage.costBreakdown.labels.freelancer}</h3>
               <div className="text-3xl font-bold text-gray-900 mb-1">{comparison.freelancer.cost}</div>
               <div className="text-sm text-gray-600">{comparison.freelancer.description}</div>
             </div>
             
             <div className="bg-primary-50 rounded-lg p-6 border-2 border-primary-200">
-              <h3 className="font-semibold text-primary-900 mb-2">Hookly Starter</h3>
+              <h3 className="font-semibold text-primary-900 mb-2">{pricingPage.costBreakdown.labels.starter}</h3>
               <div className="text-3xl font-bold text-primary-900 mb-1">{comparison.starter.cost}</div>
               <div className="text-sm text-primary-700">{comparison.starter.description}</div>
             </div>
             
             <div className="bg-purple-50 rounded-lg p-6">
-              <h3 className="font-semibold text-purple-900 mb-2">Hookly Pro</h3>
+              <h3 className="font-semibold text-purple-900 mb-2">{pricingPage.costBreakdown.labels.pro}</h3>
               <div className="text-3xl font-bold text-purple-900 mb-1">{comparison.pro.cost}</div>
               <div className="text-sm text-purple-700">{comparison.pro.description}</div>
             </div>

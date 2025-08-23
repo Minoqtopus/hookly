@@ -57,13 +57,13 @@ export default function DemoPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to generate demo ad');
+        throw new Error(errorData.message || copy.results.errors.generateFailed);
       }
 
       const result = await response.json();
       setGeneratedAd(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : copy.results.errors.generalError);
     } finally {
       setIsGenerating(false);
     }
@@ -75,7 +75,7 @@ export default function DemoPage() {
       setCopiedField(field);
       setTimeout(() => setCopiedField(null), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
+      console.error(copy.results.errors.copyFailed + ':', err);
     }
   };
 
@@ -115,7 +115,14 @@ export default function DemoPage() {
                 <div>
                   <h3 className="font-semibold text-amber-900 mb-2">{copy.form.limitations.title}</h3>
                   <p className="text-amber-800">
-                    {copy.form.limitations.text}
+                    {copy.form.limitations.text.prefix}{' '}
+                    <button 
+                      onClick={() => setShowAuthModal(true)}
+                      className="underline hover:text-amber-900 transition-colors"
+                    >
+                      {copy.form.limitations.text.linkText}
+                    </button>
+                    {' '}{copy.form.limitations.text.suffix}
                   </p>
                 </div>
               </div>
@@ -242,19 +249,19 @@ export default function DemoPage() {
                   <div className="text-2xl font-bold text-blue-600">
                     {((generatedAd.performance.estimatedViews) / 1000).toFixed(0)}K
                   </div>
-                  <div className="text-xs text-gray-600">Est. Views</div>
+                  <div className="text-xs text-gray-600">{copy.results.performance.metrics.views}</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-green-600">
                     {generatedAd.performance.estimatedCTR}%
                   </div>
-                  <div className="text-xs text-gray-600">Est. CTR</div>
+                  <div className="text-xs text-gray-600">{copy.results.performance.metrics.ctr}</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-purple-600">
                     {generatedAd.performance.viralScore}/10
                   </div>
-                  <div className="text-xs text-gray-600">Viral Score</div>
+                  <div className="text-xs text-gray-600">{copy.results.performance.metrics.viralScore}</div>
                 </div>
               </div>
             </div>
@@ -269,7 +276,7 @@ export default function DemoPage() {
                     {copy.results.sections.hook}
                   </h3>
                   <button
-                    onClick={() => handleCopyToClipboard(generatedAd.hook, 'Hook')}
+                    onClick={() => handleCopyToClipboard(generatedAd.hook, copy.results.copyFields.hook)}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     <Copy className="h-4 w-4" />
@@ -280,7 +287,7 @@ export default function DemoPage() {
                     {generatedAd.hook}
                   </p>
                 </div>
-                {copiedField === 'Hook' && (
+                {copiedField === copy.results.copyFields.hook && (
                   <p className="text-green-600 text-xs mt-2">{copy.results.copiedMessage}</p>
                 )}
               </div>
@@ -292,7 +299,7 @@ export default function DemoPage() {
                     {copy.results.sections.script}
                   </h3>
                   <button
-                    onClick={() => handleCopyToClipboard(generatedAd.script, 'Script')}
+                    onClick={() => handleCopyToClipboard(generatedAd.script, copy.results.copyFields.script)}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     <Copy className="h-4 w-4" />
@@ -303,7 +310,7 @@ export default function DemoPage() {
                     {generatedAd.script}
                   </p>
                 </div>
-                {copiedField === 'Script' && (
+                {copiedField === copy.results.copyFields.script && (
                   <p className="text-green-600 text-xs mt-2">{copy.results.copiedMessage}</p>
                 )}
               </div>

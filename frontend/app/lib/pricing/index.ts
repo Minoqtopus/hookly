@@ -42,8 +42,7 @@ export const pricingConfig: PricingData = {
         '50 generations per month',
         'TikTok + Instagram platform support',
         'Premium AI content generation',
-        'Basic analytics',
-        'Email support'
+        'Basic analytics'
       ],
       generationLimit: 50,
       platforms: ['TikTok', 'Instagram'],
@@ -62,8 +61,7 @@ export const pricingConfig: PricingData = {
         'TikTok + Instagram + X support',
         'Enhanced AI models',
         'Batch generation (up to 10)',
-        'Advanced analytics',
-        'Priority support'
+        'Advanced analytics'
       ],
       generationLimit: 200,
       platforms: ['TikTok', 'Instagram', 'X'],

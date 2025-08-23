@@ -4,15 +4,17 @@ import AuthModal from '@/app/components/AuthModal';
 import ScarcityIndicator from '@/app/components/ScarcityIndicator';
 import { landingPage } from '@/app/lib/copy';
 import { CheckCircle, Play, Sparkles, Star, TrendingUp } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function HomePage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authTrigger, setAuthTrigger] = useState<'nav_signup' | 'login'>('nav_signup');
+  const router = useRouter();
 
   const handleTryDemo = () => {
-    // Navigate to dedicated demo page
-    window.location.href = '/demo';
+    // Navigate to dedicated demo page using client-side routing
+    router.push('/demo');
   };
 
   return (

@@ -28,7 +28,7 @@ export const pricingPage = {
       },
       {
         question: 'Do you offer refunds?',
-        answer: 'Yes, we offer a 30-day money-back guarantee. If you\'re not satisfied with Hookly, contact our support team for a full refund.'
+        answer: 'Yes, we offer a 30-day money-back guarantee. If you\'re not satisfied with Hookly, contact us for a full refund.'
       },
       {
         question: 'Can I change my plan anytime?',
@@ -36,7 +36,7 @@ export const pricingPage = {
       },
       {
         question: 'Is there a free plan?',
-        answer: 'We offer a free demo and 7-day free trial instead of a permanent free plan. This ensures we can maintain high-quality AI generation and support for all users.'
+        answer: 'We offer a free demo and 7-day free trial instead of a permanent free plan. This ensures we can maintain high-quality AI generation for all users.'
       },
       {
         question: 'What payment methods do you accept?',
@@ -48,6 +48,11 @@ export const pricingPage = {
   costBreakdown: {
     title: 'Cost Per Generation',
     subtitle: 'See how much you save compared to hiring copywriters or other tools',
+    labels: {
+      freelancer: 'Freelance Copywriter',
+      starter: 'Hookly Starter',
+      pro: 'Hookly Pro'
+    }
   },
   
   finalCta: {

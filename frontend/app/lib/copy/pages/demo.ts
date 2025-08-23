@@ -13,8 +13,11 @@ export const demoPage = {
     
     limitations: {
       title: 'Demo Limitations',
-      text: 'This demo is limited to 1 generation per day.',
-      cta: 'Start your free trial'
+      text: {
+        prefix: 'This demo is limited to 1 generation per day.',
+        linkText: 'Start your free trial',
+        suffix: 'for {{trialLimit}} generations and full access to our platform.'
+      }
     },
     
     quickStart: {
@@ -60,7 +63,7 @@ export const demoPage = {
       title: '📊 Estimated Performance',
       metrics: {
         views: 'Est. Views',
-        ctr: 'Est. CTR',
+        ctr: 'Est. CTR', 
         viralScore: 'Viral Score'
       }
     },
@@ -91,7 +94,17 @@ export const demoPage = {
     },
     
     tryAgainButton: 'Try Another Demo',
-    copiedMessage: '✓ Copied to clipboard!'
+    copiedMessage: '✓ Copied to clipboard!',
+    copyFields: {
+      hook: 'Hook',
+      script: 'Script'
+    },
+    
+    errors: {
+      generateFailed: 'Failed to generate demo ad',
+      generalError: 'An error occurred',
+      copyFailed: 'Failed to copy'
+    }
   }
 } as const;
 
@@ -105,7 +118,10 @@ export const getProcessedDemoContent = () => {
       ...demoPage.form,
       limitations: {
         ...demoPage.form.limitations,
-        text: `${demoPage.form.limitations.text} ${demoPage.form.limitations.cta} for ${trialLimit} generations and full access to our platform.`
+        text: {
+          ...demoPage.form.limitations.text,
+          suffix: demoPage.form.limitations.text.suffix.replace('{{trialLimit}}', trialLimit.toString())
+        }
       }
     },
     results: {

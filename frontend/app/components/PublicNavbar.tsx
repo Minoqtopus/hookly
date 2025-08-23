@@ -12,18 +12,8 @@ export default function PublicNavbar() {
   const [authTrigger, setAuthTrigger] = useState<'nav_signup' | 'login'>('nav_signup');
   const pathname = usePathname();
 
-  // Dynamically determine the first link based on current page
-  const getFirstLink = () => {
-    if (pathname === '/pricing') {
-      return { href: '/demo', text: navbar.links.demo };
-    } else if (pathname === '/demo') {
-      return { href: '/pricing', text: navbar.links.pricing };
-    } else {
-      return { href: '/pricing', text: navbar.links.pricing };
-    }
-  };
-
-  const firstLink = getFirstLink();
+  // Hide navigation link on pricing and demo pages
+  const shouldShowNavLink = pathname !== '/pricing' && pathname !== '/demo';
 
   return (
     <>
@@ -33,9 +23,11 @@ export default function PublicNavbar() {
           <span className="text-xl font-bold text-gray-900">{navbar.brand}</span>
         </Link>
         <div className="hidden sm:flex items-center space-x-6">
-          <Link href={firstLink.href} className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-            {firstLink.text}
-          </Link>
+          {shouldShowNavLink && (
+            <Link href="/pricing" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+              {navbar.links.pricing}
+            </Link>
+          )}
           <button 
             onClick={() => {
               setAuthTrigger('login');
