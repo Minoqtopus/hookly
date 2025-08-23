@@ -1,8 +1,46 @@
 'use client';
 
 import React, { createContext, ReactNode, useContext, useEffect, useReducer } from 'react';
-import { ApiClient, Generation, UserStats } from './api';
-import { AuthService, User } from './auth';
+
+// Simple types
+export type User = {
+  id: string;
+  email: string;
+  plan: string;
+  trial_generations_used?: number;
+  is_beta_user?: boolean;
+  email_verified?: boolean;
+  trial_ends_at?: string;
+};
+
+export type Generation = {
+  id: string;
+  hook: string;
+  script: string;
+  title?: string;
+  niche?: string;
+  target_audience?: string;
+  created_at: string;
+  is_favorite?: boolean;
+  performance_data?: {
+    views?: number;
+    ctr?: number;
+    conversions?: number;
+  };
+};
+
+export type UserStats = {
+  generationsUsed?: number;
+  generationsThisMonth?: number;
+  totalGenerations?: number;
+  isTrialUser?: boolean;
+  monthlyLimit?: number;
+  streak?: number;
+  totalViews?: number;
+  avgCTR?: number;
+  generationsToday?: number;
+  trialGenerationsUsed?: number;
+};
 
 // State interfaces
 interface AppState {
@@ -17,22 +55,23 @@ interface AppState {
 
 // Action types
 type AppAction =
-  | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'SET_USER'; payload: User | null }
-  | { type: 'SET_USER_STATS'; payload: UserStats }
-  | { type: 'SET_RECENT_GENERATIONS'; payload: Generation[] }
+  | { type: 'INITIALIZE_START' }
+  | { type: 'INITIALIZE_SUCCESS'; payload: { user: User | null; userStats: UserStats | null; recentGenerations: Generation[] } }
+  | { type: 'INITIALIZE_FAILURE'; payload: string }
+  | { type: 'LOGIN_SUCCESS'; payload: { user: User; userStats: UserStats } }
+  | { type: 'LOGOUT' }
+  | { type: 'UPDATE_USER_STATS'; payload: UserStats }
   | { type: 'ADD_GENERATION'; payload: Generation }
-  | { type: 'UPDATE_GENERATION'; payload: { id: string; updates: Partial<Generation> } }
-  | { type: 'REMOVE_GENERATION'; payload: string }
-  | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'SET_INITIALIZED'; payload: boolean }
-  | { type: 'LOGOUT' };
+  | { type: 'UPDATE_RECENT_GENERATIONS'; payload: Generation[] }
+  | { type: 'TOGGLE_FAVORITE'; payload: { generationId: string; isFavorite: boolean } }
+  | { type: 'SET_ERROR'; payload: string }
+  | { type: 'CLEAR_ERROR' };
 
 // Initial state
 const initialState: AppState = {
   user: null,
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true,
   userStats: null,
   recentGenerations: [],
   error: null,
@@ -42,74 +81,114 @@ const initialState: AppState = {
 // Reducer
 function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
-    case 'SET_LOADING':
-      return { ...state, isLoading: action.payload };
-    
-    case 'SET_USER':
+    case 'INITIALIZE_START':
+      return { ...state, isLoading: true };
+      
+    case 'INITIALIZE_SUCCESS':
       return {
         ...state,
-        user: action.payload,
-        isAuthenticated: action.payload !== null,
+        user: action.payload.user,
+        isAuthenticated: !!action.payload.user,
+        userStats: action.payload.userStats,
+        recentGenerations: action.payload.recentGenerations,
+        isLoading: false,
+        isInitialized: true,
+        error: null,
       };
-    
-    case 'SET_USER_STATS':
-      return { ...state, userStats: action.payload };
-    
-    case 'SET_RECENT_GENERATIONS':
-      return { ...state, recentGenerations: action.payload };
-    
+      
+    case 'INITIALIZE_FAILURE':
+      return {
+        ...state,
+        user: null,
+        isAuthenticated: false,
+        userStats: null,
+        recentGenerations: [],
+        isLoading: false,
+        isInitialized: true,
+        error: action.payload,
+      };
+      
+    case 'LOGIN_SUCCESS':
+      return {
+        ...state,
+        user: action.payload.user,
+        isAuthenticated: true,
+        userStats: action.payload.userStats,
+        isLoading: false,
+        error: null,
+      };
+      
+    case 'LOGOUT':
+      return {
+        ...state,
+        user: null,
+        isAuthenticated: false,
+        userStats: null,
+        recentGenerations: [],
+        error: null,
+      };
+      
+    case 'UPDATE_USER_STATS':
+      return {
+        ...state,
+        userStats: action.payload,
+      };
+      
     case 'ADD_GENERATION':
       return {
         ...state,
-        recentGenerations: [action.payload, ...state.recentGenerations.slice(0, 9)],
+        recentGenerations: [action.payload, ...state.recentGenerations].slice(0, 10), // Keep only last 10
       };
-    
-    case 'UPDATE_GENERATION':
+      
+    case 'UPDATE_RECENT_GENERATIONS':
+      return {
+        ...state,
+        recentGenerations: action.payload,
+      };
+      
+    case 'TOGGLE_FAVORITE':
       return {
         ...state,
         recentGenerations: state.recentGenerations.map(gen =>
-          gen.id === action.payload.id ? { ...gen, ...action.payload.updates } : gen
+          gen.id === action.payload.generationId
+            ? { ...gen, is_favorite: action.payload.isFavorite }
+            : gen
         ),
       };
-    
-    case 'REMOVE_GENERATION':
-      return {
-        ...state,
-        recentGenerations: state.recentGenerations.filter(gen => gen.id !== action.payload),
-      };
-    
+      
     case 'SET_ERROR':
       return { ...state, error: action.payload };
-    
-    case 'SET_INITIALIZED':
-      return { ...state, isInitialized: action.payload };
-    
-    case 'LOGOUT':
-      return {
-        ...initialState,
-        isInitialized: true,
-      };
-    
+      
+    case 'CLEAR_ERROR':
+      return { ...state, error: null };
+      
     default:
       return state;
   }
 }
 
-// Context
-const AppContext = createContext<{
-  state: AppState;
-  dispatch: React.Dispatch<AppAction>;
-  actions: {
-    initialize: () => Promise<void>;
-    refreshUserData: () => Promise<void>;
-    toggleFavorite: (generationId: string) => Promise<void>;
-    deleteGeneration: (generationId: string) => Promise<void>;
-    logout: () => void;
-    clearError: () => void;
-  };
-} | null>(null);
+// Actions interface
+interface AppActions {
+  initialize: () => Promise<void>;
+  login: (user: User, userStats: UserStats) => void;
+  logout: () => void;
+  updateUserStats: (stats: UserStats) => void;
+  addGeneration: (generation: Generation) => void;
+  updateRecentGenerations: (generations: Generation[]) => void;
+  toggleFavorite: (generationId: string) => Promise<void>;
+  setError: (error: string) => void;
+  clearError: () => void;
+}
 
-// Provider component
+// Context
+interface AppContextType {
+  state: AppState;
+  actions: AppActions;
+}
+
+const AppContext = createContext<AppContextType | undefined>(undefined);
+
+// Provider
 interface AppProviderProps {
   children: ReactNode;
 }
@@ -117,197 +196,90 @@ interface AppProviderProps {
 export function AppProvider({ children }: AppProviderProps) {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-  // Initialize app state
-  const initialize = async () => {
-    if (state.isInitialized) return;
-    
-    dispatch({ type: 'SET_LOADING', payload: true });
-    
-    try {
-      // Ensure localStorage and cookies are synchronized
-      if (!AuthService.validateStorageSync()) {
-        console.warn('Storage synchronization issue detected, attempting to fix...');
-        AuthService.syncStorage();
+  // Actions
+  const actions: AppActions = {
+    initialize: async () => {
+      dispatch({ type: 'INITIALIZE_START' });
+      try {
+        // Mock initialization - just set as not authenticated for now
+        dispatch({
+          type: 'INITIALIZE_SUCCESS',
+          payload: {
+            user: null,
+            userStats: null,
+            recentGenerations: [],
+          },
+        });
+      } catch (error) {
+        dispatch({
+          type: 'INITIALIZE_FAILURE',
+          payload: error instanceof Error ? error.message : 'Initialization failed',
+        });
       }
+    },
+
+    login: (user: User, userStats: UserStats) => {
+      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, userStats } });
+    },
+
+    logout: () => {
+      dispatch({ type: 'LOGOUT' });
+    },
+
+    updateUserStats: (stats: UserStats) => {
+      dispatch({ type: 'UPDATE_USER_STATS', payload: stats });
+    },
+
+    addGeneration: (generation: Generation) => {
+      dispatch({ type: 'ADD_GENERATION', payload: generation });
+    },
+
+    updateRecentGenerations: (generations: Generation[]) => {
+      dispatch({ type: 'UPDATE_RECENT_GENERATIONS', payload: generations });
+    },
+
+    toggleFavorite: async (generationId: string) => {
+      // Mock toggle - just flip the current state
+      const generation = state.recentGenerations.find(g => g.id === generationId);
+      const newFavoriteState = !generation?.is_favorite;
       
-      // Check if user is authenticated
-      const storedUser = AuthService.getStoredUser();
-      const tokens = AuthService.getStoredTokens();
-      
-      if (storedUser && tokens) {
-        // Check if token is expired before proceeding
-        if (AuthService.isTokenExpiringSoon()) {
-          try {
-            // Try to refresh the token
-            const refreshResult = await AuthService.refreshToken();
-            if (!refreshResult) {
-              // Refresh failed, clear tokens
-              AuthService.clearTokens();
-              dispatch({ type: 'SET_USER', payload: null });
-              dispatch({ type: 'SET_LOADING', payload: false });
-              dispatch({ type: 'SET_INITIALIZED', payload: true });
-              return;
-            }
-          } catch (error) {
-            // Refresh failed, clear tokens
-            AuthService.clearTokens();
-            dispatch({ type: 'SET_USER', payload: null });
-            dispatch({ type: 'SET_LOADING', payload: false });
-            dispatch({ type: 'SET_INITIALIZED', payload: true });
-            return;
-          }
-        }
-        
-        // Set user immediately for better UX
-        dispatch({ type: 'SET_USER', payload: storedUser });
-        
-        // User is stored locally for now - when backend is ready, add token validation here
-        // For production: validate token with backend API and refresh user data
-        
-        try {
-          // Load user data for authenticated user
-          await Promise.all([
-            loadUserStats(),
-            loadRecentGenerations(),
-          ]);
-        } catch (error) {
-          console.error('Error loading user data:', error);
-          // For now, continue with cached user data
-          // In production: handle token validation failures properly
-        }
-      }
-    } catch (error) {
-      console.error('App initialization failed:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to initialize app' });
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-      dispatch({ type: 'SET_INITIALIZED', payload: true });
-    }
-  };
-
-  // Load user stats
-  const loadUserStats = async () => {
-    if (!state.isAuthenticated) return;
-    
-    try {
-      const stats = await ApiClient.getUserStats();
-      dispatch({ type: 'SET_USER_STATS', payload: stats });
-    } catch (error) {
-      console.error('Failed to load user stats:', error);
-    }
-  };
-
-  // Load recent generations
-  const loadRecentGenerations = async () => {
-    if (!state.isAuthenticated) return;
-    
-    try {
-      const response = await ApiClient.getUserGenerations(10);
-      dispatch({ type: 'SET_RECENT_GENERATIONS', payload: response.generations });
-    } catch (error) {
-      console.error('Failed to load recent generations:', error);
-    }
-  };
-
-  // Refresh all user data
-  const refreshUserData = async () => {
-    if (!state.isAuthenticated) return;
-    
-    dispatch({ type: 'SET_LOADING', payload: true });
-    
-    try {
-      await Promise.all([
-        loadUserStats(),
-        loadRecentGenerations(),
-      ]);
-    } catch (error) {
-      console.error('Failed to refresh user data:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to refresh data' });
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
-
-  // Toggle favorite
-  const toggleFavorite = async (generationId: string) => {
-    try {
-      const result = await ApiClient.toggleFavorite(generationId);
       dispatch({
-        type: 'UPDATE_GENERATION',
-        payload: { id: generationId, updates: { is_favorite: result.is_favorite } },
+        type: 'TOGGLE_FAVORITE',
+        payload: { generationId, isFavorite: newFavoriteState },
       });
-    } catch (error) {
-      console.error('Failed to toggle favorite:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to update favorite' });
-    }
-  };
+    },
 
-  // Delete generation
-  const deleteGeneration = async (generationId: string) => {
-    try {
-      await ApiClient.deleteGeneration(generationId);
-      dispatch({ type: 'REMOVE_GENERATION', payload: generationId });
-    } catch (error) {
-      console.error('Failed to delete generation:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to delete generation' });
-    }
-  };
+    setError: (error: string) => {
+      dispatch({ type: 'SET_ERROR', payload: error });
+    },
 
-  // Logout
-  const logout = () => {
-    AuthService.logout();
-    dispatch({ type: 'LOGOUT' });
-  };
-
-  // Clear error
-  const clearError = () => {
-    dispatch({ type: 'SET_ERROR', payload: null });
-  };
-
-  // Actions object
-  const actions = {
-    initialize,
-    refreshUserData,
-    toggleFavorite,
-    deleteGeneration,
-    logout,
-    clearError,
+    clearError: () => {
+      dispatch({ type: 'CLEAR_ERROR' });
+    },
   };
 
   // Initialize on mount
   useEffect(() => {
-    initialize();
-    
-    // Set up periodic storage validation (every 5 minutes)
-    const storageValidationInterval = setInterval(() => {
-      if (!AuthService.validateStorageSync()) {
-        console.warn('Periodic storage validation failed, attempting to fix...');
-        AuthService.syncStorage();
-      }
-    }, 5 * 60 * 1000); // 5 minutes
-    
-    return () => {
-      clearInterval(storageValidationInterval);
-    };
-  }, []);
+    actions.initialize();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <AppContext.Provider value={{ state, dispatch, actions }}>
+    <AppContext.Provider value={{ state, actions }}>
       {children}
     </AppContext.Provider>
   );
 }
 
-// Hook to use the context
+// Hook to use the app context
 export function useApp() {
   const context = useContext(AppContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useApp must be used within an AppProvider');
   }
   return context;
 }
 
-// Individual hooks for specific data
+// Convenience hooks
 export function useAuth() {
   const { state } = useApp();
   return {

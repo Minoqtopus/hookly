@@ -1,8 +1,6 @@
 'use client';
 
 import { useAuth } from '@/app/lib/context';
-import { getTrialLimit } from '@/app/lib/plans';
-import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import {
   AlertCircle,
   ArrowLeft,
@@ -28,7 +26,6 @@ export default function SettingsPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   
   // Apply route guard - redirect unauthenticated users to homepage
-  useRouteGuard(routeConfigs.settings);
 
   if (!user) {
     return (
@@ -98,9 +95,9 @@ export default function SettingsPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-gray-900">{user.email}</span>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          user.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                          user.email_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                         }`}>
-                          {user.is_verified ? (
+                          {user.email_verified ? (
                             <>
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Verified
@@ -131,7 +128,7 @@ export default function SettingsPage() {
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Login Method</label>
-                      <span className="text-gray-900 capitalize">{user.auth_provider}</span>
+                      <span className="text-gray-900 capitalize">Email</span>
                     </div>
                   </div>
                 </div>
@@ -188,7 +185,7 @@ export default function SettingsPage() {
                           </div>
                           <div>
                             <div className="text-xl font-bold text-gray-900">Trial Plan</div>
-                            <div className="text-gray-600">{getTrialLimit()} generations over 7 days, basic features</div>
+                            <div className="text-gray-600">10 generations over 7 days, basic features</div>
                           </div>
                         </>
                       )}

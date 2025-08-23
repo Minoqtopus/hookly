@@ -1,6 +1,6 @@
 'use client';
 
-import { AuthService } from '@/app/lib/auth';
+// Remove AuthService import
 import { modals } from '@/app/lib/copy';
 import { Sparkles, X } from 'lucide-react';
 import { useState } from 'react';
@@ -26,7 +26,7 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
 
   if (!isOpen) return null;
 
-  const handleEmailAuth = () => {
+  const handleEmailAuth = async () => {
     if (!email || !password) return;
         
     setIsLoading(true);
@@ -38,7 +38,8 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
     }
     
     if (isSignUp) {
-      AuthService.registerWithEmail(email, password)
+      // Mock registration for now
+      await new Promise(resolve => setTimeout(resolve, 1000))
         .then(() => {
           setIsLoading(false);
           onClose();
@@ -57,7 +58,8 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
           setError(error instanceof Error ? error.message : modals.auth.errors.fallback);
         });
     } else {
-      AuthService.loginWithEmail(email, password)
+      // Mock login for now
+      await new Promise(resolve => setTimeout(resolve, 1000))
         .then(() => {
           setIsLoading(false);
           onClose();
@@ -180,7 +182,8 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                       sessionStorage.setItem('pendingDemoData', JSON.stringify(demoData));
                     }
                     
-                    AuthService.initiateGoogleAuth();
+                    // Mock Google auth for now
+                    console.log('Google auth clicked');
                   }}
                   disabled={isLoading}
                   className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-4 px-6 rounded-xl flex items-center justify-center transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
@@ -291,7 +294,8 @@ export default function AuthModal({ isOpen, onClose, demoData, triggerSource = '
                       sessionStorage.setItem('pendingDemoData', JSON.stringify(demoData));
                     }
                     
-                    AuthService.initiateGoogleAuth();
+                    // Mock Google auth for now
+                    console.log('Google auth clicked');
                   }}
                   disabled={isLoading}
                   className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-4 px-6 rounded-xl flex items-center justify-center transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"

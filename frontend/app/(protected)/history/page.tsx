@@ -1,11 +1,25 @@
 'use client';
 
 import { AuthModal } from '@/app/components/modals';
-import { ApiClient, Generation } from '@/app/lib/api';
 import { useAuth } from '@/app/lib/context';
 import { toast } from '@/app/lib/utils';
-import { useAnalytics } from '@/app/lib/useAnalytics';
-import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
+
+// Simple Generation type
+type Generation = {
+  id: string;
+  hook: string;
+  script: string;
+  title?: string;
+  niche?: string;
+  target_audience?: string;
+  created_at: string;
+  is_favorite?: boolean;
+  performance_data?: {
+    views?: number;
+    ctr?: number;
+    conversions?: number;
+  };
+};
 import {
     ArrowLeft,
     Calendar,
@@ -64,72 +78,32 @@ export default function HistoryPage() {
   const [availableNiches, setAvailableNiches] = useState<string[]>([]);
 
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { trackPageView, trackInteraction } = useAnalytics();
-
-  // Apply route guard - redirect unauthenticated users to homepage
-  useRouteGuard(routeConfigs.dashboard);
 
   const loadGenerations = useCallback(async (page: number = 1, reset: boolean = false) => {
-    if (!isAuthenticated) return;
-    
-    setIsLoading(true);
-    try {
-      const offset = (page - 1) * pagination.limit;
-      const response = await ApiClient.getUserGenerations(pagination.limit, offset);
-      
-      if (reset) {
-        setGenerations(response.generations);
-      } else {
-        setGenerations(prev => [...prev, ...response.generations]);
-      }
-      
-      // Calculate pagination info manually since API doesn't return it
-      const totalPages = Math.ceil(response.total / pagination.limit);
-      const hasMore = offset + pagination.limit < response.total;
-      
-      setPagination({
-        limit: pagination.limit,
-        offset,
-        hasMore,
-        totalPages,
-      });
-      setTotal(response.total);
-      setCurrentPage(page);
-      
-      // Extract unique niches for filter dropdown
-      const niches = Array.from(new Set(response.generations.map(g => g.niche).filter(Boolean)));
-      setAvailableNiches(niches);
-      
-    } catch (error) {
-      console.error('Failed to load generations:', error);
-      toast.error('Failed to load generation history');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isAuthenticated, pagination.limit]);
+    // Mock empty data since API is removed
+    setGenerations([]);
+    setTotal(0);
+    setPagination({
+      limit: pagination.limit,
+      offset: 0,
+      hasMore: false,
+      totalPages: 1,
+    });
+    setCurrentPage(1);
+    setAvailableNiches([]);
+  }, [pagination.limit]);
 
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
       loadGenerations(1, true);
-      // Track page view
-      trackPageView('history', {
-        total_generations: total,
-        user_plan: user?.plan,
-      });
     }
-  }, [isAuthenticated, authLoading, loadGenerations, trackPageView, total, user?.plan]);
+  }, [isAuthenticated, authLoading, loadGenerations, total, user?.plan]);
 
   const handleCopyGeneration = (generation: Generation) => {
     const textToCopy = `${generation.hook}\n\n${generation.script}`;
     navigator.clipboard.writeText(textToCopy);
     toast.success('Ad content copied to clipboard!');
     
-    // Track analytics
-    trackInteraction('copy_to_clipboard', {
-      generation_id: generation.id,
-      content_type: 'generation',
-      source: 'history',
-    });
   };
 
   const handleShareGeneration = (generation: Generation) => {
@@ -142,24 +116,12 @@ export default function HistoryPage() {
         text: shareText,
         url: shareUrl,
       }).then(() => {
-        // Track successful share
-        trackInteraction('share_generation', {
-          generation_id: generation.id,
-          method: 'native_share',
-          source: 'history',
-        });
       }).catch(console.error);
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
       toast.success('Share link copied to clipboard!');
       
-      // Track fallback share
-      trackInteraction('share_generation', {
-        generation_id: generation.id,
-        method: 'clipboard_fallback',
-        source: 'history',
-      });
     }
   };
 
@@ -179,12 +141,6 @@ export default function HistoryPage() {
       );
       toast.success('Favorite status updated!');
       
-      // Track analytics
-      trackInteraction('favorite_toggle', {
-        generation_id: generationId,
-        is_favorite: newFavoriteStatus,
-        source: 'history',
-      });
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
       toast.error('Failed to update favorite status');
@@ -477,7 +433,7 @@ export default function HistoryPage() {
                       </div>
                       <div className="text-center">
                         <div className="text-lg font-semibold text-gray-900">
-                          {generation.performance_data.conversions || '0'}
+                          {generation.performance_data?.conversions || '0'}
                         </div>
                         <div className="text-xs text-gray-500">Conv.</div>
                       </div>

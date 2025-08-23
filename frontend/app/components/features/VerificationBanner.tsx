@@ -2,117 +2,110 @@
 
 import { useState, useEffect } from 'react';
 import { Mail, X, RefreshCw } from 'lucide-react';
-import { AuthService } from '@/app/lib/auth';
+import { useAuth } from '@/app/lib/context';
 
 export default function VerificationBanner() {
   const [isVisible, setIsVisible] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [canResend, setCanResend] = useState(true);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [user, setUser] = useState<any>(null);
+  
+  const { user } = useAuth();
 
   useEffect(() => {
-    const currentUser = AuthService.getStoredUser();
-    setUser(currentUser);
-    
-    // Show banner if user is logged in but not verified
-    if (currentUser && !currentUser.is_verified && currentUser.auth_provider === 'email') {
+    // Show banner if user exists but is not verified
+    if (user && !user.email_verified) {
       setIsVisible(true);
-    }
-  }, []);
-
-  // Resend cooldown timer
-  useEffect(() => {
-    if (resendCooldown > 0) {
-      const timer = setTimeout(() => {
-        setResendCooldown(resendCooldown - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
     } else {
-      setCanResend(true);
+      setIsVisible(false);
     }
+  }, [user]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (resendCooldown > 0) {
+      interval = setInterval(() => {
+        setResendCooldown(prev => {
+          if (prev <= 1) {
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
   }, [resendCooldown]);
 
   const handleResendVerification = async () => {
     if (!canResend || isResending) return;
-
-    const tokens = AuthService.getStoredTokens();
-    if (!tokens?.accessToken) return;
-
+    
     setIsResending(true);
-    setCanResend(false);
-
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/send-verification`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${tokens.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        setResendCooldown(60); // 60 second cooldown
-      } else {
-        setCanResend(true);
-      }
+      // Mock resend for now
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setCanResend(false);
+      setResendCooldown(60); // 60 second cooldown
     } catch (error) {
       console.error('Failed to resend verification:', error);
-      setCanResend(true);
     } finally {
       setIsResending(false);
     }
   };
 
-  if (!isVisible) return null;
+  const handleDismiss = () => {
+    setIsVisible(false);
+    // Store dismissal in localStorage for this session
+    localStorage.setItem('verificationBannerDismissed', 'true');
+  };
+
+  if (!isVisible || !user) {
+    return null;
+  }
 
   return (
     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-      <div className="flex items-start justify-between">
-        <div className="flex items-start">
-          <Mail className="h-5 w-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
-          <div className="flex-1">
-            <h3 className="text-sm font-medium text-yellow-800">
-              Please verify your email address
-            </h3>
-            <p className="mt-1 text-sm text-yellow-700">
-              We sent a verification email to <strong>{user?.email}</strong>. 
-              Check your inbox and click the link to verify your account.
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <Mail className="h-5 w-5 text-yellow-400" />
+          </div>
+          <div className="ml-3">
+            <p className="text-sm text-yellow-800">
+              <strong>Verify your email address</strong> to unlock full access to Hookly.
+              We sent a verification link to <strong>{user.email}</strong>.
             </p>
-            <div className="mt-3 flex items-center space-x-4">
-              <button
-                onClick={handleResendVerification}
-                disabled={!canResend || isResending}
-                className="text-sm font-medium text-yellow-800 hover:text-yellow-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-              >
-                {isResending ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-2"></div>
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    {resendCooldown > 0 
-                      ? `Resend in ${resendCooldown}s` 
-                      : 'Resend email'
-                    }
-                  </>
-                )}
-              </button>
-              <span className="text-yellow-600">•</span>
-              <span className="text-sm text-yellow-700">
-                Check your spam folder
-              </span>
-            </div>
           </div>
         </div>
-        <button
-          onClick={() => setIsVisible(false)}
-          className="ml-4 text-yellow-400 hover:text-yellow-600"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        
+        <div className="flex items-center gap-2">
+          {canResend ? (
+            <button
+              onClick={handleResendVerification}
+              disabled={isResending}
+              className="inline-flex items-center gap-1 text-sm text-yellow-800 hover:text-yellow-900 font-medium"
+            >
+              {isResending ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="h-4 w-4" />
+              )}
+              {isResending ? 'Sending...' : 'Resend'}
+            </button>
+          ) : (
+            <span className="text-sm text-yellow-700">
+              Resend in {resendCooldown}s
+            </span>
+          )}
+          
+          <button
+            onClick={handleDismiss}
+            className="inline-flex rounded-md p-1.5 text-yellow-400 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-yellow-600 focus:ring-offset-2 focus:ring-offset-yellow-50"
+          >
+            <span className="sr-only">Dismiss</span>
+            <X className="h-5 w-5" />
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,9 +1,8 @@
 'use client';
 
-import { useUpgrade } from '@/app/lib/useUpgrade';
 import { Check, Crown, Shield, Star, TrendingUp, X, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import ScarcityIndicator from './ScarcityIndicator';
+import { ScarcityIndicator } from '../public';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -13,239 +12,151 @@ interface UpgradeModalProps {
 
 export default function UpgradeModal({ isOpen, onClose, source = 'dashboard' }: UpgradeModalProps) {
   const [selectedPlan, setSelectedPlan] = useState<'starter' | 'agency'>('starter');
-  const { isUpgrading, error, upgradeToStarterMonthly, upgradeToAgencyMonthly, clearError } = useUpgrade();
+  const [isUpgrading, setIsUpgrading] = useState(false);
 
-  // Clear error when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      clearError();
-    }
-  }, [isOpen, clearError]);
-
-  const handleUpgrade = async () => {
-    // Use appropriate checkout flow based on selected plan
-    const checkoutUrl = selectedPlan === 'starter' 
-      ? await upgradeToStarterMonthly() 
-      : await upgradeToAgencyMonthly();
-    
-    if (checkoutUrl) {
-      // Redirect to LemonSqueezy checkout
-      window.location.href = checkoutUrl;
-    }
-  };
-
-  const getModalContent = () => {
-    switch (source) {
-      case 'limit_reached':
-        return {
-          title: '🎯 Ready for More?',
-          subtitle: 'You\'ve hit your daily limit - time to unlock premium access!',
-          urgency: 'Don\'t lose momentum - upgrade now and keep creating',
-          cta: 'Unlock Premium Access',
-        };
-      case 'feature_gate':
-        return {
-          title: '🚀 You\'re Loving This Tool!',
-          subtitle: 'Ready to unlock advanced features and 200 generations per month?',
-          urgency: 'Join 1,000+ Pro users making $10K+/month',
-          cta: 'Upgrade to Pro',
-        };
-      case 'nav':
-        return {
-          title: '👑 Start Your Pro Journey',
-          subtitle: 'Unlock your full creative potential with premium access',
-          urgency: 'Limited time: Save 40% on yearly plans',
-          cta: 'Get Started',
-        };
-      default:
-        return {
-          title: '👑 Upgrade to Pro',
-          subtitle: 'Unlock your full creative potential',
-          urgency: 'Limited time: Save 40% on yearly plans',
-          cta: 'Upgrade Now',
-        };
-    }
-  };
-
-  const content = getModalContent();
+  if (!isOpen) return null;
 
   const plans = {
     starter: {
       name: 'Starter',
-      price: 19,
-      dailyPrice: 0.63,
-      billing: 'per month',
-              description: 'Perfect for individual creators and marketers'
+      price: 29,
+      features: [
+        'Unlimited AI generations',
+        'Advanced targeting options',
+        'Performance analytics',
+        'Content export tools',
+        'Email support'
+      ]
     },
     agency: {
       name: 'Agency',
-      price: 129,
-      dailyPrice: 4.30,
-      billing: 'per month',
-      description: 'Built for agencies and teams'
+      price: 99,
+      features: [
+        'Everything in Starter',
+        'Team collaboration',
+        'White-label options',
+        'Priority support',
+        'Custom integrations',
+        'Advanced reporting'
+      ]
     }
   };
 
-  // Default to Starter for upgrade modals
-  const recommendedPlan = 'starter';
-
-  const features = [
-    { icon: Zap, text: '200 ad generations per month', highlight: true },
-    { icon: TrendingUp, text: 'Advanced performance analytics', highlight: true },
-    { icon: Crown, text: 'Batch generation (10+ ads at once)', highlight: true },
-    { icon: Shield, text: 'Priority customer support', highlight: false },
-    { icon: Star, text: 'Custom templates & themes', highlight: false },
-    { icon: Check, text: 'No watermarks', highlight: false },
-    { icon: Check, text: 'Export to all formats', highlight: false },
-    { icon: Check, text: 'API access', highlight: false },
-  ];
-
-  if (!isOpen) return null;
+  const handleUpgrade = async () => {
+    setIsUpgrading(true);
+    try {
+      // Mock upgrade process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      onClose();
+    } catch (error) {
+      console.error('Upgrade failed:', error);
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      
-      {/* Modal */}
-      <div className="relative min-h-screen flex items-center justify-center p-4">
-        <div className="relative bg-white rounded-2xl w-full max-w-2xl mx-auto shadow-2xl">
-          {/* Close Button */}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <Crown className="h-6 w-6 text-primary-600" />
+            <h2 className="text-xl font-semibold text-gray-900">Upgrade to Pro</h2>
+          </div>
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 transition-colors z-10"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
+        </div>
 
-          {/* Header */}
-          <div className="bg-gradient-to-r from-primary-600 to-secondary-600 rounded-t-2xl px-8 py-8 text-white text-center">
-            <Crown className="h-16 w-16 mx-auto mb-4 text-yellow-300" />
-            <h2 className="text-3xl font-bold mb-2">{content.title}</h2>
-            <p className="text-primary-100 text-lg">{content.subtitle}</p>
-            {content.urgency && (
-              <div className="mt-4 inline-block bg-yellow-400 text-yellow-900 px-4 py-2 rounded-full text-sm font-medium">
-                🔥 {content.urgency}
-              </div>
-            )}
+        <div className="p-6">
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              Unlock Unlimited Viral Content Creation
+            </h3>
+            <p className="text-gray-600">
+              Join thousands of creators and marketers scaling their social media success
+            </p>
           </div>
 
-          <div className="p-8">
-            {/* Plan Selection */}
-            <div className="mb-8">
-              <div className="grid grid-cols-3 gap-2 p-1 bg-gray-100 rounded-xl mb-6">
-                {Object.entries(plans).map(([planKey, plan]) => (
-                  <button
-                    key={planKey}
-                    onClick={() => setSelectedPlan(planKey as 'starter' | 'agency')}
-                    className={`py-3 px-2 rounded-lg font-medium transition-all text-center ${
-                      selectedPlan === planKey
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600'
-                    }`}
-                  >
-                    <div className="text-xs">{plan.name}</div>
-                    <div className="text-lg font-bold">${plan.price}</div>
-                  </button>
-                ))}
-              </div>
+          <ScarcityIndicator />
 
-              {/* Pricing */}
-              <div className="text-center mb-6">
-                <div className="text-4xl font-bold text-gray-900 mb-2">
-                  ${plans[selectedPlan].dailyPrice}
-                  <span className="text-lg font-normal text-gray-600">/day</span>
-                </div>
-                <p className="text-gray-600 mb-2">
-                  Less than the cost of a coffee ☕
-                </p>
-                <p className="text-sm text-gray-500">
-                  (${plans[selectedPlan].price}/{plans[selectedPlan].billing})
-                </p>
-                <div className="inline-flex items-center bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-medium mt-3">
-                  ✨ 7-day free trial • Cancel anytime
-                </div>
-              </div>
-            </div>
-
-            {/* Features */}
-            <div className="mb-8">
-              <h3 className="font-semibold text-gray-900 mb-4">Everything in Pro:</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {features.map((feature, index) => (
-                  <div key={index} className="flex items-center space-x-3">
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                      feature.highlight ? 'bg-primary-100' : 'bg-gray-100'
-                    }`}>
-                      <feature.icon className={`h-3 w-3 ${
-                        feature.highlight ? 'text-primary-600' : 'text-gray-600'
-                      }`} />
+          {/* Plan Selection */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {Object.entries(plans).map(([key, plan]) => (
+              <div
+                key={key}
+                onClick={() => setSelectedPlan(key as 'starter' | 'agency')}
+                className={`p-6 border-2 rounded-2xl cursor-pointer transition-all ${
+                  selectedPlan === key
+                    ? 'border-primary-500 bg-primary-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-semibold text-gray-900">{plan.name}</h4>
+                  {key === 'agency' && (
+                    <div className="bg-gradient-to-r from-primary-600 to-purple-600 text-white text-xs font-medium px-2 py-1 rounded-full">
+                      Most Popular
                     </div>
-                    <span className={`text-sm ${
-                      feature.highlight ? 'text-gray-900 font-medium' : 'text-gray-700'
-                    }`}>
-                      {feature.text}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Social Proof */}
-            <div className="bg-gray-50 rounded-xl p-6 mb-6">
-              <div className="text-center">
-                <div className="flex justify-center space-x-1 mb-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                  ))}
+                  )}
                 </div>
-                <p className="text-sm text-gray-600 italic mb-2">
-                  "Upgraded to Pro and 10x'd my ad performance in 30 days. Best investment ever!"
-                </p>
-                <p className="text-xs text-gray-500">- Sarah K, Fitness Creator & Marketer</p>
-              </div>
-            </div>
 
-            {/* Error Display */}
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{error}</p>
+                <div className="mb-6">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold text-gray-900">${plan.price}</span>
+                    <span className="text-gray-600">/month</span>
+                  </div>
+                </div>
+
+                <ul className="space-y-3">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-center gap-3">
+                      <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                      <span className="text-sm text-gray-700">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
+            ))}
+          </div>
+
+          {/* Action Button */}
+          <button
+            onClick={handleUpgrade}
+            disabled={isUpgrading}
+            className="w-full bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 text-white font-medium py-4 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isUpgrading ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                Processing...
+              </>
+            ) : (
+              <>
+                <Crown className="h-5 w-5" />
+                Upgrade to {plans[selectedPlan].name} - ${plans[selectedPlan].price}/month
+              </>
             )}
+          </button>
 
-            {/* Scarcity Messaging */}
-            <div className="mb-6 text-center">
-              <ScarcityIndicator type="limited_spots" size="small" />
-            </div>
-
-            {/* CTA */}
-            <div className="space-y-3">
-              <button
-                onClick={handleUpgrade}
-                disabled={isUpgrading}
-                className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-primary-700 hover:to-secondary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isUpgrading ? 'Processing...' : content.cta}
-              </button>
-              
-              <button
-                onClick={() => {
-                  window.location.href = `/upgrade?source=${source}`;
-                }}
-                className="w-full text-primary-600 hover:text-primary-700 font-medium py-2"
-              >
-                View Full Pricing Details →
-              </button>
-            </div>
-
-            {/* Trust Indicators */}
-            <div className="text-center mt-4 space-y-2">
-              <p className="text-xs text-gray-500">
-                🔒 Secure payment • 💳 Cancel anytime • 🚀 Instant activation
-              </p>
-              <p className="text-xs text-gray-500">
-                Trusted by <span className="font-medium">1,000+ users</span> worldwide
-              </p>
+          {/* Trust Indicators */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-center gap-8 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                <span>30-day money back</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                <span>Instant activation</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4" />
+                <span>Cancel anytime</span>
+              </div>
             </div>
           </div>
         </div>

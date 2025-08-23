@@ -7,12 +7,8 @@ import {
   ViralGrowthDashboard,
   ContentMarketingDashboard
 } from '@/app/components';
-import { ApiClient } from '@/app/lib/api';
 import { useApp, useAuth, useRecentGenerations, useUserStats } from '@/app/lib/context';
-import { getPlanConfig } from '@/app/lib/plans';
 import { toast } from '@/app/lib/utils';
-import { useAnalytics } from '@/app/lib/useAnalytics';
-import { routeConfigs, useRouteGuard } from '@/app/lib/useRouteGuard';
 import {
   ArrowRight,
   BarChart3,
@@ -45,21 +41,8 @@ export default function DashboardPage() {
   const userStats = useUserStats();
   const recentGenerations = useRecentGenerations();
   const { actions } = useApp();
-  const { trackPageView, trackInteraction, trackConversionEvent } = useAnalytics();
 
-  // Apply route guard - redirect unauthenticated users to homepage
-  useRouteGuard(routeConfigs.dashboard);
 
-  // Track page view
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      trackPageView('dashboard', {
-        user_plan: user.plan,
-        generations_used: user.trial_generations_used || 0,
-        is_beta_user: user.is_beta_user,
-      });
-    }
-  }, [isAuthenticated, user, trackPageView]);
 
   // Route guard handles authentication redirects - no need for modal
 
@@ -68,7 +51,6 @@ export default function DashboardPage() {
   };
 
   const handleShowUpgradeModal = (source: string) => {
-    trackConversionEvent('upgrade_modal_shown', { source });
     setShowUpgradeModal(true);
   };
 
@@ -86,13 +68,6 @@ export default function DashboardPage() {
     const textToCopy = `${generation.hook}\n\n${generation.script}`;
     navigator.clipboard.writeText(textToCopy);
     toast.success('Ad content copied to clipboard!');
-    
-    // Track analytics
-    trackInteraction('copy_to_clipboard', {
-      generation_id: generation.id,
-      content_type: 'generation',
-      source: 'dashboard',
-    });
   };
 
   const handleShareGeneration = (generation: any) => {
@@ -104,25 +79,11 @@ export default function DashboardPage() {
         title: generation.title,
         text: shareText,
         url: shareUrl,
-      }).then(() => {
-        // Track successful share
-        trackInteraction('share_generation', {
-          generation_id: generation.id,
-          method: 'native_share',
-          source: 'dashboard',
-        });
       }).catch(console.error);
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
       toast.success('Share link copied to clipboard!');
-      
-      // Track fallback share
-      trackInteraction('share_generation', {
-        generation_id: generation.id,
-        method: 'clipboard_fallback',
-        source: 'dashboard',
-      });
     }
   };
 
@@ -133,46 +94,14 @@ export default function DashboardPage() {
       
       await actions.toggleFavorite(generationId);
       toast.success('Favorite updated!');
-      
-      // Track analytics
-      trackInteraction('favorite_toggle', {
-        generation_id: generationId,
-        is_favorite: newFavoriteStatus,
-        source: 'dashboard',
-      });
     } catch (error) {
       toast.error('Failed to update favorite');
     }
   };
 
-  // Quick AI - Generate content with default parameters
+  // Quick AI - Redirect to generate page
   const handleQuickAI = async () => {
-    if (isQuickAILoading) return;
-    
-    setIsQuickAILoading(true);
-    try {
-      // Use default parameters for quick generation
-      const quickData = {
-        productName: 'Your Amazing Product',
-        niche: 'lifestyle',
-        targetAudience: 'Young professionals',
-      };
-      
-      const result = await ApiClient.generateAd(quickData);
-      
-      // Store result in sessionStorage for the generate page
-      sessionStorage.setItem('quickAIResult', JSON.stringify(result));
-      
-      // Redirect to generate page to show result
-      router.push('/generate?mode=quick');
-      
-      toast.success('Quick AI generation complete!');
-    } catch (error) {
-      console.error('Quick AI error:', error);
-      toast.error('Quick AI generation failed. Please try again.');
-    } finally {
-      setIsQuickAILoading(false);
-    }
+    router.push('/generate');
   };
 
   // Duplicate - Find best performing generation and pre-fill form
@@ -258,10 +187,6 @@ export default function DashboardPage() {
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* Beta Badge */}
-              {user.is_beta_user && (
-                <BetaBadge size="small" />
-              )}
               
               {/* Plan Badge */}
               <div className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -331,7 +256,7 @@ export default function DashboardPage() {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">📊 Performance Overview</h3>
                 <p className="text-gray-600 text-sm">
-                  {displayStats.totalViews > 0 ? 'Your ads are gaining traction!' : 'Start generating content to see performance metrics'}
+                  {(displayStats.totalViews || 0) > 0 ? 'Your ads are gaining traction!' : 'Start generating content to see performance metrics'}
                 </p>
               </div>
               <Link 
@@ -341,20 +266,20 @@ export default function DashboardPage() {
                 View Analytics
               </Link>
             </div>
-            {displayStats.totalViews > 0 ? (
+            {(displayStats.totalViews || 0) > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center bg-white rounded-lg p-3">
                   <div className="text-lg font-bold text-blue-600">
-                    {displayStats.totalViews >= 1000000 
-                      ? (displayStats.totalViews / 1000000).toFixed(1) + 'M'
-                      : displayStats.totalViews >= 1000
-                      ? (displayStats.totalViews / 1000).toFixed(0) + 'K' 
-                      : displayStats.totalViews}
+                    {(displayStats.totalViews || 0) >= 1000000 
+                      ? ((displayStats.totalViews || 0) / 1000000).toFixed(1) + 'M'
+                      : (displayStats.totalViews || 0) >= 1000
+                      ? ((displayStats.totalViews || 0) / 1000).toFixed(0) + 'K' 
+                      : (displayStats.totalViews || 0)}
                   </div>
                   <div className="text-xs text-gray-600">Total Views</div>
                 </div>
                 <div className="text-center bg-white rounded-lg p-3">
-                  <div className="text-lg font-bold text-green-600">{displayStats.avgCTR}%</div>
+                  <div className="text-lg font-bold text-green-600">{displayStats.avgCTR || 0}%</div>
                   <div className="text-xs text-gray-600">Avg CTR</div>
                 </div>
                 <div className="text-center bg-white rounded-lg p-3">
@@ -466,7 +391,7 @@ export default function DashboardPage() {
               <TrendingUp className="h-5 w-5 text-green-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-2">
-              {displayStats?.totalViews ? (displayStats.totalViews / 1000000).toFixed(1) + 'M' : '0'}
+              {(displayStats?.totalViews || 0) ? ((displayStats?.totalViews || 0) / 1000000).toFixed(1) + 'M' : '0'}
             </div>
             <p className="text-sm text-gray-600">
               {displayStats?.totalViews ? 'From your generations 📈' : 'Generate content to see views 💡'}
@@ -483,7 +408,7 @@ export default function DashboardPage() {
               {displayStats?.avgCTR ?? 0}%
             </div>
             <p className="text-sm text-gray-600">
-              {displayStats?.avgCTR ? 'Performance metric 🎯' : 'Generate content to track CTR 📊'}
+              {(displayStats?.avgCTR || 0) > 0 ? 'Performance metric 🎯' : 'Generate content to track CTR 📊'}
             </p>
           </div>
         </div>
@@ -559,16 +484,13 @@ export default function DashboardPage() {
                 <Crown className="h-12 w-12 text-primary-600 mx-auto mb-4" />
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Upgrade to Starter</h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  {getPlanConfig('starter')?.features.slice(0, 3).join(', ') || 'Plan features loading...'}
+                  Advanced targeting, analytics, unlimited generations
                 </p>
                 <button 
                   onClick={() => handleShowUpgradeModal('empty_state_cta')}
                   className="btn-primary w-full text-sm"
                 >
-                  {getPlanConfig('starter')?.price.monthly ? 
-                    `Upgrade Now - $${getPlanConfig('starter')!.price.monthly}/mo` : 
-                    'Upgrade Now - Loading...'
-                  }
+                  Upgrade Now - $29/mo
                 </button>
                 <p className="text-xs text-gray-500 mt-2">
                   Cancel anytime • No credit card required for trial
@@ -596,7 +518,12 @@ export default function DashboardPage() {
 
         {/* Template Library */}
         <div className="card mb-8">
-          <TemplateLibrary onUseTemplate={handleUseTemplate} compact={true} showFilters={false} />
+          {/* Template Library coming soon */}
+          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+            <div className="text-4xl mb-4">📚</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Template Library</h3>
+            <p className="text-gray-600">Pre-built templates coming soon</p>
+          </div>
         </div>
 
         {/* Local Saves (for unauthenticated users) */}
