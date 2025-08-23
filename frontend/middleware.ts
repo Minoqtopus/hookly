@@ -1,125 +1,120 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-// Define route categories for proper authentication boundaries
+// Define route categories based on actual app structure
 
-// Routes that require authentication (redirect to homepage if not authenticated)
-const protectedRoutes = [
+// Public routes - accessible to everyone
+const publicRoutes: string[] = [
+  '/',
+  '/pricing', 
+  '/demo',
+  '/privacy',
+  '/terms',
+];
+
+// Protected routes - require authentication
+const protectedRoutes: string[] = [
   '/dashboard',
-  '/settings',
-  '/teams',
-  '/analytics',
-  '/upgrade/success',
-  '/upgrade/cancel',
-  '/upgrade/cancelled',
 ];
 
-// Routes that should redirect authenticated users away (guest-only routes)
-const guestOnlyRoutes = [
-  '/examples', // Examples page - should redirect authenticated users to dashboard
+// System routes that should always be accessible (SEO and performance)
+const systemRoutes: string[] = [
+  '/_next',    // Next.js internal routes
+  '/favicon.ico', // Favicon
+  '/robots.txt',  // SEO
+  '/sitemap.xml', // SEO
 ];
 
-// Special handling for root route to avoid matching all paths
-const isRootRoute = (pathname: string) => pathname === '/';
-
-// Routes that should redirect authenticated users away (auth pages)
-const authRoutes = [
-  '/auth/register',
-];
-
-// Routes that have demo functionality and should allow guest access
-const demoRoutes = [
-  '/generate',
-];
-
-// Routes that are accessible to both but show different content
-const mixedRoutes = [
-  '/upgrade',
-];
-
-// Routes that should always be accessible
-const alwaysAccessibleRoutes = [
-  '/auth/callback',
-  '/auth/error',
-];
+// Simple JWT validation (without crypto verification for middleware performance)
+function isValidJWTStructure(token: string): boolean {
+  if (!token) return false;
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+  
+  try {
+    // Check if payload can be decoded (basic structure validation)
+    const payload = JSON.parse(atob(parts[1]));
+    
+    // Check if token is expired (basic expiry check)
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+      return false;
+    }
+    
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Get auth token from cookies or headers
+  // Always allow access to system routes (Next.js internal, SEO files)
+  if (systemRoutes.some(route => pathname.startsWith(route))) {
+    return NextResponse.next();
+  }
+  
+  // Get auth token from cookies/headers
   const token = request.cookies.get('access_token')?.value || 
                 request.headers.get('authorization')?.replace('Bearer ', '');
   
-  // Check if user is authenticated
-  const isAuthenticated = !!token;
+  // Validate token structure and expiry
+  const isAuthenticated = token ? isValidJWTStructure(token) : false;
   
-  // Handle protected routes (require authentication)
+  // Handle protected routes - require authentication
   if (protectedRoutes.some(route => pathname.startsWith(route))) {
     if (!isAuthenticated) {
-      // Redirect to homepage where user can use the auth modal
-      return NextResponse.redirect(new URL('/', request.url));
+      // Redirect unauthenticated users to homepage
+      const response = NextResponse.redirect(new URL('/', request.url));
+      response.cookies.delete('access_token'); // Clear invalid token
+      return response;
     }
     
     // User is authenticated, allow access
-    return NextResponse.next();
+    const response = NextResponse.next();
+    addSecurityHeaders(response);
+    return response;
   }
   
-  // Handle root route specially (redirect authenticated users to dashboard)
-  if (isRootRoute(pathname)) {
+  // Handle root route - redirect authenticated users to dashboard
+  if (pathname === '/') {
     if (isAuthenticated) {
-      // User is authenticated, redirect to dashboard
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
-    
-    // User is not authenticated, allow access to landing page
-    return NextResponse.next();
+    // Unauthenticated users see landing page
+    const response = NextResponse.next();
+    addSecurityHeaders(response);
+    return response;
   }
   
-  // Handle guest-only routes (redirect authenticated users away)
-  if (guestOnlyRoutes.some(route => pathname.startsWith(route))) {
-    if (isAuthenticated) {
-      // User is authenticated, redirect to dashboard
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
-    
-    // User is not authenticated, allow access
-    return NextResponse.next();
+  // Handle public routes - accessible to everyone
+  if (publicRoutes.some(route => pathname.startsWith(route))) {
+    const response = NextResponse.next();
+    addSecurityHeaders(response);
+    return response;
   }
   
-  // Handle auth routes (redirect authenticated users away)
-  if (authRoutes.some(route => pathname.startsWith(route))) {
-    if (isAuthenticated) {
-      // User is already authenticated, redirect to dashboard
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
-    
-    // User is not authenticated, allow access to auth pages
-    return NextResponse.next();
-  }
+  // Default: allow access with security headers
+  const response = NextResponse.next();
+  addSecurityHeaders(response);
+  return response;
+}
+
+// Add security headers to responses
+function addSecurityHeaders(response: NextResponse) {
+  // Prevent XSS attacks
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
   
-  // Handle demo routes (allow both authenticated and unauthenticated users)
-  if (demoRoutes.some(route => pathname.startsWith(route))) {
-    // Allow access to all users
-    // Demo mode is controlled by URL parameters and client-side logic
-    return NextResponse.next();
-  }
+  // CSP for additional security (adjust as needed for your app)
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.vercel-analytics.com *.vercel.app; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' *.vercel.app *.supabase.co;"
+  );
   
-  // Handle mixed routes (accessible to both but show different content)
-  if (mixedRoutes.some(route => pathname.startsWith(route))) {
-    // Allow access to all users
-    // The page itself will handle showing appropriate content based on auth state
-    return NextResponse.next();
-  }
-  
-  // Handle always accessible routes
-  if (alwaysAccessibleRoutes.some(route => pathname.startsWith(route))) {
-    // Always allow access to these routes
-    return NextResponse.next();
-  }
-  
-  // Default: allow access to all other routes
-  // This includes any new routes that aren't explicitly categorized
-  return NextResponse.next();
+  // Referrer policy
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 }
 
 export const config = {
