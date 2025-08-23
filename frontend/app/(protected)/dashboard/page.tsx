@@ -2,7 +2,6 @@
 
 import { 
   LocalSavesViewer,
-  PrivateNavbar,
   TrialCountdown,
   UpgradeModal,
   ViralGrowthDashboard,
@@ -41,13 +40,7 @@ export default function DashboardPage() {
   const recentGenerations = useRecentGenerations();
   const { actions } = useApp();
 
-
-
   // Route guard handles authentication redirects - no need for modal
-
-  const handleLogout = async () => {
-    await actions.logout();
-  };
 
   const handleShowUpgradeModal = (source: string) => {
     setShowUpgradeModal(true);
@@ -175,11 +168,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <PrivateNavbar onLogout={handleLogout} />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <>
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -581,7 +570,6 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-      </div>
 
       {/* Upgrade Modal */}
       <UpgradeModal
@@ -589,7 +577,6 @@ export default function DashboardPage() {
         onClose={() => setShowUpgradeModal(false)}
         source="dashboard"
       />
-
-    </div>
+    </>
   );
 }
