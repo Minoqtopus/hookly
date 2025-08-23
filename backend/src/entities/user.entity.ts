@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { Generation } from './generation.entity';
 import { RefreshToken } from './refresh-token.entity';
+import { Generation } from './generation.entity';
 
 export enum UserPlan {
   TRIAL = 'trial',
@@ -71,9 +71,6 @@ export class User {
   })
   auth_providers: AuthProvider[];
 
-  @Column({ nullable: true })
-  avatar_url?: string;
-
   @Column({ default: false })
   is_verified: boolean;
 
@@ -90,13 +87,6 @@ export class User {
   @Column({ default: false })
   has_instagram_access: boolean;
 
-  // Beta user fields for promo codes
-  @Column({ default: false })
-  is_beta_user: boolean;
-
-  @Column({ type: 'timestamp', nullable: true })
-  beta_expires_at?: Date;
-
   // Trial abuse prevention fields
   @Column({ nullable: true, length: 45 })
   registration_ip?: string;
@@ -110,9 +100,9 @@ export class User {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @OneToMany(() => Generation, generation => generation.user)
-  generations: Generation[];
-
   @OneToMany(() => RefreshToken, refreshToken => refreshToken.user)
   refresh_tokens: RefreshToken[];
+
+  @OneToMany(() => Generation, generation => generation.user)
+  generations: Generation[];
 }

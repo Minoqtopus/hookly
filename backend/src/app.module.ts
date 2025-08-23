@@ -1,25 +1,22 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AiModule } from './ai/ai.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
+import { GenerationModule } from './generation/generation.module';
 // import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { RateLimitGuard } from './common/guards/rate-limit.guard';
 // import { ErrorLoggingInterceptor } from './common/interceptors/error-logging.interceptor';
 import { RateLimitInterceptor } from './common/interceptors/rate-limit.interceptor';
 import { AnalyticsEvent } from './entities/analytics-event.entity';
 import { EmailVerification } from './entities/email-verification.entity';
-import { GenerationJob } from './entities/generation-job.entity';
 import { Generation } from './entities/generation.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { User } from './entities/user.entity';
-// import { GenerationModule } from './generation/generation.module';
 import { HealthModule } from './health/health.module';
-import { InfrastructureModule } from './infrastructure/infrastructure.module';
-import { PaymentsModule } from './payments/payments.module';
-// import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -37,21 +34,18 @@ import { PaymentsModule } from './payments/payments.module';
       url: process.env.DATABASE_URL,
       entities: [
         User, 
-        Generation, 
-        GenerationJob,
         AnalyticsEvent,
         EmailVerification,
         RefreshToken,
+        Generation,
       ],
       synchronize: false, // Disabled to avoid enum conflicts - migrations handled separately
     }),
+    AiModule,
     AuthModule,
-    // GenerationModule,
-    // UserModule,
-    PaymentsModule,
     AnalyticsModule,
+    GenerationModule,
     HealthModule,
-    InfrastructureModule,
   ],
   providers: [
     {

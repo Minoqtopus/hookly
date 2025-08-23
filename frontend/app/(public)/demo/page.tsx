@@ -2,6 +2,8 @@
 
 import { AuthModal } from '@/app/components/modals';
 import { getProcessedDemoContent } from '@/app/lib/copy';
+import { generationApi } from '@/app/lib/api';
+import type { GenerationItem, DemoGenerationRequest } from '@/app/lib/contracts';
 import {
   ArrowRight,
   CheckCircle,
@@ -15,21 +17,10 @@ import {
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
-interface DemoAd {
-  hook: string;
-  script: string;
-  visuals: string[];
-  performance: {
-    estimatedViews: number;
-    estimatedCTR: number;
-    viralScore: number;
-  };
-}
-
 export default function DemoPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedAd, setGeneratedAd] = useState<DemoAd | null>(null);
+  const [generatedAds, setGeneratedAds] = useState<GenerationItem[] | null>(null);
   const [formData, setFormData] = useState({
     productName: '',
     niche: '',
@@ -49,21 +40,14 @@ export default function DemoPage() {
     setIsGenerating(true);
 
     try {
-      const response = await fetch('/api/demo/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const request: DemoGenerationRequest = {
+        productName: formData.productName,
+        niche: formData.niche,
+        targetAudience: formData.targetAudience
+      };
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || copy.results.errors.generateFailed);
-      }
-
-      const result = await response.json();
-      setGeneratedAd(result);
+      const response = await generationApi.generateDemo(request);
+      setGeneratedAds(response.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : copy.results.errors.generalError);
     } finally {
@@ -82,7 +66,7 @@ export default function DemoPage() {
   };
 
   const handleTryAgain = () => {
-    setGeneratedAd(null);
+    setGeneratedAds(null);
     setFormData({ productName: '', niche: '', targetAudience: '' });
     setError(null);
     setShowStickyBar(false);
@@ -108,7 +92,7 @@ export default function DemoPage() {
     <div className="min-h-screen">
       {/* Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {!generatedAd ? (
+        {!generatedAds ? (
           // Demo Form
           <div className="space-y-10">
             {/* Header */}
@@ -258,98 +242,129 @@ export default function DemoPage() {
               </p>
             </div>
 
-            {/* Performance Metrics */}
+            {/* Overall Performance Summary */}
             <div className="card bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
-                {copy.results.performance.title}
+                Average Performance Across Platforms
               </h3>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-2xl font-bold text-blue-600">
-                    {((generatedAd.performance.estimatedViews) / 1000).toFixed(0)}K
+                    {Math.round(generatedAds.reduce((sum, ad) => sum + ad.performance_data.views, 0) / generatedAds.length / 1000)}K
                   </div>
-                  <div className="text-xs text-gray-600">{copy.results.performance.metrics.views}</div>
+                  <div className="text-xs text-gray-600">Avg Views</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-green-600">
-                    {generatedAd.performance.estimatedCTR}%
+                    {(generatedAds.reduce((sum, ad) => sum + ad.performance_data.ctr, 0) / generatedAds.length).toFixed(1)}%
                   </div>
-                  <div className="text-xs text-gray-600">{copy.results.performance.metrics.ctr}</div>
+                  <div className="text-xs text-gray-600">Avg CTR</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-purple-600">
-                    {generatedAd.performance.viralScore}/10
+                    {(generatedAds.reduce((sum, ad) => sum + ad.performance_data.engagement_rate, 0) / generatedAds.length).toFixed(1)}%
                   </div>
-                  <div className="text-xs text-gray-600">{copy.results.performance.metrics.viralScore}</div>
+                  <div className="text-xs text-gray-600">Avg Engagement</div>
                 </div>
               </div>
             </div>
 
-            {/* Generated Content */}
-            <div className="space-y-6">
-              {/* Hook */}
-              <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl border-2 border-green-200 shadow-sm p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900 flex items-center">
-                    <Target className="h-5 w-5 text-primary-600 mr-2" />
-                    {copy.results.sections.hook}
-                  </h3>
-                  <button
-                    onClick={() => handleCopyToClipboard(generatedAd.hook, copy.results.copyFields.hook)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-gray-800 font-medium italic">
-                    {generatedAd.hook}
-                  </p>
-                </div>
-                {copiedField === copy.results.copyFields.hook && (
-                  <p className="text-green-600 text-xs mt-2">{copy.results.copiedMessage}</p>
-                )}
-              </div>
-
-              {/* Script */}
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200 shadow-sm p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900">
-                    {copy.results.sections.script}
-                  </h3>
-                  <button
-                    onClick={() => handleCopyToClipboard(generatedAd.script, copy.results.copyFields.script)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-gray-800 whitespace-pre-line">
-                    {generatedAd.script}
-                  </p>
-                </div>
-                {copiedField === copy.results.copyFields.script && (
-                  <p className="text-green-600 text-xs mt-2">{copy.results.copiedMessage}</p>
-                )}
-              </div>
-
-              {/* Visual Suggestions */}
-              <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl border-2 border-yellow-200 shadow-sm p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">
-                  {copy.results.sections.visuals}
-                </h3>
-                <div className="space-y-3">
-                  {generatedAd.visuals.map((visual, index) => (
-                    <div key={index} className="flex items-start space-x-3">
-                      <div className="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs font-medium text-primary-600">{index + 1}</span>
+            {/* Generated Content - Multiple Platforms */}
+            <div className="space-y-8">
+              {generatedAds.map((ad) => {
+                const platformColors = {
+                  instagram: 'from-pink-50 to-purple-50 border-pink-200',
+                  tiktok: 'from-gray-50 to-slate-50 border-gray-200',
+                  twitter: 'from-blue-50 to-cyan-50 border-blue-200'
+                };
+                
+                return (
+                  <div key={ad.id} className={`bg-gradient-to-br ${platformColors[ad.platform as keyof typeof platformColors] || 'from-gray-50 to-slate-50 border-gray-200'} rounded-xl border-2 shadow-sm p-6`}>
+                    {/* Platform Header */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900 capitalize">
+                          {ad.platform} Content
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">{ad.title}</p>
                       </div>
-                      <p className="text-gray-700 text-sm">{visual}</p>
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-gray-900">
+                          {(ad.performance_data.views / 1000).toFixed(0)}K views
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {ad.performance_data.engagement_rate}% engagement
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+
+                    {/* Hook Section */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-gray-900 flex items-center">
+                          <Target className="h-4 w-4 text-primary-600 mr-2" />
+                          Hook
+                        </h4>
+                        <button
+                          onClick={() => handleCopyToClipboard(ad.hook, `hook-${ad.id}`)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="bg-white rounded-lg p-4 border">
+                        <p className="text-gray-800 font-medium italic">
+                          {ad.hook}
+                        </p>
+                      </div>
+                      {copiedField === `hook-${ad.id}` && (
+                        <p className="text-green-600 text-xs mt-2">Copied to clipboard!</p>
+                      )}
+                    </div>
+
+                    {/* Script Section */}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-gray-900">Full Script</h4>
+                        <button
+                          onClick={() => handleCopyToClipboard(ad.script, `script-${ad.id}`)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="bg-white rounded-lg p-4 border">
+                        <p className="text-gray-800 whitespace-pre-line text-sm">
+                          {ad.script}
+                        </p>
+                      </div>
+                      {copiedField === `script-${ad.id}` && (
+                        <p className="text-green-600 text-xs mt-2">Copied to clipboard!</p>
+                      )}
+                    </div>
+
+                    {/* Performance Details */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+                      <div className="text-center">
+                        <div className="font-semibold text-gray-900">{ad.performance_data.clicks}</div>
+                        <div className="text-xs text-gray-500">Clicks</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-gray-900">{ad.performance_data.conversions}</div>
+                        <div className="text-xs text-gray-500">Conversions</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-gray-900">{ad.performance_data.ctr}%</div>
+                        <div className="text-xs text-gray-500">CTR</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-gray-900">{ad.performance_data.engagement_rate}%</div>
+                        <div className="text-xs text-gray-500">Engagement</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Demo to Trial Conversion */}

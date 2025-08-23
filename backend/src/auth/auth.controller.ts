@@ -776,7 +776,6 @@ export class AuthController {
       const result = await this.authService.validateOAuthUser({
         google_id: req.user.google_id,
         email: req.user.email,
-        avatar_url: req.user.avatar_url,
       });
 
       /**

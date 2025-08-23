@@ -474,7 +474,7 @@ export class AuthService {
    * @returns Secure user object with JWT tokens and linked provider information
    */
   async validateOAuthUser(oauthUser: OAuthUserDto) {
-    const { email, google_id, avatar_url } = oauthUser;
+    const { email, google_id } = oauthUser;
 
     // Check if user already exists by email (account linking)
     let user = await this.userRepository.findOne({ where: { email } });
@@ -495,11 +495,6 @@ export class AuthService {
         needsUpdate = true;
       }
 
-      // Update avatar if user doesn't have one
-      if (avatar_url && !user.avatar_url) {
-        user.avatar_url = avatar_url;
-        needsUpdate = true;
-      }
 
       // Auto-verify email for OAuth users (trusted provider)
       if (!user.is_verified) {
@@ -518,7 +513,6 @@ export class AuthService {
       user = this.userRepository.create({
         email,
         google_id,
-        avatar_url,
         auth_providers: authProviders,
         is_verified: true, // OAuth emails are pre-verified
       });
@@ -534,7 +528,6 @@ export class AuthService {
         email: user.email, 
         plan: user.plan,
         auth_providers: user.auth_providers,
-        avatar_url: user.avatar_url,
         is_verified: user.is_verified
       },
       ...tokens,

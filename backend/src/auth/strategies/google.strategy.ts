@@ -43,7 +43,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         return done(new Error('Invalid Google profile: missing required fields'), null);
       }
 
-      const { id, name, emails, photos } = profile;
+      const { id, name, emails } = profile;
       
       // Validate email format
       const email = emails[0].value;
@@ -58,7 +58,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         email: email.toLowerCase().trim().substring(0, 255), // Normalize and limit
         first_name: name?.givenName?.substring(0, 50) || '', // Limit length
         last_name: name?.familyName?.substring(0, 50) || '', // Limit length
-        avatar_url: photos?.[0]?.value?.substring(0, 500) || null, // Limit URL length
         // Note: We don't store OAuth access tokens for security
         oauth_provider: 'google',
         oauth_validated_at: new Date().toISOString(),
