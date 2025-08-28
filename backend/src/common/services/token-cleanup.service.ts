@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { RefreshTokenService } from '../../auth/refresh-token.service';
+import { RefreshTokenService } from '../../auth/services/supporting/refresh-token.service';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EmailVerification, VerificationStatus } from '../../entities/email-verification.entity';

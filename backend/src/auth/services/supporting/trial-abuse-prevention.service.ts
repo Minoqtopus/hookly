@@ -1,7 +1,7 @@
 import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
-import { User, UserPlan } from '../entities/user.entity';
+import { User, UserPlan } from '../../../entities/user.entity';
 
 export interface TrialRegistrationInfo {
   email: string;

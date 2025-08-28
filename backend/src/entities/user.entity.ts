@@ -15,13 +15,15 @@ export enum UserRole {
 
 export enum AuthProvider {
   EMAIL = 'email',
-  GOOGLE = 'google'
+  GOOGLE = 'google',
+  MICROSOFT = 'microsoft',
+  APPLE = 'apple'
 }
 
 @Entity('users')
 @Index('idx_user_email', ['email'])
 @Index('idx_user_plan', ['plan'])
-@Index('idx_user_google_id', ['google_id'])
+@Index('idx_user_provider_ids', ['provider_ids'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -31,6 +33,15 @@ export class User {
 
   @Column({ nullable: true })
   password?: string;
+
+  @Column({ nullable: true })
+  first_name?: string;
+
+  @Column({ nullable: true })
+  last_name?: string;
+
+  @Column({ nullable: true })
+  profile_picture?: string;
 
   @Column({
     type: 'enum',
@@ -46,6 +57,20 @@ export class User {
   })
   role: UserRole;
 
+  @Column({
+    type: 'simple-array',
+    default: [AuthProvider.EMAIL]
+  })
+  auth_providers: AuthProvider[];
+
+  // OAuth provider IDs (JSON field for multiple providers)
+  @Column({ type: 'jsonb', nullable: true })
+  provider_ids?: {
+    google?: string;
+    microsoft?: string;
+    apple?: string;
+  };
+
   @Column({ type: 'int', default: 0 })
   monthly_generation_count: number;
 
@@ -53,26 +78,25 @@ export class User {
   monthly_reset_date: Date;
 
   // Trial management fields
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamp', nullable: true })
   trial_started_at?: Date;
 
-  @Column({ type: 'timestamp' })  
+  @Column({ type: 'timestamp', nullable: true })  
   trial_ends_at?: Date;
 
   @Column({ type: 'int', default: 0 })
   trial_generations_used: number;
 
-  @Column({ nullable: true })
-  google_id?: string;
-
-  @Column({
-    type: 'simple-array',
-    default: [AuthProvider.EMAIL]
-  })
-  auth_providers: AuthProvider[];
-
+  // Email verification fields
   @Column({ default: false })
-  is_verified: boolean;
+  is_email_verified: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  email_verified_at?: Date;
+
+  // Password management fields
+  @Column({ type: 'timestamp', nullable: true })
+  password_changed_at?: Date;
 
   @Column({ type: 'int', default: 0 })
   total_generations: number;
@@ -82,7 +106,7 @@ export class User {
   has_tiktok_access: boolean;
 
   @Column({ default: false })
-  has_x_access: boolean;
+  has_youtube_access: boolean;
 
   @Column({ default: false })
   has_instagram_access: boolean;

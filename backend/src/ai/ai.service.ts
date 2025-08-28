@@ -6,7 +6,7 @@ export interface GenerationRequest {
   productName: string;
   niche: string;
   targetAudience: string;
-  platform: 'instagram' | 'tiktok' | 'twitter';
+  platform: 'instagram' | 'tiktok' | 'youtube';
 }
 
 export interface GeneratedContent {
@@ -117,12 +117,12 @@ Generate content that feels authentic, personal, and viral-worthy for ${request.
 - Use Instagram-specific language and hashtags
 - Focus on aesthetics and lifestyle benefits`,
       
-      twitter: `
-- Length: Thread format (280 chars per tweet, 5-8 tweets)
-- Style: Conversational, insightful, shareable
-- Format: Thread with numbered points or story
-- Use relevant hashtags sparingly
-- Include engaging questions or polls`,
+      youtube: `
+- Length: 60 seconds to 3 minutes (400-1200 words)
+- Style: Engaging, educational, entertaining
+- Format: Hook, story, value, call-to-action
+- Use YouTube Shorts format for under 60 seconds
+- Focus on retention and watch time`,
       
       facebook: `
 - Length: 100-300 words

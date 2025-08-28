@@ -5,6 +5,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AiModule } from './ai/ai.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { PaymentModule } from './payment/payment.module';
 import { AuthModule } from './auth/auth.module';
 import { GenerationModule } from './generation/generation.module';
 // import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -44,6 +45,7 @@ import { HealthModule } from './health/health.module';
     AiModule,
     AuthModule,
     AnalyticsModule,
+    PaymentModule,
     GenerationModule,
     HealthModule,
   ],

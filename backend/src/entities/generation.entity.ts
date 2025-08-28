@@ -4,7 +4,7 @@ import { User } from './user.entity';
 export enum GenerationType {
   INSTAGRAM = 'instagram',
   TIKTOK = 'tiktok',
-  TWITTER = 'twitter'
+  YOUTUBE = 'youtube'
 }
 
 export enum GenerationStatus {

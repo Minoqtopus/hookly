@@ -83,13 +83,13 @@ This is a NestJS backend for Hookly, an AI-powered ad generation platform. The a
 - JWT secrets and OAuth credentials
 - OpenAI API configuration for generation
 
-## Signup Control System
+## Signup Strategy
 
-This application implements exclusive signup limiting to control growth:
-- Database stores `total_signups_allowed` and `total_signups_completed`
-- Real-time validation prevents exceeding signup limits
-- Critical for cost control and sustainable scaling
-- Creates exclusivity/FOMO for user acquisition
+This application implements an open signup strategy:
+- Unlimited user registrations allowed
+- Focus on organic growth without artificial limits
+- Emphasis on trial-to-paid conversion optimization
+- Scalable infrastructure to handle growth
 
 ## Port Configuration
 - Default port: 3001 (configurable via PORT environment variable)

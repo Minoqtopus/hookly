@@ -5,11 +5,12 @@ export enum VerificationStatus {
   PENDING = 'pending',
   VERIFIED = 'verified',
   EXPIRED = 'expired',
+  FAILED = 'failed',
   RESENT = 'resent'
 }
 
 export enum VerificationType {
-  EMAIL_SIGNUP = 'email_signup',
+  EMAIL_VERIFICATION = 'email_verification',
   EMAIL_CHANGE = 'email_change',
   PASSWORD_RESET = 'password_reset'
 }
@@ -38,7 +39,7 @@ export class EmailVerification {
   @Column({
     type: 'enum',
     enum: VerificationType,
-    default: VerificationType.EMAIL_SIGNUP
+    default: VerificationType.EMAIL_VERIFICATION
   })
   type: VerificationType;
 

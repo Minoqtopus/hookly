@@ -4,6 +4,7 @@ import { RateLimit, RateLimits } from '../common/decorators/rate-limit.decorator
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GenerationService } from './generation.service';
 import { DemoGenerationDto } from './dto/demo-generation.dto';
+import { CreateGenerationDto } from './dto/create-generation.dto';
 
 @ApiTags('Generation')
 @Controller('generation')
@@ -86,6 +87,86 @@ export class GenerationController {
       return {
         success: false,
         message: 'Failed to create demo generations',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @RateLimit(RateLimits.GENERATION)
+  @ApiOperation({
+    summary: 'Create new generation',
+    description: `Generate personalized viral content for authenticated users.
+    
+    **Features:**
+    - AI-powered content generation using Gemini
+    - Platform-specific optimization (TikTok, Instagram, YouTube)
+    - Usage limit enforcement based on user plan
+    - Real-time performance metrics simulation
+    
+    **Plan Limits:**
+    - Trial: 15 total generations, TikTok only
+    - Starter: 50/month, TikTok + Instagram  
+    - Pro: 200/month, TikTok + Instagram + YouTube
+    
+    **Rate Limiting:**
+    - USER_GENERATION limit applies (5 per hour for quality control)`
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Generation created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Generation created successfully' },
+        data: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            title: { type: 'string', example: 'How This Product Changed My Life' },
+            platform: { type: 'string', enum: ['tiktok', 'instagram', 'youtube'] },
+            hook: { type: 'string' },
+            script: { type: 'string' },
+            performance_data: { type: 'object' },
+            created_at: { type: 'string', format: 'date-time' }
+          }
+        },
+        user_stats: {
+          type: 'object',
+          properties: {
+            generations_remaining: { type: 'number' },
+            monthly_limit: { type: 'number' }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Generation limit exceeded or platform not available'
+  })
+  async createGeneration(
+    @Body() createData: CreateGenerationDto,
+    @Request() req: any
+  ) {
+    try {
+      const generation = await this.generationService.createUserGeneration(
+        req.user.sub,
+        createData
+      );
+      
+      return {
+        success: true,
+        message: 'Generation created successfully',
+        data: generation
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to create generation',
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
