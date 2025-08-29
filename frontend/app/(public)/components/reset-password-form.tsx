@@ -2,8 +2,8 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/domains/auth";
 import { Logo } from "./logo";
 
@@ -11,10 +11,22 @@ export const ResetPasswordForm = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [success, setSuccess] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  const router = useRouter();
   
   const { resetPassword, isLoading, error } = useAuth();
+
+  // Extract token from URL and remove it for security
+  useEffect(() => {
+    const tokenFromUrl = searchParams.get("token");
+    if (tokenFromUrl) {
+      setToken(tokenFromUrl);
+      // Remove token from URL without reloading the page
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +40,9 @@ export const ResetPasswordForm = () => {
     const result = await resetPassword(token, password);
     if (result.success) {
       setSuccess(true);
+      // Clear password fields for security
+      setPassword("");
+      setConfirmPassword("");
     }
   };
 

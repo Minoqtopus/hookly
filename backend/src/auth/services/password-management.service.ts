@@ -10,16 +10,16 @@
  * This maintains the exact same security patterns as the original AuthService.
  */
 
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { EmailService } from '../../email/email.service';
-import { User } from '../../entities/user.entity';
-import { EmailVerification, VerificationStatus, VerificationType } from '../../entities/email-verification.entity';
-import { TokenSecurityUtil } from '../../common/utils/token-security.util';
+import { Repository } from 'typeorm';
 import { SecurityLoggerService } from '../../common/services/security-logger.service';
+import { TokenSecurityUtil } from '../../common/utils/token-security.util';
+import { EmailService } from '../../email/email.service';
+import { EmailVerification, VerificationStatus, VerificationType } from '../../entities/email-verification.entity';
+import { User } from '../../entities/user.entity';
 
 export interface PasswordResetResult {
   message: string;
@@ -93,7 +93,7 @@ export class PasswordManagementService {
     await this.emailVerificationRepository.save(verification);
 
     // Send reset email
-    const resetUrl = `${this.configService.get('FRONTEND_URL')}/auth/reset-password?token=${resetToken}`;
+    const resetUrl = `${this.configService.get('FRONTEND_URL')}/reset-password?token=${resetToken}`;
     
     await this.emailService.sendPasswordResetEmail(
       user.email,

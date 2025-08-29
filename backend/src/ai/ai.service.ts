@@ -144,15 +144,18 @@ Generate content that feels authentic, personal, and viral-worthy for ${request.
 
   private parseAiResponse(text: string, request: GenerationRequest): GeneratedContent {
     try {
+      // Remove markdown code blocks if present
+      let cleanedText = text.replace(/```json\s*|\s*```/g, '');
+      
       // Extract JSON from the AI response
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         
         return {
-          title: parsed.title || `${request.productName} Changed My Life`,
-          hook: parsed.hook || `I was skeptical about ${request.productName} until this happened...`,
-          script: parsed.script || this.generateFallbackScript(request),
+          title: this.ensureString(parsed.title) || `${request.productName} Changed My Life`,
+          hook: this.ensureString(parsed.hook) || `I was skeptical about ${request.productName} until this happened...`,
+          script: this.ensureString(parsed.script) || this.generateFallbackScript(request),
           performance_data: this.generatePerformanceData()
         };
       }
@@ -164,9 +167,27 @@ Generate content that feels authentic, personal, and viral-worthy for ${request.
     return {
       title: this.extractTitle(text) || `${request.productName} Success Story`,
       hook: this.extractHook(text) || `You won't believe what ${request.productName} did for me...`,
-      script: text || this.generateFallbackScript(request),
+      script: this.cleanupScript(text) || this.generateFallbackScript(request),
       performance_data: this.generatePerformanceData()
     };
+  }
+
+  private ensureString(value: any): string | null {
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (value && typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+    return null;
+  }
+
+  private cleanupScript(text: string): string {
+    // Remove markdown code blocks and other formatting
+    return text
+      .replace(/```json\s*|\s*```/g, '')
+      .replace(/^\{[\s\S]*\}$/, '') // Remove if it's just a JSON object
+      .trim();
   }
 
   private extractTitle(text: string): string | null {

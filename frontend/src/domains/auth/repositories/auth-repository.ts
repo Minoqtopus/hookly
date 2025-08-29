@@ -110,8 +110,19 @@ export class AuthRepository {
    * Endpoint: POST /auth/reset-password
    */
   async resetPasswordWithToken(request: ResetPasswordWithTokenRequest): Promise<ResetPasswordWithTokenResponse> {
-    const response = await apiClient.post<ResetPasswordWithTokenResponse>('/auth/reset-password', request);
-    return response.data;
+    try {
+      const response = await apiClient.post<{ message: string; user: { id: string; email: string } }>('/auth/reset-password', request);
+      // Backend returns without success flag, we add it
+      return {
+        success: true,
+        message: response.data.message
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to reset password'
+      };
+    }
   }
 
   /**
