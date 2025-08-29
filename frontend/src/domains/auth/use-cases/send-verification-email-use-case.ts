@@ -11,8 +11,8 @@ import { AuthService } from '../services/auth-service';
 
 export interface SendVerificationEmailUseCaseResult {
   success: boolean;
-  message?: string;
-  error?: string;
+  message: string;
+  error: string;
 }
 
 export class SendVerificationEmailUseCase {
@@ -27,6 +27,7 @@ export class SendVerificationEmailUseCase {
       return {
         success: response.success,
         message: response.message,
+        error: '',
       };
     } catch (error) {
       // Handle unexpected errors
@@ -34,6 +35,7 @@ export class SendVerificationEmailUseCase {
       
       return {
         success: false,
+        message: '',
         error: errorMessage,
       };
     }

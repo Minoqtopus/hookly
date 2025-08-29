@@ -6,12 +6,12 @@
  * No UI Concerns: No notifications, navigation, or UI state
  */
 
-import { VerifyEmailRequest } from '../contracts/auth';
+import { User, VerifyEmailRequest } from '../contracts/auth';
 import { AuthService } from '../services/auth-service';
 
 export interface VerifyEmailUseCaseResult {
   success: boolean;
-  user?: any;
+  user?: User;
   remainingGenerations?: number;
   error?: string;
 }

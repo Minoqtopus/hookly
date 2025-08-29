@@ -11,8 +11,8 @@ import { AuthService } from '../services/auth-service';
 
 export interface ForgotPasswordUseCaseResult {
   success: boolean;
-  message?: string;
-  error?: string;
+  message: string;
+  error: string;
 }
 
 export class ForgotPasswordUseCase {
@@ -27,6 +27,7 @@ export class ForgotPasswordUseCase {
       return {
         success: response.success,
         message: response.message,
+        error: '',
       };
     } catch (error) {
       // Handle unexpected errors
@@ -34,6 +35,7 @@ export class ForgotPasswordUseCase {
       
       return {
         success: false,
+        message: '',
         error: errorMessage,
       };
     }

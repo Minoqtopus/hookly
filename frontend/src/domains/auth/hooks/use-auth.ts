@@ -15,7 +15,8 @@ import {
 } from '../../../shared/services';
 import type {
     LoginRequest,
-    RegisterRequest
+    RegisterRequest,
+    User
 } from '../index';
 import {
     AuthRepository,
@@ -55,7 +56,7 @@ const refreshTokenUseCase = new RefreshTokenUseCase(authService);
 
 // Local state interface
 interface AuthState {
-  user: any | null;
+  user: User | null;
   isAuthenticated: boolean;
   remainingGenerations: number;
   isLoading: boolean;
@@ -80,19 +81,18 @@ export function useAuth() {
       const result = await loginUseCase.execute(credentials);
       
       if (result.success) {
-        // Handle UI concerns in hook
-        const response = await authService.login(credentials);
-        
-        // Store tokens
-        tokenService.setAccessToken(response.tokens.access_token);
-        tokenService.setRefreshToken(response.tokens.refresh_token);
+        // Handle UI concerns in hook using use-case result
+        if (result.tokens) {
+          tokenService.setAccessToken(result.tokens.access_token);
+          tokenService.setRefreshToken(result.tokens.refresh_token);
+        }
         
         // Show notifications
         notificationService.showSuccess('Login successful!');
         
-        if (!response.user.is_email_verified) {
+        if (result.user && !result.user.is_email_verified) {
           notificationService.showInfo(
-            `You have ${response.remaining_generations} generations remaining. Verify your email to unlock 15 total!`
+            `You have ${result.remainingGenerations} generations remaining. Verify your email to unlock 15 total!`
           );
         }
         
@@ -101,7 +101,7 @@ export function useAuth() {
         
         // Update local state
         setAuthState({
-          user: result.user,
+          user: result.user || null,
           isAuthenticated: true,
           remainingGenerations: result.remainingGenerations || 0,
           isLoading: false,
@@ -130,19 +130,18 @@ export function useAuth() {
       const result = await registerUseCase.execute(userData);
       
       if (result.success) {
-        // Handle UI concerns in hook
-        const response = await authService.register(userData);
-        
-        // Store tokens
-        tokenService.setAccessToken(response.tokens.access_token);
-        tokenService.setRefreshToken(response.tokens.refresh_token);
+        // Handle UI concerns in hook using use-case result
+        if (result.tokens) {
+          tokenService.setAccessToken(result.tokens.access_token);
+          tokenService.setRefreshToken(result.tokens.refresh_token);
+        }
         
         // Show notifications
         notificationService.showSuccess('Registration successful! Welcome to Hookly!');
         
-        if (!response.user.is_email_verified) {
+        if (result.user && !result.user.is_email_verified) {
           notificationService.showInfo(
-            `You have ${response.remaining_generations} generations remaining. Verify your email to unlock 15 total!`
+            `You have ${result.remainingGenerations} generations remaining. Verify your email to unlock 15 total!`
           );
         }
         
@@ -151,9 +150,9 @@ export function useAuth() {
         
         // Update local state
         setAuthState({
-          user: result.user,
-          isAuthenticated: true,
+          user: result.user || null,
           remainingGenerations: result.remainingGenerations || 0,
+          isAuthenticated: true,
           isLoading: false,
           error: null,
         });
@@ -226,19 +225,18 @@ export function useAuth() {
       const result = await googleOAuthUseCase.execute({ code, state });
       
       if (result.success) {
-        // Handle UI concerns in hook
-        const response = await authService.googleOAuth({ code, state });
-        
-        // Store tokens
-        tokenService.setAccessToken(response.tokens.access_token);
-        tokenService.setRefreshToken(response.tokens.refresh_token);
+        // Handle UI concerns in hook using use-case result
+        if (result.tokens) {
+          tokenService.setAccessToken(result.tokens.access_token);
+          tokenService.setRefreshToken(result.tokens.refresh_token);
+        }
         
         // Show notifications
         notificationService.showSuccess('Google login successful! Welcome to Hookly!');
         
-        if (!response.user.is_email_verified) {
+        if (result.user && !result.user.is_email_verified) {
           notificationService.showInfo(
-            `You have ${response.remaining_generations} generations remaining. Verify your email to unlock 15 total!`
+            `You have ${result.remainingGenerations} generations remaining. Verify your email to unlock 15 total!`
           );
         }
         
@@ -247,7 +245,7 @@ export function useAuth() {
         
         // Update local state
         setAuthState({
-          user: result.user,
+          user: result.user || null,
           isAuthenticated: true,
           remainingGenerations: result.remainingGenerations || 0,
           isLoading: false,
@@ -285,7 +283,7 @@ export function useAuth() {
         // Update local state
         setAuthState(prev => ({
           ...prev,
-          user: result.user,
+          user: result.user || null,
           remainingGenerations: result.remainingGenerations || 0,
           isLoading: false,
         }));
@@ -405,7 +403,7 @@ export function useAuth() {
       
       const result = await refreshTokenUseCase.execute({ refresh_token: refreshTokenValue });
       
-      if (result.success) {
+      if (result.success && result.tokens) {
         // Store new tokens
         tokenService.setAccessToken(result.tokens.access_token);
         tokenService.setRefreshToken(result.tokens.refresh_token);

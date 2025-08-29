@@ -6,13 +6,14 @@
  * No UI Concerns: No notifications, navigation, or UI state
  */
 
-import { LoginRequest } from '../contracts/auth';
+import { AuthTokens, LoginRequest, User } from '../contracts/auth';
 import { AuthService } from '../services/auth-service';
 
 export interface LoginUseCaseResult {
   success: boolean;
-  user?: any;
+  user?: User;
   remainingGenerations?: number;
+  tokens?: AuthTokens;
   error?: string;
 }
 

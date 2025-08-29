@@ -6,12 +6,12 @@
  * No UI Concerns: No notifications or UI state
  */
 
-import { RefreshTokenRequest } from '../contracts/auth';
+import { AuthTokens, RefreshTokenRequest } from '../contracts/auth';
 import { AuthService } from '../services/auth-service';
 
 export interface RefreshTokenUseCaseResult {
   success: boolean;
-  tokens?: any;
+  tokens?: AuthTokens;
   error?: string;
 }
 

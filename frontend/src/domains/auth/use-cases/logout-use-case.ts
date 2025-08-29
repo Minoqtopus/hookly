@@ -11,8 +11,8 @@ import { AuthService } from '../services/auth-service';
 
 export interface LogoutUseCaseResult {
   success: boolean;
-  message?: string;
-  error?: string;
+  message: string;
+  error: string;
 }
 
 export class LogoutUseCase {
@@ -27,6 +27,7 @@ export class LogoutUseCase {
       return {
         success: response.success,
         message: response.message,
+        error: '',
       };
     } catch (error) {
       // Handle unexpected errors
@@ -34,6 +35,7 @@ export class LogoutUseCase {
       
       return {
         success: false,
+        message: '',
         error: errorMessage,
       };
     }
