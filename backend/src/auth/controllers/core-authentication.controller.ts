@@ -20,7 +20,7 @@ import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { UserPlan } from '../../entities/user.entity';
-import { BUSINESS_CONSTANTS } from '../../constants/business-rules';
+import { BUSINESS_CONSTANTS, getGenerationLimit } from '../../constants/business-rules';
 
 @ApiTags('Core Authentication')
 @Controller('auth')
@@ -476,7 +476,9 @@ export class CoreAuthenticationController {
     const needsReset = currentMonth !== resetMonth;
 
     if (user.plan === UserPlan.TRIAL) {
-      generations_remaining = BUSINESS_CONSTANTS.GENERATION_LIMITS.TRIAL_TOTAL - user.trial_generations_used;
+      // BUSINESS REQUIREMENT: Email verification affects trial generation limits
+      const trialLimit = getGenerationLimit(user.plan, user.is_email_verified);
+      generations_remaining = trialLimit - user.trial_generations_used;
     } else if (user.plan === UserPlan.STARTER) {
       const monthlyCount = needsReset ? 0 : user.monthly_generation_count;
       generations_remaining = BUSINESS_CONSTANTS.GENERATION_LIMITS.STARTER_MONTHLY - monthlyCount;
@@ -488,7 +490,7 @@ export class CoreAuthenticationController {
     const profile = {
       ...user,
       generations_remaining,
-      monthly_limit: user.plan === UserPlan.TRIAL ? BUSINESS_CONSTANTS.GENERATION_LIMITS.TRIAL_TOTAL : 
+      monthly_limit: user.plan === UserPlan.TRIAL ? getGenerationLimit(user.plan, user.is_email_verified) : 
                      user.plan === UserPlan.STARTER ? BUSINESS_CONSTANTS.GENERATION_LIMITS.STARTER_MONTHLY : 
                      BUSINESS_CONSTANTS.GENERATION_LIMITS.PRO_MONTHLY
     };

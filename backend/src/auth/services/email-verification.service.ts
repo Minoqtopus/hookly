@@ -139,13 +139,14 @@ export class EmailVerificationService {
       email_verified_at: new Date()
     });
 
+    // BUSINESS REQUIREMENT: Fetch complete user data since email verification affects generation limits
+    const updatedUser = await this.userRepository.findOne({
+      where: { id: verification.user.id }
+    });
+
     return {
       message: 'Email verified successfully',
-      user: {
-        id: verification.user.id,
-        email: verification.user.email,
-        is_email_verified: true
-      }
+      user: updatedUser
     };
   }
 

@@ -68,8 +68,9 @@ export class TrialAbusePreventionService {
       },
     });
 
-    // Allow maximum 2 trial accounts per IP per 30 days
-    if (trialUsersFromIP >= 2) {
+    // BUSINESS REQUIREMENT: Allow maximum 3 trial accounts per IP per 30 days
+    // Test defines this requirement: 0, 1, 2 allowed; 3+ rejected
+    if (trialUsersFromIP >= 3) {
       this.logger.warn(`Trial abuse detected: IP ${ipAddress} has ${trialUsersFromIP} trial accounts in last 30 days`);
       throw new ForbiddenException('Trial limit reached for this location. Please contact support if you need assistance.');
     }

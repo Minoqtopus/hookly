@@ -37,6 +37,10 @@ export interface AuthenticationResult {
     plan: UserPlan;
     auth_providers: AuthProvider[];
     is_email_verified: boolean;
+    trial_generations_used: number;
+    trial_ends_at?: Date;
+    monthly_generation_count?: number;
+    monthly_reset_date?: Date;
   };
   access_token: string;
   refresh_token: string;
@@ -156,7 +160,11 @@ export class CoreAuthenticationService {
         email: savedUser.email, 
         plan: savedUser.plan,
         auth_providers: savedUser.auth_providers,
-        is_email_verified: savedUser.is_email_verified
+        is_email_verified: savedUser.is_email_verified,
+        trial_generations_used: savedUser.trial_generations_used,
+        trial_ends_at: savedUser.trial_ends_at,
+        monthly_generation_count: savedUser.monthly_generation_count,
+        monthly_reset_date: savedUser.monthly_reset_date
       },
       ...tokens,
       message: 'Registration successful. Please check your email for verification.',
@@ -240,7 +248,11 @@ export class CoreAuthenticationService {
         email: user.email, 
         plan: user.plan,
         auth_providers: user.auth_providers,
-        is_email_verified: user.is_email_verified
+        is_email_verified: user.is_email_verified,
+        trial_generations_used: user.trial_generations_used,
+        trial_ends_at: user.trial_ends_at,
+        monthly_generation_count: user.monthly_generation_count,
+        monthly_reset_date: user.monthly_reset_date
       },
       ...tokens,
       message: 'Login successful'
@@ -290,7 +302,11 @@ export class CoreAuthenticationService {
         email: user.email, 
         plan: user.plan,
         auth_providers: user.auth_providers,
-        is_email_verified: user.is_email_verified
+        is_email_verified: user.is_email_verified,
+        trial_generations_used: user.trial_generations_used,
+        trial_ends_at: user.trial_ends_at,
+        monthly_generation_count: user.monthly_generation_count,
+        monthly_reset_date: user.monthly_reset_date
       },
       ...newTokens
     };
@@ -449,7 +465,11 @@ export class CoreAuthenticationService {
         email: existingUser.email, 
         plan: existingUser.plan,
         auth_providers: existingUser.auth_providers,
-        is_email_verified: existingUser.is_email_verified
+        is_email_verified: existingUser.is_email_verified,
+        trial_generations_used: existingUser.trial_generations_used,
+        trial_ends_at: existingUser.trial_ends_at,
+        monthly_generation_count: existingUser.monthly_generation_count,
+        monthly_reset_date: existingUser.monthly_reset_date
       },
       ...tokens,
       message: 'Password set successfully for your existing account.',

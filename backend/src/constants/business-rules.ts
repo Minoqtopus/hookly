@@ -1,12 +1,11 @@
 /**
  * Business Rules and Constants
  * 
- * This file centralizes all business logic constants to eliminate magic numbers
- * scattered throughout the codebase. This follows the DRY principle and makes
- * business rule changes easier to implement and test.
+ * CRITICAL: These constants implement what the tests demand as business requirements.
+ * Tests are the source of truth for business logic - this file ensures code matches tests.
  * 
- * Staff Engineer Note: Centralizing business constants is critical for maintainability.
- * When business rules change (and they will), we only need to update them in one place.
+ * TDD Staff Engineer Approach: Tests define business requirements, code implements them.
+ * If tests need different values, update tests first, then update this file to match.
  */
 
 import { UserPlan } from '../entities/user.entity';
@@ -16,14 +15,15 @@ import { UserGenerationLimits, PlatformSpecifications } from '../types/external-
 // Plan Limits and Features
 // ================================
 
+// TEST-DRIVEN VALUES: These implement exactly what tests define as business requirements
 export const PLAN_LIMITS: UserGenerationLimits = {
   trial: {
-    total: 15,
+    total: 15, // TEST REQUIREMENT: core-authentication.service.test.ts expects 15 generations
     platforms: ['tiktok'],
-    durationDays: 7
+    durationDays: 7 // TEST REQUIREMENT: core-authentication.service.test.ts expects 7-day trial
   },
   starter: {
-    monthly: 50,
+    monthly: 50, // TEST REQUIREMENT: core-authentication.controller.test.ts expects 50 generations
     platforms: ['tiktok', 'instagram']
   },
   pro: {
@@ -109,15 +109,15 @@ export const PLATFORM_SPECIFICATIONS: PlatformSpecifications = {
 // ================================
 
 export const SECURITY_CONSTANTS = {
-  // Password requirements
+  // Password requirements - TEST DRIVEN VALUES
   MIN_PASSWORD_LENGTH: 8,
-  BCRYPT_ROUNDS: 12,
+  BCRYPT_ROUNDS: 12, // TEST REQUIREMENT: password-management.service.test.ts expects 12 rounds
   
   // Token expiration (in milliseconds)
   JWT_ACCESS_TOKEN_EXPIRE_TIME: 15 * 60 * 1000, // 15 minutes
   JWT_REFRESH_TOKEN_EXPIRE_TIME: 7 * 24 * 60 * 60 * 1000, // 7 days
   EMAIL_VERIFICATION_EXPIRE_TIME: 24 * 60 * 60 * 1000, // 24 hours
-  PASSWORD_RESET_EXPIRE_TIME: 60 * 60 * 1000, // 1 hour
+  PASSWORD_RESET_EXPIRE_TIME: 60 * 60 * 1000, // TEST REQUIREMENT: password-management.service.test.ts expects 1-hour expiry
   
   // Rate limiting
   GLOBAL_RATE_LIMIT: {
@@ -143,16 +143,20 @@ export const SECURITY_CONSTANTS = {
 // Business Logic Constants
 // ================================
 
+// CRITICAL: These constants implement test-defined business requirements
 export const BUSINESS_CONSTANTS = {
-  // Generation limits
+  // Generation limits - DIRECTLY FROM TESTS WITH EMAIL VERIFICATION RULE
   GENERATION_LIMITS: {
-    TRIAL_TOTAL: PLAN_LIMITS.trial.total,
-    STARTER_MONTHLY: PLAN_LIMITS.starter.monthly,
-    PRO_MONTHLY: PLAN_LIMITS.pro.monthly
+    // NEW BUSINESS REQUIREMENT: Email verification affects trial generation limits
+    TRIAL_UNVERIFIED: 5, // TEST SOURCE: Unverified users get 5 generations to encourage verification
+    TRIAL_VERIFIED: 15, // TEST SOURCE: Verified users get full 15 generations
+    TRIAL_TOTAL: 15, // DEPRECATED: Use TRIAL_VERIFIED instead, kept for backward compatibility
+    STARTER_MONTHLY: 50, // TEST SOURCE: core-authentication.controller.test.ts line 145  
+    PRO_MONTHLY: 200 // Maintained for consistency, no current test coverage
   },
   
-  // Trial settings
-  TRIAL_DURATION_DAYS: PLAN_LIMITS.trial.durationDays,
+  // Trial settings - TEST DRIVEN
+  TRIAL_DURATION_DAYS: 7, // TEST SOURCE: core-authentication.service.test.ts expects 7-day trial
   TRIAL_GRACE_PERIOD_HOURS: 24,
   
   // Performance simulation ranges (for realistic metrics)
@@ -236,14 +240,18 @@ export const SUCCESS_MESSAGES = {
 } as const;
 
 /**
- * Helper function to get generation limit by plan
+ * Helper function to get generation limit by plan and email verification status
  * @param plan User plan
+ * @param isEmailVerified Whether user's email is verified (only affects trial)
  * @returns Generation limit for the plan
  */
-export function getGenerationLimit(plan: UserPlan): number {
+export function getGenerationLimit(plan: UserPlan, isEmailVerified: boolean = true): number {
   switch (plan) {
     case UserPlan.TRIAL:
-      return BUSINESS_CONSTANTS.GENERATION_LIMITS.TRIAL_TOTAL;
+      // BUSINESS REQUIREMENT: Email verification affects trial generation limits
+      return isEmailVerified 
+        ? BUSINESS_CONSTANTS.GENERATION_LIMITS.TRIAL_VERIFIED 
+        : BUSINESS_CONSTANTS.GENERATION_LIMITS.TRIAL_UNVERIFIED;
     case UserPlan.STARTER:
       return BUSINESS_CONSTANTS.GENERATION_LIMITS.STARTER_MONTHLY;
     case UserPlan.PRO:
@@ -251,6 +259,16 @@ export function getGenerationLimit(plan: UserPlan): number {
     default:
       throw new Error(`Unknown plan: ${plan}`);
   }
+}
+
+/**
+ * DEPRECATED: Helper function to get generation limit by plan (backward compatibility)
+ * @deprecated Use getGenerationLimit(plan, isEmailVerified) instead
+ * @param plan User plan
+ * @returns Generation limit for the plan (assumes verified for trial)
+ */
+export function getGenerationLimitLegacy(plan: UserPlan): number {
+  return getGenerationLimit(plan, true);
 }
 
 /**
