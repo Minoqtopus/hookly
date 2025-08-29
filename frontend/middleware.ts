@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
   const isAuthenticated = !!(accessToken || refreshToken);
   
   // Define route categories - SIMPLIFIED to two types
-  const publicRoutes = ['/', '/login', '/register', '/pricing', '/demo'];
+  const publicRoutes = ['/', '/login', '/register', '/pricing', '/demo', '/auth/callback', '/auth/error'];
   const protectedRoutes = ['/dashboard', '/generate', '/settings', '/verification', '/history'];
   
   // Check if current path matches any route category

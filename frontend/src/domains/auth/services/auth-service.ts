@@ -7,27 +7,25 @@
  */
 
 import {
-    ChangePasswordRequest,
-    ChangePasswordResponse,
-    GetCurrentUserResponse,
-    GoogleOAuthRequest,
-    GoogleOAuthResponse,
-    LoginRequest,
-    LoginResponse,
-    LogoutRequest,
-    LogoutResponse,
-    PasswordResetRequest,
-    PasswordResetResponse,
-    RefreshTokenRequest,
-    RefreshTokenResponse,
-    RegisterRequest,
-    RegisterResponse,
-    ResetPasswordWithTokenRequest,
-    ResetPasswordWithTokenResponse,
-    SendVerificationEmailRequest,
-    SendVerificationEmailResponse,
-    VerifyEmailRequest,
-    VerifyEmailResponse
+  ChangePasswordRequest,
+  ChangePasswordResponse,
+  GetCurrentUserResponse,
+  LoginRequest,
+  LoginResponse,
+  LogoutRequest,
+  LogoutResponse,
+  PasswordResetRequest,
+  PasswordResetResponse,
+  RefreshTokenRequest,
+  RefreshTokenResponse,
+  RegisterRequest,
+  RegisterResponse,
+  ResetPasswordWithTokenRequest,
+  ResetPasswordWithTokenResponse,
+  SendVerificationEmailRequest,
+  SendVerificationEmailResponse,
+  VerifyEmailRequest,
+  VerifyEmailResponse
 } from '../contracts/auth';
 import { AuthRepository } from '../repositories/auth-repository';
 
@@ -64,16 +62,12 @@ export class AuthService {
 
   /**
    * Initiate Google OAuth Flow - Data Access Only
+   * 
+   * Staff Engineer Note: This method redirects the user to the backend OAuth endpoint.
+   * The backend handles the entire OAuth flow and redirects back with tokens.
    */
-  async initiateGoogleOAuth(): Promise<{ redirectUrl: string }> {
+  async initiateGoogleOAuth(): Promise<void> {
     return this.authRepository.initiateGoogleOAuth();
-  }
-
-  /**
-   * Google OAuth Login - Data Access Only
-   */
-  async googleOAuth(request: GoogleOAuthRequest): Promise<GoogleOAuthResponse> {
-    return this.authRepository.googleOAuth(request);
   }
 
   /**

@@ -38,10 +38,19 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    // In a real app, this would redirect to Google OAuth
-    // For now, we'll simulate with a mock code
-    const mockCode = 'mock_google_oauth_code';
-    await googleOAuth(mockCode);
+    try {
+      console.log('[LOGIN] Initiating Google OAuth flow');
+      
+      // OAuth flow: Redirect to backend, which handles Google OAuth
+      // The backend will redirect to Google, then back to our callback page
+      await googleOAuth();
+      
+      // Note: googleOAuth() will redirect the user away from this page
+      // No need to handle the response here
+    } catch (error) {
+      console.error('[LOGIN] Google OAuth initiation failed:', error);
+      // Note: error is already handled by useAuth hook
+    }
   };
 
   const handleForgotPassword = async () => {

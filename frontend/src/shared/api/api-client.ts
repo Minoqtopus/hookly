@@ -36,13 +36,22 @@ export class ApiClient {
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
     
+    // Get stored access token for authentication
+    const accessToken = this.getStoredAccessToken();
+    
     const config: RequestInit = {
       headers: {
         ...this.defaultHeaders,
+        // Automatically include Authorization header if token exists
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
         ...options.headers,
       },
       ...options,
     };
+
+    console.log('[API_CLIENT] Making request to:', endpoint);
+    console.log('[API_CLIENT] Request headers:', config.headers);
+    console.log('[API_CLIENT] Stored token exists:', !!accessToken);
 
     try {
       const response = await fetch(url, config);
@@ -119,12 +128,28 @@ export class ApiClient {
 
   // Set auth token for authenticated requests
   setAuthToken(token: string): void {
+    console.log('[API_CLIENT] Setting auth token:', token.substring(0, 20) + '...');
     this.defaultHeaders['Authorization'] = `Bearer ${token}`;
+    console.log('[API_CLIENT] Authorization header set:', this.defaultHeaders['Authorization']);
   }
 
   // Clear auth token
   clearAuthToken(): void {
+    console.log('[API_CLIENT] Clearing auth token');
     delete this.defaultHeaders['Authorization'];
+  }
+
+  // Get stored access token from localStorage
+  private getStoredAccessToken(): string | null {
+    try {
+      if (typeof window !== 'undefined') {
+        return localStorage.getItem('access_token');
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to get stored access token:', error);
+      return null;
+    }
   }
 }
 

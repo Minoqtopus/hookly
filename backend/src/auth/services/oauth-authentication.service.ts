@@ -10,17 +10,17 @@
  * This maintains the exact same business logic as the original AuthService.
  */
 
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AnalyticsService } from '../../analytics/analytics.service';
+import { SecurityLoggerService } from '../../common/services/security-logger.service';
+import { BUSINESS_CONSTANTS } from '../../constants/business-rules';
 import { EventType } from '../../entities/analytics-event.entity';
 import { AuthProvider, User, UserPlan, UserRole } from '../../entities/user.entity';
 import { OAuthUserDto } from '../dto/oauth-user.dto';
 import { AdminManagementService } from './supporting/admin-management.service';
 import { TrialAbusePreventionService } from './supporting/trial-abuse-prevention.service';
-import { SecurityLoggerService } from '../../common/services/security-logger.service';
-import { BUSINESS_CONSTANTS } from '../../constants/business-rules';
 
 export interface OAuthValidationResult {
   user: User;
@@ -52,16 +52,39 @@ export class OAuthAuthenticationService {
     ipAddress?: string, 
     userAgent?: string
   ): Promise<OAuthValidationResult> {
+    console.log('[OAUTH_SERVICE] validateOAuthUser called with:', JSON.stringify(oauthUser, null, 2));
+    console.log('[OAUTH_SERVICE] IP Address:', ipAddress);
+    console.log('[OAUTH_SERVICE] User Agent:', userAgent);
+    
     const { email, provider, providerId, firstName, lastName, picture } = oauthUser;
+    
+    console.log('[OAUTH_SERVICE] Destructured fields:', {
+      email,
+      provider,
+      providerId,
+      firstName,
+      lastName,
+      picture
+    });
 
     if (!email || !provider || !providerId) {
+      console.error('[OAUTH_SERVICE] Validation failed - missing required fields:', {
+        hasEmail: !!email,
+        hasProvider: !!provider,
+        hasProviderId: !!providerId,
+        emailValue: email,
+        providerValue: provider,
+        providerIdValue: providerId
+      });
       throw new BadRequestException('Invalid OAuth user data');
     }
 
+    console.log('[OAUTH_SERVICE] Basic validation passed, checking if user exists');
     // Check if user already exists by email (account linking - same as original)
     let user = await this.userRepository.findOne({ where: { email } });
 
     if (user) {
+      console.log('[OAUTH_SERVICE] User already exists, updating OAuth provider information');
       // Existing user - update OAuth provider information if needed (same logic as original)
       let needsUpdate = false;
 
@@ -140,6 +163,7 @@ export class OAuthAuthenticationService {
         accountLinked: needsUpdate
       };
     } else {
+      console.log('[OAUTH_SERVICE] User does not exist, creating new user');
       // Create new user for first-time OAuth authentication (same as original AuthService)
       const authProviders = [provider];
       const providerIds: any = {};

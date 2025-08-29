@@ -9,28 +9,28 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
-    NavigationService,
-    NotificationService,
-    TokenService
+  NavigationService,
+  NotificationService,
+  TokenService
 } from '../../../shared/services';
 import type {
-    LoginRequest,
-    RegisterRequest,
-    User
+  LoginRequest,
+  RegisterRequest,
+  User
 } from '../index';
 import {
-    AuthRepository,
-    AuthService,
-    ChangePasswordUseCase,
-    ForgotPasswordUseCase,
-    GoogleOAuthUseCase,
-    LoginUseCase,
-    LogoutUseCase,
-    RefreshTokenUseCase,
-    RegisterUseCase,
-    ResetPasswordUseCase,
-    SendVerificationEmailUseCase,
-    VerifyEmailUseCase
+  AuthRepository,
+  AuthService,
+  ChangePasswordUseCase,
+  ForgotPasswordUseCase,
+  GoogleOAuthUseCase,
+  LoginUseCase,
+  LogoutUseCase,
+  RefreshTokenUseCase,
+  RegisterUseCase,
+  ResetPasswordUseCase,
+  SendVerificationEmailUseCase,
+  VerifyEmailUseCase
 } from '../index';
 
 // Create singleton instances
@@ -226,12 +226,12 @@ export function useAuth() {
   }, []);
 
   // Google OAuth - Uses GoogleOAuthUseCase
-  const googleOAuth = useCallback(async (code?: string, state?: string) => {
+  const googleOAuth = useCallback(async () => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
-      // If no code, initiate OAuth flow, otherwise handle callback
-      const result = await googleOAuthUseCase.execute(code ? { code, state } : undefined);
+      // Initiate OAuth flow (redirects to backend)
+      const result = await googleOAuthUseCase.execute();
       
       if (result.success) {
         // Handle OAuth initiation (redirect)
@@ -239,37 +239,6 @@ export function useAuth() {
           window.location.href = result.redirect;
           return result;
         }
-        
-        // Handle OAuth callback (authentication complete)
-        if (result.tokens) {
-          tokenService.setAccessToken(result.tokens.access_token);
-          tokenService.setRefreshToken(result.tokens.refresh_token);
-        }
-        
-        // Calculate remaining generations based on user data
-        const remainingGenerations = result.user ? 
-          (result.user.is_email_verified ? 15 : 5) - result.user.trial_generations_used : 0;
-        
-        // Show notifications
-        notificationService.showSuccess('Google login successful! Welcome to Hookly!');
-        
-        if (result.user && !result.user.is_email_verified) {
-          notificationService.showInfo(
-            `You have ${remainingGenerations} generations remaining. Verify your email to unlock 15 total!`
-          );
-        }
-        
-        // Navigate
-        navigationService.navigateTo('/dashboard');
-        
-        // Update local state
-        setAuthState({
-          user: result.user || null,
-          isAuthenticated: true,
-          remainingGenerations,
-          isLoading: false,
-          error: null,
-        });
       } else {
         setAuthState(prev => ({ ...prev, isLoading: false, error: result.error || 'Google login failed' }));
         notificationService.showError(result.error || 'Google login failed');

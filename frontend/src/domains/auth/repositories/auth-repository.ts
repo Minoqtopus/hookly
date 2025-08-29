@@ -8,27 +8,25 @@
 
 import { apiClient } from '../../../shared/api/api-client';
 import {
-    ChangePasswordRequest,
-    ChangePasswordResponse,
-    GetCurrentUserResponse,
-    GoogleOAuthRequest,
-    GoogleOAuthResponse,
-    LoginRequest,
-    LoginResponse,
-    LogoutRequest,
-    LogoutResponse,
-    PasswordResetRequest,
-    PasswordResetResponse,
-    RefreshTokenRequest,
-    RefreshTokenResponse,
-    RegisterRequest,
-    RegisterResponse,
-    ResetPasswordWithTokenRequest,
-    ResetPasswordWithTokenResponse,
-    SendVerificationEmailRequest,
-    SendVerificationEmailResponse,
-    VerifyEmailRequest,
-    VerifyEmailResponse,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
+  GetCurrentUserResponse,
+  LoginRequest,
+  LoginResponse,
+  LogoutRequest,
+  LogoutResponse,
+  PasswordResetRequest,
+  PasswordResetResponse,
+  RefreshTokenRequest,
+  RefreshTokenResponse,
+  RegisterRequest,
+  RegisterResponse,
+  ResetPasswordWithTokenRequest,
+  ResetPasswordWithTokenResponse,
+  SendVerificationEmailRequest,
+  SendVerificationEmailResponse,
+  VerifyEmailRequest,
+  VerifyEmailResponse
 } from '../contracts/auth';
 
 export class AuthRepository {
@@ -116,21 +114,18 @@ export class AuthRepository {
   /**
    * Initiate Google OAuth Flow
    * Endpoint: GET /auth/google (redirect)
+   * 
+   * Staff Engineer Note: OAuth flow works by redirecting the user to the backend,
+   * not by making API calls. The backend handles the entire OAuth flow and
+   * redirects back to the frontend with tokens.
    */
-  async initiateGoogleOAuth(): Promise<{ redirectUrl: string }> {
+  async initiateGoogleOAuth(): Promise<void> {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    return { redirectUrl: `${baseUrl}/auth/google` };
-  }
-
-  /**
-   * Google OAuth Callback Handler
-   * Endpoint: Process callback data
-   */
-  async googleOAuth(request: GoogleOAuthRequest): Promise<GoogleOAuthResponse> {
-    // This would handle the callback data from the OAuth flow
-    // For now, this might not be used as OAuth flow handles redirects
-    const response = await apiClient.post<GoogleOAuthResponse>('/auth/google/callback', request);
-    return response.data;
+    const redirectUrl = `${baseUrl}/auth/google`;
+    
+    // Redirect to backend OAuth endpoint
+    // This will trigger the Google OAuth flow
+    window.location.href = redirectUrl;
   }
 
   /**

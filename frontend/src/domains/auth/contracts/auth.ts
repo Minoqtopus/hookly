@@ -176,23 +176,8 @@ export interface ChangePasswordResponse {
   success: boolean;
 }
 
-// OAuth Google Request (must match backend endpoint)
-export interface GoogleOAuthRequest {
-  code: string;
-  state?: string;
-}
-
-// OAuth Google Response (must match backend response)
-export interface GoogleOAuthResponse {
-  user: User;
-  access_token: string;
-  refresh_token: string;
-  message?: string;
-}
-
 // Get Current User Response (must match backend endpoint)
 export interface GetCurrentUserResponse {
   user: User;
   remaining_generations: number;
-  message?: string;
 }

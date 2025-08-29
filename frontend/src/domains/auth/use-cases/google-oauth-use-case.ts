@@ -6,13 +6,10 @@
  * No UI Concerns: No notifications, navigation, or UI state
  */
 
-import { AuthTokens, GoogleOAuthRequest, User } from '../contracts/auth';
 import { AuthService } from '../services/auth-service';
 
 export interface GoogleOAuthUseCaseResult {
   success: boolean;
-  user?: User;
-  tokens?: AuthTokens;
   redirect?: string;
   error?: string;
 }
@@ -20,30 +17,22 @@ export interface GoogleOAuthUseCaseResult {
 export class GoogleOAuthUseCase {
   constructor(private authService: AuthService) {}
 
-  async execute(request?: GoogleOAuthRequest): Promise<GoogleOAuthUseCaseResult> {
+  async execute(): Promise<GoogleOAuthUseCaseResult> {
     try {
-      // If no request provided, initiate OAuth flow
-      if (!request) {
-        // Business Logic: Initiate OAuth flow by redirecting to backend
-        const response = await this.authService.initiateGoogleOAuth();
-        return {
-          success: true,
-          redirect: response.redirectUrl
-        };
-      }
-
-      // Handle OAuth callback with code
-      const response = await this.authService.googleOAuth(request);
+      // Staff Engineer Note: OAuth flow works by redirects, not API calls
+      // The frontend should only initiate the OAuth flow
+      // Callbacks are handled by the backend redirecting to the frontend with tokens
       
-      // Business Logic: Return authentication result
+      // Initiate OAuth flow by redirecting to backend
+      await this.authService.initiateGoogleOAuth();
+      
+      // Construct redirect URL for the use case result
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const redirectUrl = `${baseUrl}/auth/google`;
+      
       return {
         success: true,
-        user: response.user,
-        tokens: {
-          access_token: response.access_token,
-          refresh_token: response.refresh_token,
-          expires_in: 900
-        }
+        redirect: redirectUrl
       };
     } catch (error) {
       // Handle unexpected errors
