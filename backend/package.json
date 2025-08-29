@@ -17,7 +17,9 @@
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "npm run typeorm -- migration:generate -d src/data-source.ts",
     "migration:run": "npm run typeorm -- migration:run -d src/data-source.ts",
-    "migration:revert": "npm run typeorm -- migration:revert -d src/data-source.ts"
+    "migration:revert": "npm run typeorm -- migration:revert -d src/data-source.ts",
+    "generate:openapi": "ts-node scripts/generate-openapi.ts",
+    "generate:types": "npm run generate:openapi"
   },
   "keywords": [],
   "author": "",
@@ -66,7 +68,7 @@
     "@nestjs/cli": "^11.0.10",
     "@nestjs/testing": "^11.1.6",
     "@types/bcrypt": "^6.0.0",
-    "@types/jest": "^29.5.12",
+    "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.3.0",
     "@types/passport-jwt": "^4.0.1",

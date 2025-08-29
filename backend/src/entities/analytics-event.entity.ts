@@ -3,9 +3,9 @@ import { User } from './user.entity';
 
 export enum EventType {
   // Core user actions
-  USER_SIGNUP = 'user_signup',
-  USER_LOGIN = 'user_login',
-  USER_LOGOUT = 'user_logout',
+  REGISTRATION = 'registration',
+  LOGIN = 'login',
+  LOGOUT = 'logout',
   EMAIL_VERIFIED = 'email_verified',
   
   // Core generation events

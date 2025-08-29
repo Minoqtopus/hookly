@@ -1,86 +1,76 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { User } from './user.entity';
 
+export enum GenerationType {
+  INSTAGRAM = 'instagram',
+  TIKTOK = 'tiktok',
+  YOUTUBE = 'youtube'
+}
+
+export enum GenerationStatus {
+  PENDING = 'pending',
+  COMPLETED = 'completed',
+  FAILED = 'failed'
+}
+
 @Entity('generations')
-@Index('idx_generation_user_created', ['user_id', 'created_at'])
-@Index('idx_generation_featured', ['is_featured'])
-@Index('idx_generation_guest', ['is_guest_generation', 'created_at'])
-@Index('idx_generation_guest_ip', ['guest_ip_address', 'created_at'])
-@Index('idx_generation_favorite_user', ['user_id', 'is_favorite'])
+@Index('idx_generation_user', ['user'])
+@Index('idx_generation_status', ['status'])
+@Index('idx_generation_created', ['created_at'])
 export class Generation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('uuid', { nullable: true })
-  user_id?: string;
+  @ManyToOne(() => User, user => user.generations)
+  user: User;
 
-  @Column({ nullable: true })
-  title?: string;
+  @Column({ length: 500 })
+  title: string;
 
-  @Column()
-  product_name: string;
-
-  @Column()
-  niche: string;
-
-  @Column()
-  target_audience: string;
-
-  @Column('text')
+  @Column({ type: 'text' })
   hook: string;
 
-  @Column('text') 
+  @Column({ type: 'text' })
   script: string;
 
-  @Column('simple-array')
-  visuals: string[];
+  @Column({
+    type: 'enum',
+    enum: GenerationType,
+    default: GenerationType.TIKTOK
+  })
+  platform: GenerationType;
 
-  @Column({ default: false })
-  is_favorite: boolean;
+  @Column({
+    type: 'enum',
+    enum: GenerationStatus,
+    default: GenerationStatus.PENDING
+  })
+  status: GenerationStatus;
 
-  @Column({ default: false })
-  is_featured: boolean;
+  @Column({ length: 100, nullable: true })
+  niche?: string;
 
-  @Column({ default: false })
-  is_guest_generation: boolean;
+  @Column({ length: 200, nullable: true })
+  target_audience?: string;
 
-  @Column({ nullable: true })
-  guest_ip_address?: string;
-
-  @Column('jsonb', { nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   performance_data?: {
     views?: number;
     clicks?: number;
     conversions?: number;
     ctr?: number;
+    engagement_rate?: number;
   };
 
-  @Column('jsonb', { nullable: true })
-  generation_metadata?: {
-    processing_time_ms?: number;
-    model_version?: string;
-    ai_provider?: string;
-    tokens_used?: number;
-    retry_count?: number;
-    error_count?: number;
-    generated_at?: string;
-    token_usage?: {
-      inputTokens: number;
-      outputTokens: number;
-      totalTokens: number;
-      estimatedCost: number;
-    };
-    cost?: number;
-    quality_score?: number;
-  };
+  @Column({ default: false })
+  is_favorite: boolean;
 
-  @Column({ type: 'int', default: 0 })
-  share_count: number;
+  @Column({ default: false })
+  is_demo: boolean;
 
   @CreateDateColumn()
   created_at: Date;
 
-  @ManyToOne(() => User, user => user.generations)
-  @JoinColumn({ name: 'user_id' })
-  user?: User;
+  @UpdateDateColumn()
+  updated_at: Date;
 }

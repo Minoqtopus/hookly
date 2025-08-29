@@ -597,12 +597,36 @@
 - **Newsletter & blog foundation** - content marketing strategy
 - **Target**: $1K → $10K MRR
 
-### **Phase 3: Scale & Enterprise (6-12 months)**
-- AI model fine-tuning and optimization
-- Advanced content analytics
-- Enterprise upsells (white-label, custom integrations)
-- **Content monetization** - premium newsletters, sponsored content
-- **Target**: $10K → $100K MRR
+### **Phase 3: Scaling & Optimization (Future Roadmap)**
+
+To ensure long-term growth and increase the lifetime value of our customers, the following features are planned for our "Pro" and future "Agency" tiers. These features are designed to deepen our moat and allow us to move upmarket.
+
+### 1. AI Style Learning
+- **Description**: The AI will analyze a user's existing content (e.g., from a YouTube channel, blog, or provided text samples) to learn their unique brand voice, tone, and style.
+- **Value Proposition**: Ensures all generated scripts are perfectly on-brand, dramatically reducing editing time and increasing content authenticity. This moves us from a "generic script writer" to a "personalized content partner."
+
+### 2. Team Collaboration
+- **Description**: Will allow multiple user seats under a single paid account, with role-based permissions (e.g., Admin, Editor, Writer).
+- **Value Proposition**: Unlocks the agency and marketing team markets. This is a critical feature for moving upmarket and justifies a higher "Agency" pricing tier.
+
+### 3. Advanced Performance Analytics
+- **Description**: Moves beyond the simulated "Viral Score" to provide real, actionable insights on generated content.
+- **Features**:
+    - **Hook Analysis**: A/B test different hooks for the same script.
+    - **CTA Effectiveness**: Track which calls-to-action are performing best.
+    - **Audience Resonance Score**: Predict how well a script will perform with a specific target audience.
+- **Value Proposition**: Delivers on our core promise of removing guesswork by providing data-backed evidence of what works.
+
+### 4. API Access
+- **Description**: A developer API for power users and agencies to integrate Hookly into their own custom content workflows, CMS, or scheduling tools.
+- **Value Proposition**: Creates a sticky ecosystem and unlocks a new, high-value customer segment.
+
+### 5. Expanded Platform Integrations
+- **Description**: Dedicated, optimized modules and templates for professional platforms.
+- **Enterprise Upsells**:
+    - **LinkedIn**: For thought leadership and professional content.
+    - **Facebook**: For community-building and ad content.
+- **Value Proposition**: Opens up new revenue streams through targeted, high-ticket enterprise add-ons.
 
 ### **Phase 4: Market Domination (12+ months)**
 - International expansion and localization

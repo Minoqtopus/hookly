@@ -1,8 +1,11 @@
+import { AuthProvider } from '../../entities/user.entity';
+
 export interface OAuthUserDto {
-  google_id?: string;
   email: string;
-  first_name?: string;
-  last_name?: string;
-  avatar_url?: string;
+  provider: AuthProvider;
+  providerId: string;
+  firstName?: string;
+  lastName?: string;
+  picture?: string;
   access_token?: string;
 }

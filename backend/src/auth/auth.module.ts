@@ -7,15 +7,24 @@ import { EmailModule } from '../email/email.module';
 import { EmailVerification } from '../entities/email-verification.entity';
 import { RefreshToken } from '../entities/refresh-token.entity';
 import { User } from '../entities/user.entity';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { AdminManagementService } from './admin-management.service';
-import { RefreshTokenService } from './refresh-token.service';
-import { TrialAbusePreventionService } from './trial-abuse-prevention.service';
+// Legacy imports removed - using specialized controllers and services
+import { AdminManagementService } from './services/supporting/admin-management.service';
+import { RefreshTokenService } from './services/supporting/refresh-token.service';
+import { TrialAbusePreventionService } from './services/supporting/trial-abuse-prevention.service';
 import { AdminGuard } from './guards/admin.guard';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { SecurityLoggerService } from '../common/services/security-logger.service';
+import { EmailVerificationService } from './services/email-verification.service';
+import { PasswordManagementService } from './services/password-management.service';
+import { OAuthAuthenticationService } from './services/oauth-authentication.service';
+import { CoreAuthenticationService } from './services/core-authentication.service';
+import {
+  CoreAuthenticationController,
+  OAuthController,
+  EmailVerificationController,
+  PasswordManagementController,
+} from './controllers';
 
 @Module({
   imports: [
@@ -25,8 +34,42 @@ import { SecurityLoggerService } from '../common/services/security-logger.servic
     EmailModule,
     forwardRef(() => AnalyticsModule),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, AdminManagementService, RefreshTokenService, TrialAbusePreventionService, JwtStrategy, GoogleStrategy, AdminGuard, SecurityLoggerService],
-  exports: [AuthService, AdminManagementService, RefreshTokenService, TrialAbusePreventionService, AdminGuard, SecurityLoggerService],
+  controllers: [
+    // Staff Engineer specialized controllers (clean architecture)
+    CoreAuthenticationController,
+    OAuthController,
+    EmailVerificationController,
+    PasswordManagementController,
+  ],
+  providers: [
+    // Specialized authentication services (Staff Engineer clean architecture)
+    CoreAuthenticationService,
+    OAuthAuthenticationService,
+    EmailVerificationService,
+    PasswordManagementService,
+    // Supporting services
+    AdminManagementService,
+    RefreshTokenService,
+    TrialAbusePreventionService,
+    SecurityLoggerService,
+    // Passport strategies
+    JwtStrategy,
+    GoogleStrategy,
+    // Guards
+    AdminGuard,
+  ],
+  exports: [
+    // Specialized services for other modules
+    CoreAuthenticationService,
+    OAuthAuthenticationService,
+    EmailVerificationService,
+    PasswordManagementService,
+    // Supporting services
+    AdminManagementService, 
+    RefreshTokenService, 
+    TrialAbusePreventionService, 
+    AdminGuard, 
+    SecurityLoggerService
+  ],
 })
 export class AuthModule {}

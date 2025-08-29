@@ -1,23 +1,32 @@
-import { ConditionalProviders } from '@/app/components/providers';
-import { generateMetadata as getMetadata } from '@/app/lib/copy';
-import { Inter } from 'next/font/google';
-import './globals.css';
+import { cn } from "@/lib/cn";
+import type { Metadata } from "next";
+import { Inter as FontSans } from "next/font/google";
+import "./globals.css";
 
-const inter = Inter({ subsets: ['latin'] });
+const fontSans = FontSans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
 
-export const metadata = getMetadata();
+export const metadata: Metadata = {
+  title: "Hookly - AI-Powered Viral Content Generation",
+  description: "Transform your business into a viral content creator with AI-powered UGC ads for TikTok, Instagram, and YouTube.",
+};
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <ConditionalProviders>
-          {children}
-        </ConditionalProviders>
+    <html lang="en" suppressHydrationWarning>
+      <body 
+        className={cn(
+          "min-h-screen bg-background font-sans antialiased",
+          fontSans.variable
+        )}
+      >
+        {children}
       </body>
     </html>
   );

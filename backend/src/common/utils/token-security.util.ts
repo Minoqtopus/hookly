@@ -177,4 +177,51 @@ export class TokenSecurityUtil {
       return { isValid: false, error: 'Token verification failed' };
     }
   }
+
+  /**
+   * Generate secure token with embedded data (for emails, API keys)
+   * 
+   * @param secret - HMAC secret key
+   * @param data - Data to embed in token
+   * @returns Secure token with embedded data
+   */
+  static generateSecureToken(secret: string, data: any): string {
+    const payload = JSON.stringify(data);
+    const encodedPayload = Buffer.from(payload).toString('base64url');
+    const signature = crypto
+      .createHmac('sha256', secret)
+      .update(encodedPayload)
+      .digest('base64url');
+    
+    return `${encodedPayload}.${signature}`;
+  }
+
+  /**
+   * Verify secure token and extract embedded data
+   * 
+   * @param token - The secure token to verify
+   * @param secret - HMAC secret key
+   * @returns Extracted data if valid, throws error if invalid
+   */
+  static verifySecureToken(token: string, secret: string): any {
+    const [encodedPayload, signature] = token.split('.');
+    
+    if (!encodedPayload || !signature) {
+      throw new Error('Invalid token format');
+    }
+
+    // Verify signature
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(encodedPayload)
+      .digest('base64url');
+
+    if (signature !== expectedSignature) {
+      throw new Error('Invalid token signature');
+    }
+
+    // Decode and return data
+    const payload = Buffer.from(encodedPayload, 'base64url').toString('utf8');
+    return JSON.parse(payload);
+  }
 }

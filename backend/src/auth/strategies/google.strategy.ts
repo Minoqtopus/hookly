@@ -38,17 +38,26 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     done: VerifyCallback,
   ): Promise<any> {
     try {
+      console.log('[GOOGLE_STRATEGY] Starting validation with profile:', JSON.stringify(profile, null, 2));
+      
       // Validate required profile fields exist
       if (!profile?.id || !profile?.emails?.[0]?.value) {
+        console.error('[GOOGLE_STRATEGY] Missing required fields:', { 
+          hasId: !!profile?.id, 
+          hasEmails: !!profile?.emails, 
+          firstEmail: profile?.emails?.[0]?.value 
+        });
         return done(new Error('Invalid Google profile: missing required fields'), null);
       }
 
-      const { id, name, emails, photos } = profile;
+      const { id, name, emails } = profile;
+      console.log('[GOOGLE_STRATEGY] Extracted fields:', { id, name, emails });
       
       // Validate email format
       const email = emails[0].value;
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
+        console.error('[GOOGLE_STRATEGY] Invalid email format:', email);
         return done(new Error('Invalid email format from Google profile'), null);
       }
 
@@ -58,20 +67,26 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         email: email.toLowerCase().trim().substring(0, 255), // Normalize and limit
         first_name: name?.givenName?.substring(0, 50) || '', // Limit length
         last_name: name?.familyName?.substring(0, 50) || '', // Limit length
-        avatar_url: photos?.[0]?.value?.substring(0, 500) || null, // Limit URL length
         // Note: We don't store OAuth access tokens for security
         oauth_provider: 'google',
         oauth_validated_at: new Date().toISOString(),
       };
 
+      console.log('[GOOGLE_STRATEGY] Created user object:', JSON.stringify(user, null, 2));
+
       // Additional security validation
       if (user.email.length < 3 || user.google_id.length < 1) {
+        console.error('[GOOGLE_STRATEGY] Security validation failed:', { 
+          emailLength: user.email.length, 
+          googleIdLength: user.google_id.length 
+        });
         return done(new Error('Invalid Google profile data'), null);
       }
 
+      console.log('[GOOGLE_STRATEGY] Validation successful, calling done()');
       done(null, user);
     } catch (error) {
-      console.error('Google OAuth validation error:', error);
+      console.error('[GOOGLE_STRATEGY] Unexpected error:', error);
       done(new Error('OAuth validation failed'), null);
     }
   }

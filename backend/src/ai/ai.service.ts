@@ -1,237 +1,223 @@
-import { Injectable } from '@nestjs/common';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import OpenAI from 'openai';
-import { ContentGenerationRequest, ContentGenerationResponse, ContentGeneratorPort } from '../core/ports/content-generator.port';
 
-export interface UGCGenerationInput {
+export interface GenerationRequest {
   productName: string;
   niche: string;
   targetAudience: string;
+  platform: 'instagram' | 'tiktok' | 'youtube';
 }
 
-export interface UGCGenerationOutput {
-  script: string;
+export interface GeneratedContent {
+  title: string;
   hook: string;
-  visuals: string[];
-}
-
-export interface UGCVariationsOutput {
-  variations: UGCGenerationOutput[];
-  performance: {
-    estimatedViews: number;
-    estimatedCTR: number;
-    viralScore: number;
-  }[];
+  script: string;
+  performance_data: {
+    views: number;
+    clicks: number;
+    conversions: number;
+    ctr: number;
+    engagement_rate: number;
+  };
 }
 
 @Injectable()
-export class AIService implements ContentGeneratorPort {
-  private openai: OpenAI;
+export class AiService {
+  private readonly logger = new Logger(AiService.name);
+  private genAI: GoogleGenerativeAI;
+  private model: any;
 
   constructor(private configService: ConfigService) {
-    this.openai = new OpenAI({
-      apiKey: this.configService.get<string>('OPENAI_API_KEY'),
-    });
+    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+    if (!apiKey) {
+      this.logger.warn('GEMINI_API_KEY not found. AI generation will use fallback templates.');
+      return;
+    }
+
+    this.genAI = new GoogleGenerativeAI(apiKey);
+    this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    this.logger.log('Gemini AI service initialized successfully');
   }
 
-  async generateUGCContent(input: UGCGenerationInput): Promise<UGCGenerationOutput> {
-    const { productName, niche, targetAudience } = input;
-
-    const prompt = `Create a TikTok UGC ad script for the following product:
-
-Product: ${productName}
-Niche: ${niche}
-Target Audience: ${targetAudience}
-
-Please provide:
-1. A compelling hook (1-2 sentences that grab attention in the first 3 seconds)
-2. A full script (30-60 seconds, conversational, authentic UGC style)
-3. Visual suggestions (5-7 specific shot ideas for the video)
-
-Format your response as JSON with the following structure:
-{
-  "hook": "your hook here",
-  "script": "your full script here",
-  "visuals": ["visual 1", "visual 2", "visual 3", "visual 4", "visual 5"]
-}
-
-Make it sound authentic, relatable, and focused on solving a problem or showing results. Use a conversational tone that doesn't feel like a traditional ad.`;
+  async generateContent(request: GenerationRequest): Promise<GeneratedContent> {
+    if (!this.model) {
+      this.logger.warn('Gemini API not available, using fallback generation');
+      return this.generateFallbackContent(request);
+    }
 
     try {
-      const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert UGC content creator who specializes in creating viral TikTok ads. You understand what makes content engaging, authentic, and conversion-focused.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        temperature: 0.8,
-        max_tokens: 1000,
-      });
+      const prompt = this.buildPrompt(request);
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
 
-      const responseContent = completion.choices[0].message.content;
-      
-      // Parse the JSON response
-      const parsedResponse = JSON.parse(responseContent);
-      
-      return {
-        script: parsedResponse.script,
-        hook: parsedResponse.hook,
-        visuals: parsedResponse.visuals || [],
-      };
+      return this.parseAiResponse(text, request);
     } catch (error) {
-      console.error('AI API Error:', error);
-      throw new Error('Failed to generate UGC content');
+      this.logger.error('AI generation failed, using fallback', error instanceof Error ? error.message : 'Unknown error');
+      return this.generateFallbackContent(request);
     }
   }
 
-  async generateUGCVariations(request: ContentGenerationRequest, count: number): Promise<ContentGenerationResponse[]> {
-    const { productName, niche, targetAudience } = request;
+  private buildPrompt(request: GenerationRequest): string {
+    const platformSpecs = this.getPlatformSpecs(request.platform);
+    
+    return `Generate high-converting UGC (User Generated Content) for ${request.platform.toUpperCase()} that feels authentic and viral-worthy.
 
-    const prompt = `Create ${count} distinct TikTok UGC ad variations for the following product. Each variation should have a different approach and angle:
+PRODUCT CONTEXT:
+- Product/Service: ${request.productName}
+- Niche: ${request.niche}
+- Target Audience: ${request.targetAudience}
 
-Product: ${productName}
-Niche: ${niche}
-Target Audience: ${targetAudience}
+PLATFORM: ${request.platform.toUpperCase()}
+${platformSpecs}
 
-For each variation, provide:
-1. A compelling hook (1-2 sentences that grab attention in the first 3 seconds)
-2. A full script (30-60 seconds, conversational, authentic UGC style)
-3. Visual suggestions (5-7 specific shot ideas for the video)
+CONTENT REQUIREMENTS:
+1. Write a compelling TITLE (max 80 characters)
+2. Create an attention-grabbing HOOK (first 1-2 sentences that stop the scroll)
+3. Write a complete SCRIPT that feels authentic and personal
 
-VARIATION APPROACHES:
-- Variation 1: Problem/Solution focused - Start with a relatable problem, show the solution
-- Variation 2: Transformation/Results - Focus on before/after, personal experience
-- Variation 3: Social Proof/Trending - Emphasize popularity, FOMO, what everyone's talking about
+TONE & STYLE:
+- Sound like a real person sharing their experience
+- Use casual, conversational language
+- Include specific details and numbers when possible
+- Be enthusiastic but not salesy
+- Use emotional triggers (curiosity, FOMO, social proof)
 
-Format your response as JSON with the following structure:
+STRUCTURE GUIDELINES:
+- Start with a hook that creates curiosity or controversy
+- Share a personal story or transformation
+- Highlight specific benefits/results
+- Include a soft call-to-action
+- Use platform-appropriate formatting and hashtags
+
+FORMAT YOUR RESPONSE AS JSON:
 {
-  "variations": [
-    {
-      "hook": "variation 1 hook here",
-      "script": "variation 1 full script here",
-      "visuals": ["visual 1", "visual 2", "visual 3", "visual 4", "visual 5"]
-    },
-    {
-      "hook": "variation 2 hook here", 
-      "script": "variation 2 full script here",
-      "visuals": ["visual 1", "visual 2", "visual 3", "visual 4", "visual 5"]
-    },
-    {
-      "hook": "variation 3 hook here",
-      "script": "variation 3 full script here", 
-      "visuals": ["visual 1", "visual 2", "visual 3", "visual 4", "visual 5"]
-    }
-  ]
+  "title": "Your compelling title here",
+  "hook": "Your attention-grabbing hook here",
+  "script": "Your complete script here with proper formatting"
 }
 
-Make each variation feel authentic, relatable, and focused on solving a problem or showing results. Use different conversational tones and approaches for each variation.`;
+Generate content that feels authentic, personal, and viral-worthy for ${request.targetAudience} interested in ${request.niche}.`;
+  }
 
+  private getPlatformSpecs(platform: string): string {
+    const specs = {
+      tiktok: `
+- Length: 60-90 seconds of content (400-600 words)
+- Style: Fast-paced, energetic, trend-focused
+- Format: Quick tips, transformations, before/after
+- Use relevant hashtags and trending sounds references
+- Include hook in first 3 seconds`,
+      
+      instagram: `
+- Length: 30-60 seconds (300-500 words)  
+- Style: Visually appealing, lifestyle-focused
+- Format: Stories, carousels, reels
+- Use Instagram-specific language and hashtags
+- Focus on aesthetics and lifestyle benefits`,
+      
+      youtube: `
+- Length: 60 seconds to 3 minutes (400-1200 words)
+- Style: Engaging, educational, entertaining
+- Format: Hook, story, value, call-to-action
+- Use YouTube Shorts format for under 60 seconds
+- Focus on retention and watch time`,
+      
+      facebook: `
+- Length: 100-300 words
+- Style: Community-focused, discussion-starter
+- Format: Personal story with engaging visuals
+- Encourage comments and shares
+- Use Facebook groups and community language`,
+      
+      linkedin: `
+- Length: 150-400 words
+- Style: Professional, value-driven, educational
+- Format: Industry insights, case studies, lessons learned
+- Use professional language and industry hashtags
+- Focus on business value and ROI`
+    };
+
+    return specs[platform] || specs.tiktok;
+  }
+
+  private parseAiResponse(text: string, request: GenerationRequest): GeneratedContent {
     try {
-      const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert UGC content creator who specializes in creating viral TikTok ads. You understand what makes content engaging, authentic, and conversion-focused. You can create multiple distinct variations with different approaches and angles.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        temperature: 0.9, // Higher temperature for more variation
-        max_tokens: 2500, // Increased for 3 variations
-      });
-
-      const responseContent = completion.choices[0].message.content;
-      
-      // Parse the JSON response
-      const parsedResponse = JSON.parse(responseContent);
-      
-      // Generate fake but believable performance metrics for each variation
-      const generatePerformanceMetrics = (index: number) => {
-        const baseViews = 45000 + (index * 15000) + Math.random() * 20000;
-        const baseCTR = 3.5 + (index * 0.3) + Math.random() * 1.2;
-        const baseViral = 7.0 + (index * 0.4) + Math.random() * 1.5;
+      // Extract JSON from the AI response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
         
         return {
-          estimatedViews: Math.round(baseViews),
-          estimatedCTR: Number(baseCTR.toFixed(1)),
-          viralScore: Number(Math.min(10, baseViral).toFixed(1))
+          title: parsed.title || `${request.productName} Changed My Life`,
+          hook: parsed.hook || `I was skeptical about ${request.productName} until this happened...`,
+          script: parsed.script || this.generateFallbackScript(request),
+          performance_data: this.generatePerformanceData()
         };
-      };
-
-      // Convert to ContentGenerationResponse array
-      return (parsedResponse.variations || []).map((variation: any, index: number) => ({
-        hook: variation.hook,
-        script: variation.script,
-        visuals: variation.visuals || [],
-        performance: generatePerformanceMetrics(index)
-      }));
-    } catch (error) {
-      console.error('AI API Error:', error);
-      throw new Error('Failed to generate UGC variations');
+      }
+    } catch (parseError) {
+      this.logger.warn('Failed to parse AI response as JSON', parseError instanceof Error ? parseError.message : 'Unknown parse error');
     }
-  }
 
-  async validateContent(content: string, context: ContentGenerationRequest): Promise<{
-    quality: number;
-    uniqueness: number;
-    relevance: number;
-    suggestions: string[];
-  }> {
-    // Mock implementation for now
+    // If JSON parsing fails, extract content manually
     return {
-      quality: 0.85,
-      uniqueness: 0.78,
-      relevance: 0.92,
-      suggestions: ['Consider adding more specific details', 'Make the hook more attention-grabbing']
+      title: this.extractTitle(text) || `${request.productName} Success Story`,
+      hook: this.extractHook(text) || `You won't believe what ${request.productName} did for me...`,
+      script: text || this.generateFallbackScript(request),
+      performance_data: this.generatePerformanceData()
     };
   }
 
-  async getProviderHealth(): Promise<{
-    status: 'healthy' | 'degraded' | 'unhealthy';
-    responseTime: number;
-    errorRate: number;
-    uptime: number;
-    costPerGeneration: number;
-  }> {
-    // Mock implementation for now
+  private extractTitle(text: string): string | null {
+    const titleMatch = text.match(/(?:title|TITLE)["']?:\s*["']?([^"'\n]+)["']?/i);
+    return titleMatch ? titleMatch[1].trim() : null;
+  }
+
+  private extractHook(text: string): string | null {
+    const hookMatch = text.match(/(?:hook|HOOK)["']?:\s*["']?([^"'\n]+)["']?/i);
+    return hookMatch ? hookMatch[1].trim() : null;
+  }
+
+  private generateFallbackContent(request: GenerationRequest): GeneratedContent {
     return {
-      status: 'healthy',
-      responseTime: 2500,
-      errorRate: 0.02,
-      uptime: 0.998,
-      costPerGeneration: 0.015
+      title: `How ${request.productName} Transformed My ${request.niche} Game`,
+      hook: `I was struggling with ${request.niche} until I discovered ${request.productName}. The results were incredible...`,
+      script: this.generateFallbackScript(request),
+      performance_data: this.generatePerformanceData()
     };
   }
 
-  getCapabilities(): any {
+  private generateFallbackScript(request: GenerationRequest): string {
+    return `I was struggling with ${request.niche} until I discovered ${request.productName}. The results were incredible...
+
+Here's what happened:
+• Week 1: I noticed immediate improvements
+• Week 2: Friends started asking what changed  
+• Week 3: I realized this was a game-changer
+• Week 4: I couldn't imagine going back
+
+${request.productName} completely transformed how I approach ${request.niche}.
+
+Perfect for ${request.targetAudience} who want real results.
+
+If you're struggling like I was, don't wait. This actually works.
+
+What's been your biggest challenge with ${request.niche}? Let me know below! 👇`;
+  }
+
+  private generatePerformanceData() {
+    // Generate realistic performance metrics with some randomization
+    const baseViews = Math.floor(Math.random() * 80000) + 20000; // 20K-100K views
+    const baseCTR = parseFloat((Math.random() * 4 + 3).toFixed(1)); // 3-7% CTR
+    const conversionRate = parseFloat((Math.random() * 0.05 + 0.02).toFixed(3)); // 2-7% conversion
+    
     return {
-      supportsCreativeContent: true,
-      supportsSpeedOptimization: false,
-      supportsPremiumQuality: true,
-      maxTokensPerRequest: 4096,
-      costPer1MInputTokens: 0.15,
-      costPer1MOutputTokens: 0.60
+      views: baseViews,
+      clicks: Math.floor(baseViews * (baseCTR / 100)),
+      conversions: Math.floor(baseViews * conversionRate),
+      ctr: baseCTR,
+      engagement_rate: parseFloat((Math.random() * 8 + 5).toFixed(1)) // 5-13% engagement
     };
-  }
-
-  getLastGenerationMetrics(): any {
-    return null;
-  }
-
-  getProviderId(): string {
-    return 'openai';
-  }
-
-  async isAvailable(): Promise<boolean> {
-    return !!this.configService.get<string>('OPENAI_API_KEY');
   }
 }

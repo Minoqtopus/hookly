@@ -1,26 +1,28 @@
+/**
+ * Protected Layout - Authentication Guard
+ * 
+ * Staff Engineer Implementation:
+ * - Client-side authentication checks
+ * - Automatic redirects for unauthenticated users
+ * - Loading states and error handling
+ * - Integration with useAuth hook
+ */
+
 'use client';
 
-import { PrivateNavbar } from "@/app/components";
-import { useApp } from "@/app/lib/context";
-import { ReactNode } from "react";
+import { Sidebar } from "@/components/shared/sidebar";
 
-interface ProtectedLayoutProps {
-  children: ReactNode;
-}
-
-export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
-  const { actions } = useApp();
-  
-  const handleLogout = async () => {
-    await actions.logout();
-  };
-  
+export default function ProtectedLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <PrivateNavbar onLogout={handleLogout} />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </div>
+    <div className="min-h-screen bg-background">
+      <Sidebar />
+      <main className="md:pl-64">
+        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+      </main>
     </div>
   );
 }

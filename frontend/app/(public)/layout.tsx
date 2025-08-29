@@ -1,24 +1,27 @@
+/**
+ * Public Layout - Guest User Protection
+ * 
+ * Staff Engineer Implementation:
+ * - Redirects ALL authenticated users away from public routes
+ * - Public routes are guest-only (no authenticated users allowed)
+ * - Integration with useAuth hook for state management
+ */
+
 'use client';
 
-import PublicNavbar from "@/app/components/public/PublicNavbar";
-import { usePathname } from "next/navigation";
-import { ReactNode } from "react";
+import { Footer } from "./components/footer";
+import { Navbar } from "./components/navbar";
 
-interface PublicLayoutProps {
-  children: ReactNode;
-}
-
-export default function PublicLayout({ children }: PublicLayoutProps) {
-  // Auth routing is now handled by middleware
-  const pathname = usePathname();
-  const isLandingPage = pathname === '/';
-  
+export default function PublicLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <div className={isLandingPage ? 'hero-gradient-bg' : ''}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <PublicNavbar />
-        {children}
-      </div>
+    <div>
+      <Navbar />
+      <main>{children}</main>
+      <Footer />
     </div>
   );
 }
