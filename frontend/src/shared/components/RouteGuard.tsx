@@ -10,7 +10,7 @@
 
 'use client';
 
-import { useAuth } from '@/src/domains/auth';
+import { useAuth } from '@/domains/auth';
 import { useRouter } from 'next/navigation';
 import { ReactNode, useEffect } from 'react';
 

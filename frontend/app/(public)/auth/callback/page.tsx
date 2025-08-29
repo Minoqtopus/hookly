@@ -16,8 +16,8 @@
 
 'use client';
 
-import { useAuth } from '@/src/domains/auth';
-import { TokenService } from '@/src/shared/services';
+import { useAuth } from '@/domains/auth';
+import { TokenService } from '@/shared/services';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -46,10 +46,9 @@ export default function OAuthCallbackPage() {
           return;
         }
 
-        // Parse user data
-        let userData;
+        // Parse user data (validate format)
         try {
-          userData = JSON.parse(decodeURIComponent(userParam));
+          JSON.parse(decodeURIComponent(userParam));
         } catch (parseError) {
           setError('Invalid user data from OAuth callback');
           setTimeout(() => router.push('/login'), 3000);
