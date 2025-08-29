@@ -1,454 +1,80 @@
-'use client';
-
-import { AuthModal } from '@/app/components/modals';
-import { getProcessedDemoContent } from '@/app/lib/copy';
-import { generationApi } from '@/app/lib/api';
-import type { GenerationItem, DemoGenerationRequest } from '@/app/lib/contracts';
-import {
-  ArrowRight,
-  CheckCircle,
-  Copy,
-  Lightbulb,
-  Play,
-  RefreshCw,
-  Sparkles,
-  Target
-} from 'lucide-react';
-import Link from 'next/link';
-import { useState, useEffect } from 'react';
+/**
+ * Demo Page
+ * 
+ * Staff Engineer Design: Clean, scalable foundation
+ * Business Logic: Basic demo interface structure
+ */
 
 export default function DemoPage() {
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedAds, setGeneratedAds] = useState<GenerationItem[] | null>(null);
-  const [formData, setFormData] = useState({
-    productName: '',
-    niche: '',
-    targetAudience: ''
-  });
-  const [error, setError] = useState<string | null>(null);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [showStickyBar, setShowStickyBar] = useState(false);
-  const [stickyBarDismissed, setStickyBarDismissed] = useState(false);
-
-  // Get processed copy with dynamic values
-  const copy = getProcessedDemoContent();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsGenerating(true);
-
-    try {
-      const request: DemoGenerationRequest = {
-        productName: formData.productName,
-        niche: formData.niche,
-        targetAudience: formData.targetAudience
-      };
-
-      const response = await generationApi.generateDemo(request);
-      setGeneratedAds(response.data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : copy.results.errors.generalError);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleCopyToClipboard = async (text: string, field: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedField(field);
-      setTimeout(() => setCopiedField(null), 2000);
-    } catch (err) {
-      console.error(copy.results.errors.copyFailed + ':', err);
-    }
-  };
-
-  const handleTryAgain = () => {
-    setGeneratedAds(null);
-    setFormData({ productName: '', niche: '', targetAudience: '' });
-    setError(null);
-    setShowStickyBar(false);
-  };
-
-  // Show sticky bar after user interacts with page
-  useEffect(() => {
-    if (!stickyBarDismissed && !showAuthModal) {
-      const timer = setTimeout(() => {
-        setShowStickyBar(true);
-      }, 10000); // Show after 10 seconds
-
-      return () => clearTimeout(timer);
-    }
-  }, [stickyBarDismissed, showAuthModal]);
-
-  const handleDismissStickyBar = () => {
-    setShowStickyBar(false);
-    setStickyBarDismissed(true);
-  };
-
   return (
-    <div className="min-h-screen">
-      {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {!generatedAds ? (
-          // Demo Form
-          <div className="space-y-10">
-            {/* Header */}
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            See It In Action
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Watch how our AI platform creates viral content in seconds
+          </p>
+        </div>
+
+        {/* Demo Video */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-12">
+          <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
             <div className="text-center">
-              <div className="inline-flex items-center bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 text-blue-800 px-6 py-3 rounded-full mb-6">
-                <Play className="h-5 w-5 mr-2" />
-                <span className="font-medium">
-                  {copy.form.badge}
-                </span>
-              </div>
-              <h1 className="text-5xl font-bold text-gray-900 mb-6">
-                {copy.form.title.prefix} <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-purple-600">{copy.form.title.highlight}</span> {copy.form.title.suffix}
-              </h1>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                {copy.form.subtitle}
-              </p>
-            </div>
-
-            {/* Demo Limitations Notice */}
-            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-6 max-w-2xl mx-auto">
-              <div className="flex">
-                <Lightbulb className="h-6 w-6 text-amber-600 mt-0.5 mr-4 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-amber-900 mb-2">{copy.form.limitations.title}</h3>
-                  <p className="text-amber-800">
-                    {copy.form.limitations.text.prefix}{' '}
-                    <button 
-                      onClick={() => setShowAuthModal(true)}
-                      className="underline hover:text-amber-900 transition-colors"
-                    >
-                      {copy.form.limitations.text.linkText}
-                    </button>
-                    {' '}{copy.form.limitations.text.suffix}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Suggestions */}
-            <div className="max-w-4xl mx-auto mb-8">
-              <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl border-2 border-blue-200 shadow-sm p-8">
-                <h3 className="font-semibold text-gray-900 mb-4 text-center">{copy.form.quickStart.title}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {copy.form.quickStart.suggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setFormData(suggestion)}
-                      className="text-left p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 hover:shadow-md transition-all duration-200 shadow-sm hover:scale-[1.02] cursor-pointer"
-                    >
-                      <div className="font-medium text-gray-900">{suggestion.productName}</div>
-                      <div className="text-sm text-gray-600">{suggestion.niche} • {suggestion.targetAudience}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Form */}
-            <div className="max-w-4xl mx-auto">
-              <form onSubmit={handleSubmit} className="bg-gradient-to-br from-white to-gray-50 rounded-2xl border-2 border-gray-300 hover:border-primary-300 shadow-sm hover:shadow-md transition-all duration-200 p-8">
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-3">
-                      {copy.form.fields.productName.label}
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.productName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, productName: e.target.value }))}
-                      placeholder={copy.form.fields.productName.placeholder}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
-                      required
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      {copy.form.fields.productName.helpText}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-3">
-                      {copy.form.fields.niche.label}
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.niche}
-                      onChange={(e) => setFormData(prev => ({ ...prev, niche: e.target.value }))}
-                      placeholder={copy.form.fields.niche.placeholder}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-3">
-                      {copy.form.fields.targetAudience.label}
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.targetAudience}
-                      onChange={(e) => setFormData(prev => ({ ...prev, targetAudience: e.target.value }))}
-                      placeholder={copy.form.fields.targetAudience.placeholder}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
-                      required
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      {copy.form.fields.targetAudience.helpText}
-                    </p>
-                  </div>
-
-                  {error && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <p className="text-red-700 text-sm">{error}</p>
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={isGenerating || !formData.productName || !formData.niche || !formData.targetAudience}
-                    className="w-full bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 text-white font-semibold text-lg py-4 px-8 rounded-xl transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                        {copy.form.generateButton.loading}
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-6 w-6 mr-3" />
-                        {copy.form.generateButton.default}
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
+              <span className="text-6xl mb-4 block">🎬</span>
+              <p className="text-xl font-medium text-gray-600">Demo Video</p>
+              <p className="text-gray-500">Watch our platform in action</p>
             </div>
           </div>
-        ) : (
-          // Demo Results
-          <div className="space-y-8">
-            {/* Header */}
-            <div className="text-center">
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                {copy.results.header.title}
-              </h1>
-              <p className="text-gray-600">
-                {copy.results.header.subtitle}
-              </p>
+        </div>
+
+        {/* Demo Steps */}
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">1</span>
             </div>
-
-            {/* Overall Performance Summary */}
-            <div className="card bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
-                Average Performance Across Platforms
-              </h3>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-blue-600">
-                    {Math.round(generatedAds.reduce((sum, ad) => sum + ad.performance_data.views, 0) / generatedAds.length / 1000)}K
-                  </div>
-                  <div className="text-xs text-gray-600">Avg Views</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-green-600">
-                    {(generatedAds.reduce((sum, ad) => sum + ad.performance_data.ctr, 0) / generatedAds.length).toFixed(1)}%
-                  </div>
-                  <div className="text-xs text-gray-600">Avg CTR</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-purple-600">
-                    {(generatedAds.reduce((sum, ad) => sum + ad.performance_data.engagement_rate, 0) / generatedAds.length).toFixed(1)}%
-                  </div>
-                  <div className="text-xs text-gray-600">Avg Engagement</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Generated Content - Multiple Platforms */}
-            <div className="space-y-8">
-              {generatedAds.map((ad) => {
-                const platformColors = {
-                  instagram: 'from-pink-50 to-purple-50 border-pink-200',
-                  tiktok: 'from-gray-50 to-slate-50 border-gray-200',
-                  twitter: 'from-blue-50 to-cyan-50 border-blue-200'
-                };
-                
-                return (
-                  <div key={ad.id} className={`bg-gradient-to-br ${platformColors[ad.platform as keyof typeof platformColors] || 'from-gray-50 to-slate-50 border-gray-200'} rounded-xl border-2 shadow-sm p-6`}>
-                    {/* Platform Header */}
-                    <div className="flex items-center justify-between mb-6">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900 capitalize">
-                          {ad.platform} Content
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1">{ad.title}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-medium text-gray-900">
-                          {(ad.performance_data.views / 1000).toFixed(0)}K views
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {ad.performance_data.engagement_rate}% engagement
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Hook Section */}
-                    <div className="mb-6">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold text-gray-900 flex items-center">
-                          <Target className="h-4 w-4 text-primary-600 mr-2" />
-                          Hook
-                        </h4>
-                        <button
-                          onClick={() => handleCopyToClipboard(ad.hook, `hook-${ad.id}`)}
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <div className="bg-white rounded-lg p-4 border">
-                        <p className="text-gray-800 font-medium italic">
-                          {ad.hook}
-                        </p>
-                      </div>
-                      {copiedField === `hook-${ad.id}` && (
-                        <p className="text-green-600 text-xs mt-2">Copied to clipboard!</p>
-                      )}
-                    </div>
-
-                    {/* Script Section */}
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold text-gray-900">Full Script</h4>
-                        <button
-                          onClick={() => handleCopyToClipboard(ad.script, `script-${ad.id}`)}
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <div className="bg-white rounded-lg p-4 border">
-                        <p className="text-gray-800 whitespace-pre-line text-sm">
-                          {ad.script}
-                        </p>
-                      </div>
-                      {copiedField === `script-${ad.id}` && (
-                        <p className="text-green-600 text-xs mt-2">Copied to clipboard!</p>
-                      )}
-                    </div>
-
-                    {/* Performance Details */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
-                      <div className="text-center">
-                        <div className="font-semibold text-gray-900">{ad.performance_data.clicks}</div>
-                        <div className="text-xs text-gray-500">Clicks</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-semibold text-gray-900">{ad.performance_data.conversions}</div>
-                        <div className="text-xs text-gray-500">Conversions</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-semibold text-gray-900">{ad.performance_data.ctr}%</div>
-                        <div className="text-xs text-gray-500">CTR</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-semibold text-gray-900">{ad.performance_data.engagement_rate}%</div>
-                        <div className="text-xs text-gray-500">Engagement</div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Demo to Trial Conversion */}
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-300 shadow-sm p-6">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{copy.results.conversion.title}</h3>
-                <p className="text-gray-600 mb-4">
-                  {copy.results.conversion.subtitle}
-                </p>
-                
-                <div className="bg-white rounded-lg p-4 mb-4 text-left">
-                  <h4 className="font-semibold text-gray-900 mb-2">{copy.results.conversion.benefits.title}</h4>
-                  <ul className="space-y-1 text-sm text-gray-700">
-                    {copy.results.conversion.benefits.items.map((item, index) => (
-                      <li key={index}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <button 
-                    onClick={() => setShowAuthModal(true)}
-                    className="btn-primary text-lg px-8 py-3"
-                  >
-                    {copy.results.conversion.buttons.primary}
-                  </button>
-                  <Link href="/pricing" className="btn-secondary text-lg px-8 py-3 flex items-center justify-center">
-                    {copy.results.conversion.buttons.secondary}
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Link>
-                </div>
-                <p className="text-xs text-gray-500 mt-3">
-                  {copy.results.conversion.disclaimer}
-                </p>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-center">
-              <button
-                onClick={handleTryAgain}
-                className="btn-secondary flex items-center"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-{copy.results.tryAgainButton}
-              </button>
-            </div>
+            <h3 className="text-xl font-semibold mb-2">Describe Your Content</h3>
+            <p className="text-gray-600">Tell us what you want to create and who it's for</p>
           </div>
-        )}
-      </div>
-
-      {/* Subtle CTA Bar */}
-      {showStickyBar && (
-        <div className="fixed bottom-4 right-4 bg-white border border-gray-200 shadow-lg rounded-lg p-4 max-w-xs z-50 transform transition-all duration-300">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className="text-sm text-gray-700 mb-2">{copy.stickyBar.title}</p>
-              <button
-                onClick={() => setShowAuthModal(true)}
-                className="text-primary-600 hover:text-primary-700 text-sm font-medium underline"
-              >
-                {copy.stickyBar.button}
-              </button>
+          
+          <div className="text-center">
+            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">2</span>
             </div>
-            <button
-              onClick={handleDismissStickyBar}
-              className="text-gray-400 hover:text-gray-600 ml-2"
-              aria-label="Close"
-            >
-              {copy.stickyBar.closeButton}
+            <h3 className="text-xl font-semibold mb-2">AI Generates Content</h3>
+            <p className="text-gray-600">Our advanced AI creates engaging content in seconds</p>
+          </div>
+          
+          <div className="text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">3</span>
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Export & Share</h3>
+            <p className="text-gray-600">Download your content and share it on social media</p>
+          </div>
+        </div>
+
+        {/* CTA Section */}
+        <div className="bg-blue-600 text-white rounded-lg p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">
+            Ready to Create Your Own?
+          </h2>
+          <p className="text-xl mb-8 text-blue-100">
+            Start with 15 free generations and see the magic happen
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors">
+              Start Free Trial
+            </button>
+            <button className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-blue-600 transition-colors">
+              View Pricing
             </button>
           </div>
         </div>
-      )}
-
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        triggerSource="nav_signup"
-      />
+      </div>
     </div>
   );
 }

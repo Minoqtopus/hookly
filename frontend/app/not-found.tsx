@@ -1,12 +1,17 @@
+/**
+ * 404 Not Found Page
+ * 
+ * Staff Engineer Design: Clean 404 page without dependencies
+ * Works for both authenticated and unauthenticated users
+ */
+
 'use client';
 
-import { useAuth } from '@/app/lib/context';
 import { Home, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function NotFound() {
-  const { isAuthenticated } = useAuth();
   const router = useRouter();
 
   return (
@@ -25,13 +30,13 @@ export default function NotFound() {
         </p>
 
         <div className="space-y-3">
-          <button
-            onClick={() => isAuthenticated ? router.push('/dashboard') : router.push('/')}
-            className="w-full bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+          <Link
+            href="/"
+            className="w-full bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-colors inline-flex items-center justify-center"
           >
-            <Home className="h-4 w-4 mr-2 inline" />
-            {isAuthenticated ? 'Go to Dashboard' : 'Go Home'}
-          </button>
+            <Home className="h-4 w-4 mr-2" />
+            Go Home
+          </Link>
 
           <div className="flex gap-3">
             <button
@@ -42,14 +47,12 @@ export default function NotFound() {
               Back
             </button>
 
-            {!isAuthenticated && (
-              <Link
-                href="/demo"
-                className="flex-1 border border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-3 px-4 rounded-lg transition-colors text-center"
-              >
-                Demo
-              </Link>
-            )}
+            <Link
+              href="/demo"
+              className="flex-1 border border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-3 px-4 rounded-lg transition-colors text-center"
+            >
+              Try Demo
+            </Link>
           </div>
         </div>
       </div>

@@ -1,212 +1,199 @@
-'use client';
-
-import { AuthModal } from '@/app/components/modals';
-import { pricingPage, pricingPlans, trialLimit, costPerGeneration, comparison, getProcessedFaqItems } from '@/app/lib/copy';
-import { Check, Zap } from 'lucide-react';
-import Link from 'next/link';
-import { useState } from 'react';
+/**
+ * Pricing Page
+ * 
+ * Staff Engineer Design: Clean, scalable foundation
+ * Business Logic: Basic pricing display structure
+ */
 
 export default function PricingPage() {
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<'STARTER' | 'PRO'>('STARTER');
-
-  // Use centralized pricing data
-  const plans = pricingPlans;
-
-  // Use FAQ data from copy file
-  const faqData = getProcessedFaqItems();
-
-  const handleSelectPlan = (planId: 'STARTER' | 'PRO') => {
-    setSelectedPlan(planId);
-    setShowAuthModal(true);
-  };
-
-  const getTriggerSource = () => {
-    if (selectedPlan === 'STARTER') {
-      return 'starter_plan_signup';
-    } else if (selectedPlan === 'PRO') {
-      return 'pro_plan_signup';
-    }
-    return 'pricing_page';
-  };
-
   return (
-    <div className="min-h-screen">
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        {/* Banner removed - no user context in public page */}
-
-        {/* Header Section */}
-        <div className="text-center mb-20">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            {pricingPage.header.title}
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Simple, Transparent Pricing
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            {pricingPage.header.subtitle}
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Choose the plan that fits your content creation needs. All plans include our premium AI models.
           </p>
-          
-          {/* Trial CTA */}
-          <div className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-            <Zap className="h-5 w-5 text-blue-600 mr-2" />
-            <span className="text-blue-800 font-medium">
-              Start with a 7-day free trial ({trialLimit} generations) • No credit card required
-            </span>
-          </div>
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid lg:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative rounded-2xl border-2 p-8 flex flex-col transition-all duration-200 hover:scale-[1.02] shadow-sm hover:shadow-md ${
-                plan.popular 
-                  ? 'bg-gradient-to-br from-primary-50 to-purple-50 border-primary-300 hover:border-primary-400' 
-                  : 'bg-gray-50 border-gray-300 hover:border-gray-400 hover:bg-white'
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-primary-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                    Most Popular
-                  </span>
-                </div>
-              )}
-              
-              {/* Plan Header */}
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                <p className="text-gray-600">{plan.description}</p>
+        <div className="grid lg:grid-cols-3 gap-8 mb-16">
+          {/* Trial Plan */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+            <div className="text-center">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Trial</h3>
+              <div className="mb-4">
+                <span className="text-4xl font-bold text-gray-900">$0</span>
+                <span className="text-gray-600">/7 days</span>
               </div>
-
-              {/* Price */}
-              <div className="text-center mb-8">
-                <div>
-                  <div className="flex items-baseline justify-center">
-                    <span className="text-4xl font-bold text-gray-900">
-                      {plan.price}
-                    </span>
-                    <span className="text-gray-500 ml-1">{plan.period}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Features */}
-              <ul className="space-y-3 mb-8 flex-grow">
-                {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              {/* CTA Button */}
-              <button
-                onClick={() => handleSelectPlan(plan.name as 'STARTER' | 'PRO')}
-                className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
-                  plan.popular
-                    ? 'bg-primary-600 text-white hover:bg-primary-700'
-                    : 'bg-gray-900 text-white hover:bg-gray-800'
-                }`}
-              >
-                {pricingPage.buttons.trial}
-              </button>
-              
-              <p className="text-center text-sm text-gray-500 mt-3">
-                Generation Limit: {plan.generationLimit}
-              </p>
+              <p className="text-gray-600 mb-6">Perfect for trying out our platform</p>
             </div>
-          ))}
-        </div>
-
-        {/* Cost Breakdown */}
-        <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl border-2 border-gray-200 shadow-sm p-8 mb-16 max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {pricingPage.costBreakdown.title}
-            </h2>
-            <p className="text-gray-600">
-              {pricingPage.costBreakdown.subtitle}
-            </p>
+            
+            <ul className="space-y-3 mb-8">
+              <li className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-gray-700">15 generations</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-gray-700">TikTok platform access</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-gray-700">Basic templates</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-gray-700">Email support</span>
+              </li>
+            </ul>
+            
+            <button className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+              Start Free Trial
+            </button>
           </div>
-          
-          <div className="grid md:grid-cols-3 gap-6 text-center">
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-2">{pricingPage.costBreakdown.labels.freelancer}</h3>
-              <div className="text-3xl font-bold text-gray-900 mb-1">{comparison.freelancer.cost}</div>
-              <div className="text-sm text-gray-600">{comparison.freelancer.description}</div>
+
+          {/* Starter Plan */}
+          <div className="bg-white rounded-lg shadow-lg border-2 border-blue-500 p-8 relative">
+            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+              <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                Most Popular
+              </span>
             </div>
             
-            <div className="bg-primary-50 rounded-lg p-6 border-2 border-primary-200">
-              <h3 className="font-semibold text-primary-900 mb-2">{pricingPage.costBreakdown.labels.starter}</h3>
-              <div className="text-3xl font-bold text-primary-900 mb-1">{comparison.starter.cost}</div>
-              <div className="text-sm text-primary-700">{comparison.starter.description}</div>
+            <div className="text-center">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Starter</h3>
+              <div className="mb-4">
+                <span className="text-4xl font-bold text-gray-900">$19</span>
+                <span className="text-gray-600">/month</span>
+              </div>
+              <p className="text-gray-600 mb-6">For creators and small businesses</p>
             </div>
             
-            <div className="bg-purple-50 rounded-lg p-6">
-              <h3 className="font-semibold text-purple-900 mb-2">{pricingPage.costBreakdown.labels.pro}</h3>
-              <div className="text-3xl font-bold text-purple-900 mb-1">{comparison.pro.cost}</div>
-              <div className="text-sm text-purple-700">{comparison.pro.description}</div>
+            <ul className="space-y-3 mb-8">
+              <li className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-gray-700">50 generations/month</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-gray-700">TikTok + Instagram access</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-gray-700">Premium templates</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-gray-700">Performance analytics</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-gray-700">Priority support</span>
+              </li>
+            </ul>
+            
+            <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+              Choose Starter
+            </button>
+          </div>
+
+          {/* Pro Plan */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+            <div className="text-center">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Pro</h3>
+              <div className="mb-4">
+                <span className="text-4xl font-bold text-gray-900">$59</span>
+                <span className="text-gray-600">/month</span>
+              </div>
+              <p className="text-gray-600 mb-6">For power users and agencies</p>
             </div>
+            
+            <ul className="space-y-3 mb-8">
+              <li className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-gray-700">200 generations/month</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-gray-700">All platforms (TikTok, Instagram, YouTube)</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-gray-700">Advanced templates</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-gray-700">Batch generation</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-gray-700">Advanced export options</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-gray-700">24/7 support</span>
+              </li>
+            </ul>
+            
+            <button className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+              Choose Pro
+            </button>
           </div>
         </div>
 
         {/* FAQ Section */}
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              {pricingPage.faq.title}
-            </h2>
-            <p className="text-gray-600">
-              {pricingPage.faq.subtitle}
-            </p>
-          </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+            Frequently Asked Questions
+          </h2>
           
           <div className="space-y-6">
-            {faqData.map((faq, index) => (
-              <div key={index} className="bg-gray-50 hover:bg-white rounded-lg border-2 border-gray-200 hover:border-primary-200 shadow-sm hover:shadow-md p-6 transition-all duration-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  {faq.question}
-                </h3>
-                <p className="text-gray-700 leading-relaxed">
-                  {faq.answer}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Final CTA */}
-        <div className="text-center mt-16">
-          <div className="bg-gradient-to-r from-primary-600 to-purple-600 rounded-2xl p-8 text-white max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold mb-4">
-              {pricingPage.finalCta.title}
-            </h2>
-            <p className="text-xl mb-6 opacity-90">
-              {pricingPage.finalCta.subtitle}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/demo" className="bg-white/20 backdrop-blur-sm border-2 border-white/30 text-white font-semibold px-8 py-3 rounded-xl hover:bg-white/30 transition-all duration-200">
-                {pricingPage.finalCta.demoButton}
-              </Link>
-              <button 
-                onClick={() => setShowAuthModal(true)}
-                className="bg-white text-primary-600 font-semibold px-8 py-3 rounded-xl hover:bg-gray-50 shadow-lg transition-all duration-200"
-              >
-                {pricingPage.finalCta.trialButton}
-              </button>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Can I cancel anytime?
+              </h3>
+              <p className="text-gray-600">
+                Yes, you can cancel your subscription at any time. No long-term contracts or hidden fees.
+              </p>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                What happens after my trial ends?
+              </h3>
+              <p className="text-gray-600">
+                After your 7-day trial, you'll need to choose a paid plan to continue generating content.
+              </p>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Do unused generations roll over?
+              </h3>
+              <p className="text-gray-600">
+                Generations reset monthly and don't roll over. This ensures fresh content creation each month.
+              </p>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        triggerSource={getTriggerSource()}
-      />
+        {/* CTA Section */}
+        <div className="text-center mt-16">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Ready to Start Creating?
+          </h2>
+          <p className="text-xl text-gray-600 mb-8">
+            Join thousands of creators who are already growing their audience
+          </p>
+          <button className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors">
+            Start Free Trial
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

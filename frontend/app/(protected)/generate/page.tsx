@@ -1,146 +1,165 @@
-'use client';
-
-import { AuthModal, ExportModal } from '@/app/components/modals';
-import { useAuth } from '@/app/lib/context';
-import { RefreshCw, Sparkles } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { toast } from '@/app/lib/utils';
+/**
+ * Generate Content Page
+ * 
+ * Staff Engineer Design: Clean, scalable foundation
+ * Business Logic: Basic content generation interface
+ */
 
 export default function GeneratePage() {
-  const [productName, setProductName] = useState('');
-  const [niche, setNiche] = useState('');
-  const [targetAudience, setTargetAudience] = useState('');
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const { user, isAuthenticated } = useAuth();
-  const router = useRouter();
-
-  const handleGenerate = async () => {
-    if (!isAuthenticated) {
-      setShowAuthModal(true);
-      return;
-    }
-
-    if (!productName || !niche || !targetAudience) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      // Mock generation for now
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      toast.success('Ad generated successfully!');
-    } catch (error) {
-      toast.error('Failed to generate ad. Please try again.');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Generate Viral Social Media Ads
-          </h1>
-          <p className="text-xl text-gray-600">
-            Create compelling hooks and scripts that drive engagement and conversions
-          </p>
-        </div>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Generate Content</h1>
+        <p className="text-gray-600">Create viral content for your chosen platform.</p>
+      </div>
 
-        {/* Generation Form */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      {/* Email Verification Reminder */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <span className="text-blue-400 text-lg mr-3">🔓</span>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Product Name *
-              </label>
-              <input
-                type="text"
-                value={productName}
-                onChange={(e) => setProductName(e.target.value)}
-                placeholder="Enter your product name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Niche *
-              </label>
-              <select
-                value={niche}
-                onChange={(e) => setNiche(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              >
-                <option value="">Select your niche</option>
-                <option value="fitness">Fitness & Health</option>
-                <option value="beauty">Beauty & Skincare</option>
-                <option value="tech">Technology</option>
-                <option value="lifestyle">Lifestyle</option>
-                <option value="fashion">Fashion</option>
-                <option value="food">Food & Beverage</option>
-                <option value="business">Business</option>
-                <option value="education">Education</option>
-              </select>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Target Audience *
-              </label>
-              <textarea
-                value={targetAudience}
-                onChange={(e) => setTargetAudience(e.target.value)}
-                placeholder="Describe your target audience (age, interests, demographics, etc.)"
-                rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
+              <h3 className="text-sm font-medium text-blue-800">
+                Unlock More Generations
+              </h3>
+              <p className="text-sm text-blue-700">
+                You have 3 generations remaining. Verify your email to unlock 15 total generations.
+              </p>
             </div>
           </div>
-
-          <button
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="w-full bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 text-white font-medium py-4 px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          <a 
+            href="/verification"
+            className="bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
           >
-            {isGenerating ? (
-              <RefreshCw className="h-5 w-5 animate-spin" />
-            ) : (
-              <Sparkles className="h-5 w-5" />
-            )}
-            {isGenerating ? 'Generating...' : 'Generate Viral Ad'}
+            Verify Now
+          </a>
+        </div>
+      </div>
+
+      {/* Platform Selection */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Choose Platform</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button className="p-4 border-2 border-blue-200 rounded-lg hover:border-blue-400 transition-colors">
+            <div className="text-center">
+              <span className="text-3xl mb-2 block">🎵</span>
+              <h3 className="font-semibold text-gray-900">TikTok</h3>
+              <p className="text-sm text-gray-600">60-90 second videos</p>
+            </div>
+          </button>
+          
+          <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-gray-400 transition-colors">
+            <div className="text-center">
+              <span className="text-3xl mb-2 block">📸</span>
+              <h3 className="font-semibold text-gray-900">Instagram</h3>
+              <p className="text-sm text-gray-600">30-60 second content</p>
+            </div>
+          </button>
+          
+          <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-gray-400 transition-colors">
+            <div className="text-center">
+              <span className="text-3xl mb-2 block">📺</span>
+              <h3 className="font-semibold text-gray-900">YouTube</h3>
+              <p className="text-sm text-gray-600">60 seconds to 3 minutes</p>
+            </div>
           </button>
         </div>
-
-        {/* Empty State */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-12 text-center">
-          <div className="text-6xl mb-4">🎯</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            Ready to Create Your First Viral Ad?
-          </h3>
-          <p className="text-gray-600">
-            Fill out the form above and click generate to create compelling social media ad content
-          </p>
-        </div>
-
-        {/* Modals */}
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
-          triggerSource="nav_signup"
-        />
-
-        <ExportModal
-          isOpen={showExportModal}
-          onClose={() => setShowExportModal(false)}
-          content=""
-          title=""
-        />
       </div>
+
+      {/* Content Type */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Content Type</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button className="p-4 border-2 border-blue-200 rounded-lg hover:border-blue-400 transition-colors">
+            <div className="text-center">
+              <span className="text-2xl mb-2 block">💡</span>
+              <h3 className="font-semibold text-gray-900">Hook Video</h3>
+              <p className="text-sm text-gray-600">Grab attention in first 3 seconds</p>
+            </div>
+          </button>
+          
+          <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-gray-400 transition-colors">
+            <div className="text-center">
+              <span className="text-2xl mb-2 block">📚</span>
+              <h3 className="font-semibold text-gray-900">Educational</h3>
+              <p className="text-sm text-gray-600">Teach something valuable</p>
+            </div>
+          </button>
+          
+          <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-gray-400 transition-colors">
+            <div className="text-center">
+              <span className="text-2xl mb-2 block">🎭</span>
+              <h3 className="font-semibold text-gray-900">Story</h3>
+              <p className="text-sm text-gray-600">Share personal experiences</p>
+            </div>
+          </button>
+          
+          <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-gray-400 transition-colors">
+            <div className="text-center">
+              <span className="text-2xl mb-2 block">🔥</span>
+              <h3 className="font-semibold text-gray-900">Trend</h3>
+              <p className="text-sm text-gray-600">Jump on viral trends</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* Content Description */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Describe Your Content</h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              What do you want to create?
+            </label>
+            <textarea 
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              rows={4}
+              placeholder="Describe the content you want to generate. Be specific about your niche, target audience, and the message you want to convey..."
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Target Audience
+              </label>
+              <input 
+                type="text"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g., Young professionals, fitness enthusiasts"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tone
+              </label>
+              <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option>Professional</option>
+                <option>Casual</option>
+                <option>Humorous</option>
+                <option>Inspirational</option>
+                <option>Educational</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Generate Button */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <button className="w-full bg-blue-600 text-white px-6 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors">
+          Generate Content
+        </button>
+        <p className="text-sm text-gray-600 text-center mt-2">
+          This will use 1 generation from your plan (3 remaining)
+        </p>
+        <p className="text-xs text-blue-600 text-center mt-1">
+          Verify your email to unlock 15 total generations
+        </p>
+      </div>
+    </div>
   );
 }

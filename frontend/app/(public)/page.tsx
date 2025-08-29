@@ -1,133 +1,132 @@
-'use client';
+/**
+ * Landing Page - Public Route
+ * 
+ * Staff Engineer Design: Clean, scalable foundation
+ * Business Focus: High-converting landing page for viral content platform
+ */
 
-import { AuthModal } from '@/app/components/modals';
-import { ScarcityIndicator } from '@/app/components/public';
-import { landingPage } from '@/app/lib/copy';
-import { CheckCircle, Play, Sparkles, Star, TrendingUp } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { Metadata } from 'next';
+
+// ================================
+// SEO Metadata
+// ================================
+
+export const metadata: Metadata = {
+  title: 'Viral Content Generator - Create Viral Social Media Content with AI',
+  description: 'Generate high-converting viral content for TikTok, Instagram, and YouTube. AI-powered social media content creation platform with 15 free generations.',
+  keywords: [
+    'viral content generator', 
+    'AI social media', 
+    'TikTok content creator', 
+    'Instagram viral posts',
+    'YouTube content ideas',
+    'social media automation',
+    'viral marketing tool'
+  ],
+  openGraph: {
+    title: 'Viral Content Generator - AI-Powered Social Media Content',
+    description: 'Create viral social media content that converts. Get 15 free generations and start growing your audience today.',
+    type: 'website',
+    url: 'https://viralcontentgenerator.com',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Viral Content Generator - AI Social Media Tool',
+    description: 'Generate viral content for TikTok, Instagram & YouTube. 15 free generations to start.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
+// ================================
+// Landing Page Component
+// ================================
 
 export default function HomePage() {
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authTrigger, setAuthTrigger] = useState<'nav_signup' | 'login'>('nav_signup');
-  const router = useRouter();
-
-  const handleTryDemo = () => {
-    // Navigate to dedicated demo page using client-side routing
-    router.push('/demo');
-  };
-
   return (
-    <>
-      {/* Hero Section - Mobile First */}
-      <div className="relative overflow-hidden">
-        <div className="pb-16">
-
-          {/* Hero Content */}
-          <div className="text-center max-w-4xl mx-auto">
-            {/* Social Proof Badge */}
-            <div className="inline-flex items-center bg-primary-50 rounded-full px-4 py-2 mb-4">
-              <Star className="h-4 w-4 text-primary-600 mr-2" />
-              <span className="text-sm font-medium text-primary-700">
-                {landingPage.socialProof.badge}
+    <div className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+              Create Viral Content
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">
+                That Converts
               </span>
-            </div>
-
-            {/* Scarcity Indicator */}
-            <div className="flex justify-center mb-6">
-              <ScarcityIndicator type="users_online" size="medium" />
-            </div>
-
-
-            {/* Main Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              {landingPage.hero.title.prefix}{' '}
-              <span className="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-                {landingPage.hero.title.highlight}
-              </span>
-              <br />
-              {landingPage.hero.title.suffix}
             </h1>
-
-            {/* Subheadline */}
-            <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              {landingPage.hero.subtitle}
+            <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
+              Generate high-converting viral content for TikTok, Instagram, and YouTube using AI. 
+              Start with 15 free generations and grow your audience.
             </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <button 
-                onClick={handleTryDemo}
-                className="btn-primary text-lg px-8 py-4 flex items-center justify-center"
-              >
-                <Play className="h-5 w-5 mr-2" />
-                {landingPage.hero.cta}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors">
+                Start Free Trial
               </button>
-              
-              <button 
-                onClick={() => {
-                  setAuthTrigger('nav_signup');
-                  setShowAuthModal(true);
-                }}
-                className="btn-secondary text-lg px-8 py-4 flex items-center justify-center"
-              >
-                <Sparkles className="h-5 w-5 mr-2" />
-                {landingPage.hero.secondaryCta}
+              <button className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-blue-600 transition-colors">
+                Watch Demo
               </button>
-            </div>
-
-            {/* Trust Indicators */}
-            <div className="flex flex-wrap justify-center items-center gap-6 text-sm text-gray-500">
-              {landingPage.trustIndicators.map((indicator, index) => (
-                <div key={index} className="flex items-center">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                  {indicator}
-                </div>
-              ))}
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Background Gradient */}
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary-100/20 to-secondary-100/20 transform skew-y-1"></div>
-        </div>
-      </div>
-
-      {/* Social Proof Section - Full Width */}
-      <div className="bg-white py-16 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
+      {/* Features Section */}
+      <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              {landingPage.socialProof.title}
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Why Choose Our Platform?
             </h2>
-            <p className="text-gray-600">
-              {landingPage.socialProof.subtitle}
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Built for creators and businesses who want to compete with big brands
             </p>
           </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              { ...landingPage.socialProof.stats.views, icon: TrendingUp },
-              { ...landingPage.socialProof.stats.revenue, icon: Star },
-              { ...landingPage.socialProof.stats.users, icon: CheckCircle },
-            ].map((stat, index) => (
-              <div key={index} className="text-center">
-                <stat.icon className="h-12 w-12 text-primary-600 mx-auto mb-4" />
-                <div className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</div>
-                <div className="text-gray-600">{stat.label}</div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center p-6">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">🚀</span>
               </div>
-            ))}
+              <h3 className="text-xl font-semibold mb-2">AI-Powered Generation</h3>
+              <p className="text-gray-600">Advanced AI models create content that resonates with your audience</p>
+            </div>
+            
+            <div className="text-center p-6">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">📊</span>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Performance Prediction</h3>
+              <p className="text-gray-600">Know which content will perform before you post it</p>
+            </div>
+            
+            <div className="text-center p-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">🎯</span>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Multi-Platform Support</h3>
+              <p className="text-gray-600">Create content for TikTok, Instagram, YouTube, and more</p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        triggerSource={authTrigger}
-      />
-    </>
+      {/* CTA Section */}
+      <section className="py-20 bg-blue-600 text-white">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Ready to Go Viral?
+          </h2>
+          <p className="text-xl mb-8 text-blue-100">
+            Join thousands of creators who are already growing their audience
+          </p>
+          <button className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors">
+            Get Started Free
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }

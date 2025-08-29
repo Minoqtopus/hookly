@@ -17,7 +17,9 @@
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "npm run typeorm -- migration:generate -d src/data-source.ts",
     "migration:run": "npm run typeorm -- migration:run -d src/data-source.ts",
-    "migration:revert": "npm run typeorm -- migration:revert -d src/data-source.ts"
+    "migration:revert": "npm run typeorm -- migration:revert -d src/data-source.ts",
+    "generate:openapi": "ts-node scripts/generate-openapi.ts",
+    "generate:types": "npm run generate:openapi"
   },
   "keywords": [],
   "author": "",
