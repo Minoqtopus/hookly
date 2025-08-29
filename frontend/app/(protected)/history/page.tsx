@@ -1,121 +1,148 @@
-/**
- * History Page
- * 
- * Staff Engineer Design: Clean, scalable foundation
- * Business Logic: Basic history display structure
- */
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { FileText, MoreHorizontal, Search, Trash2 } from "lucide-react";
+
+// Mock data
+const generations = [
+  {
+    id: "gen_1",
+    topic: "My top 5 tips for learning a new language",
+    platform: "TikTok",
+    date: "2023-10-27",
+    viralScore: 8.7,
+  },
+  {
+    id: "gen_2",
+    topic: "Unboxing the new Acme phone",
+    platform: "YouTube",
+    date: "2023-10-25",
+    viralScore: 9.1,
+  },
+  {
+    id: "gen_3",
+    topic: "A 3-step guide to improve your cooking",
+    platform: "Instagram",
+    date: "2023-10-22",
+    viralScore: 7.5,
+  },
+  {
+    id: "gen_4",
+    topic: "Day in the life of a remote worker",
+    platform: "TikTok",
+    date: "2023-10-20",
+    viralScore: 8.2,
+  },
+    {
+    id: "gen_5",
+    topic: "How to start a successful side hustle",
+    platform: "YouTube",
+    date: "2023-10-18",
+    viralScore: 9.5,
+  },
+];
 
 export default function HistoryPage() {
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Generation History</h1>
-        <p className="text-gray-600">View all your previously generated content.</p>
+        <h1 className="text-3xl font-bold">Generation History</h1>
+        <p className="text-muted-foreground mt-1">
+          Review, manage, and export your past generations.
+        </p>
       </div>
 
-      {/* Filter Options */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <div className="flex flex-wrap gap-4">
-          <select className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            <option>All Platforms</option>
-            <option>TikTok</option>
-            <option>Instagram</option>
-            <option>YouTube</option>
-          </select>
-          
-          <select className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            <option>All Types</option>
-            <option>Hook Video</option>
-            <option>Educational</option>
-            <option>Story</option>
-            <option>Trend</option>
-          </select>
-          
-          <input 
-            type="date" 
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-      </div>
-
-      {/* History List */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Generations</h2>
-        </div>
-        
-        <div className="divide-y divide-gray-200">
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <span className="text-xl">🎵</span>
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">TikTok Hook Video</h3>
-                  <p className="text-sm text-gray-600">Generated 2 hours ago</p>
-                  <p className="text-sm text-gray-500">Fitness motivation content</p>
-                </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Your Generations</CardTitle>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search by topic..." className="pl-10" />
               </div>
-              <div className="flex items-center space-x-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  TikTok
-                </span>
-                <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                  View
-                </button>
-              </div>
+              <Select defaultValue="all">
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="All Platforms" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Platforms</SelectItem>
+                  <SelectItem value="tiktok">TikTok</SelectItem>
+                  <SelectItem value="instagram">Instagram</SelectItem>
+                  <SelectItem value="youtube">YouTube</SelectItem>
+                  <SelectItem value="twitter">X (Twitter)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <span className="text-xl">📸</span>
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">Instagram Story</h3>
-                  <p className="text-sm text-gray-600">Generated 1 day ago</p>
-                  <p className="text-sm text-gray-500">Business tips for entrepreneurs</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  Instagram
-                </span>
-                <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                  View
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                  <span className="text-xl">📺</span>
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">YouTube Short</h3>
-                  <p className="text-sm text-gray-600">Generated 3 days ago</p>
-                  <p className="text-sm text-gray-500">Cooking tutorial</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                  YouTube
-                </span>
-                <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                  View
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Topic</TableHead>
+                <TableHead>Platform</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Viral Score</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {generations.map((gen) => (
+                <TableRow key={gen.id}>
+                  <TableCell className="font-medium">{gen.topic}</TableCell>
+                  <TableCell>{gen.platform}</TableCell>
+                  <TableCell>{gen.date}</TableCell>
+                  <TableCell>{gen.viralScore}/10</TableCell>
+                  <TableCell className="text-right">
+                     <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <FileText className="mr-2 h-4 w-4" />
+                          <span>View Details</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          <span>Delete</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

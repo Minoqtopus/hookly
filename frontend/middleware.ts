@@ -1,87 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server';
-
-/**
- * Enhanced Middleware with Route Protection
- * 
- * Staff Engineer Implementation:
- * - Two route types: Public (guest only) and Protected (authenticated only)
- * - Server-side authentication checks
- * - Proper route protection for public/private routes
- * - Security headers and redirects
- */
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  
-  // Get authentication token from cookies
-  const accessToken = request.cookies.get('access_token')?.value;
-  const refreshToken = request.cookies.get('refresh_token')?.value;
-  
-  // Determine authentication status
-  const isAuthenticated = !!(accessToken || refreshToken);
-  
-  // Define route categories - SIMPLIFIED to two types
-  const publicRoutes = ['/', '/login', '/register', '/pricing', '/demo', '/auth/callback', '/auth/error'];
-  const protectedRoutes = ['/dashboard', '/generate', '/settings', '/verification', '/history'];
-  
-  // Check if current path matches any route category
-  const isPublicRoute = publicRoutes.some(route => pathname === route);
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-  
-  // Route protection logic - SIMPLIFIED
-  if (isAuthenticated && isPublicRoute) {
-    // Authenticated users trying to access public routes - redirect to dashboard
-    console.log(`[MIDDLEWARE] Authenticated user redirected from ${pathname} to /dashboard`);
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-  
-  if (!isAuthenticated && isProtectedRoute) {
-    // Unauthenticated users trying to access protected routes - redirect to login
-    console.log(`[MIDDLEWARE] Unauthenticated user redirected from ${pathname} to /login`);
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-  
-  // Set comprehensive security headers
-  const response = NextResponse.next();
-  
-  // Security headers
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('X-XSS-Protection', '1; mode=block');
-  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  
-  // Content Security Policy - Environment-based for flexibility
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-  
-  const cspDirectives = [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https:",
-    "font-src 'self' data:",
-    `connect-src 'self' ${isDevelopment ? apiUrl : 'https://*.hookly.com'}`,
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'"
-  ];
-  
-  response.headers.set('Content-Security-Policy', cspDirectives.join('; '));
-  
-  return response;
+  // const accessToken = request.cookies.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
+  // const refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE_NAME)?.value;
+  // const { pathname } = request.nextUrl;
+
+  // // TODO: Re-enable this auth guard once UI development is complete.
+  // // If user is not authenticated and is trying to access a protected route,
+  // // redirect them to the login page.
+  // if (!accessToken && !refreshToken && !pathname.startsWith("/login")) {
+  //   const loginUrl = new URL("/login", request.url);
+  //   return NextResponse.redirect(loginUrl);
+  // }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - .well-known (security files)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico|.well-known).*)',
-  ],
+  // Matcher to apply middleware to all routes except for API, static files, and image optimization routes.
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
