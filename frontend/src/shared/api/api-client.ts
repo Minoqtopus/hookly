@@ -57,7 +57,8 @@ export class ApiClient {
       }
 
       const data = await response.json();
-      return data;
+      // Backend returns data directly, not wrapped in ApiResponse format
+      return { data, success: true };
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
@@ -87,7 +88,10 @@ export class ApiClient {
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'POST',
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+      },
       body: data ? JSON.stringify(data) : undefined,
     });
   }

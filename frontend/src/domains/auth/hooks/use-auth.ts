@@ -87,12 +87,16 @@ export function useAuth() {
           tokenService.setRefreshToken(result.tokens.refresh_token);
         }
         
+        // Calculate remaining generations based on user data
+        const remainingGenerations = result.user ? 
+          (result.user.is_email_verified ? 15 : 5) - result.user.trial_generations_used : 0;
+        
         // Show notifications
         notificationService.showSuccess('Login successful!');
         
         if (result.user && !result.user.is_email_verified) {
           notificationService.showInfo(
-            `You have ${result.remainingGenerations} generations remaining. Verify your email to unlock 15 total!`
+            `You have ${remainingGenerations} generations remaining. Verify your email to unlock 15 total!`
           );
         }
         
@@ -103,7 +107,7 @@ export function useAuth() {
         setAuthState({
           user: result.user || null,
           isAuthenticated: true,
-          remainingGenerations: result.remainingGenerations || 0,
+          remainingGenerations,
           isLoading: false,
           error: null,
         });
@@ -136,12 +140,16 @@ export function useAuth() {
           tokenService.setRefreshToken(result.tokens.refresh_token);
         }
         
+        // Calculate remaining generations based on user data
+        const remainingGenerations = result.user ? 
+          (result.user.is_email_verified ? 15 : 5) - result.user.trial_generations_used : 0;
+        
         // Show notifications
         notificationService.showSuccess('Registration successful! Welcome to Hookly!');
         
         if (result.user && !result.user.is_email_verified) {
           notificationService.showInfo(
-            `You have ${result.remainingGenerations} generations remaining. Verify your email to unlock 15 total!`
+            `You have ${remainingGenerations} generations remaining. Verify your email to unlock 15 total!`
           );
         }
         
@@ -151,7 +159,7 @@ export function useAuth() {
         // Update local state
         setAuthState({
           user: result.user || null,
-          remainingGenerations: result.remainingGenerations || 0,
+          remainingGenerations,
           isAuthenticated: true,
           isLoading: false,
           error: null,
@@ -231,12 +239,16 @@ export function useAuth() {
           tokenService.setRefreshToken(result.tokens.refresh_token);
         }
         
+        // Calculate remaining generations based on user data
+        const remainingGenerations = result.user ? 
+          (result.user.is_email_verified ? 15 : 5) - result.user.trial_generations_used : 0;
+        
         // Show notifications
         notificationService.showSuccess('Google login successful! Welcome to Hookly!');
         
         if (result.user && !result.user.is_email_verified) {
           notificationService.showInfo(
-            `You have ${result.remainingGenerations} generations remaining. Verify your email to unlock 15 total!`
+            `You have ${remainingGenerations} generations remaining. Verify your email to unlock 15 total!`
           );
         }
         
@@ -247,7 +259,7 @@ export function useAuth() {
         setAuthState({
           user: result.user || null,
           isAuthenticated: true,
-          remainingGenerations: result.remainingGenerations || 0,
+          remainingGenerations,
           isLoading: false,
           error: null,
         });
@@ -273,9 +285,12 @@ export function useAuth() {
       const result = await verifyEmailUseCase.execute({ token });
       
       if (result.success) {
+        // Calculate remaining generations after email verification
+        const remainingGenerations = result.user ? 15 - result.user.trial_generations_used : 0;
+        
         // Handle UI concerns in hook
         notificationService.showSuccess(
-          `Email verified successfully! You now have ${result.remainingGenerations} generations available.`
+          `Email verified successfully! You now have ${remainingGenerations} generations available.`
         );
         
         navigationService.navigateTo('/dashboard');
@@ -284,7 +299,7 @@ export function useAuth() {
         setAuthState(prev => ({
           ...prev,
           user: result.user || null,
-          remainingGenerations: result.remainingGenerations || 0,
+          remainingGenerations,
           isLoading: false,
         }));
       } else {
@@ -427,16 +442,20 @@ export function useAuth() {
     try {
       const response = await authService.getCurrentUser();
       
+      // Calculate remaining generations
+      const remainingGenerations = response.user ? 
+        (response.user.is_email_verified ? 15 : 5) - response.user.trial_generations_used : 0;
+      
       // Update local state
       setAuthState({
         user: response.user,
         isAuthenticated: true,
-        remainingGenerations: response.remaining_generations,
+        remainingGenerations,
         isLoading: false,
         error: null,
       });
       
-      return { success: true, user: response.user, remainingGenerations: response.remaining_generations };
+      return { success: true, user: response.user, remainingGenerations };
     } catch (error) {
       // If getCurrentUser fails, user is not authenticated
       setAuthState({

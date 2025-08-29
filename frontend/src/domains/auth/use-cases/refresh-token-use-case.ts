@@ -26,7 +26,11 @@ export class RefreshTokenUseCase {
       // 2. Business Logic: Return business result
       return {
         success: true,
-        tokens: response.tokens,
+        tokens: {
+          access_token: response.access_token,
+          refresh_token: response.refresh_token,
+          expires_in: 900
+        }
       };
     } catch (error) {
       // Handle unexpected errors

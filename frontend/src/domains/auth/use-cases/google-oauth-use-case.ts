@@ -12,7 +12,6 @@ import { AuthService } from '../services/auth-service';
 export interface GoogleOAuthUseCaseResult {
   success: boolean;
   user?: User;
-  remainingGenerations?: number;
   tokens?: AuthTokens;
   error?: string;
 }
@@ -29,7 +28,11 @@ export class GoogleOAuthUseCase {
       return {
         success: true,
         user: response.user,
-        remainingGenerations: response.remaining_generations,
+        tokens: {
+          access_token: response.access_token,
+          refresh_token: response.refresh_token,
+          expires_in: 900
+        }
       };
     } catch (error) {
       // Handle unexpected errors

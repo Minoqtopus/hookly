@@ -12,7 +12,6 @@ import { AuthService } from '../services/auth-service';
 export interface RegisterUseCaseResult {
   success: boolean;
   user?: User;
-  remainingGenerations?: number;
   tokens?: AuthTokens;
   error?: string;
 }
@@ -45,11 +44,15 @@ export class RegisterUseCase {
       // 3. Business Logic: Call auth service for data access
       const response = await this.authService.register(registerRequest);
       
-      // 4. Business Logic: Return business result
+      // 4. Business Logic: Transform backend response to expected format
       return {
         success: true,
         user: response.user,
-        remainingGenerations: response.remaining_generations,
+        tokens: {
+          access_token: response.access_token,
+          refresh_token: response.refresh_token,
+          expires_in: 900 // 15 minutes in seconds
+        }
       };
     } catch (error) {
       // Handle unexpected errors

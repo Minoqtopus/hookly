@@ -70,8 +70,8 @@ export interface LoginRequest {
 // Login Response (must match backend response)
 export interface LoginResponse {
   user: User;
-  tokens: AuthTokens;
-  remaining_generations: number;
+  access_token: string;
+  refresh_token: string;
   message?: string;
 }
 
@@ -84,9 +84,10 @@ export interface RegisterRequest {
 // Register Response (must match backend response)
 export interface RegisterResponse {
   user: User;
-  tokens: AuthTokens;
-  remaining_generations: number;
+  access_token: string;
+  refresh_token: string;
   message?: string;
+  isNewUser?: boolean;
 }
 
 // Email Verification Request (must match backend endpoint)
@@ -119,7 +120,13 @@ export interface RefreshTokenRequest {
 
 // Refresh Token Response (must match backend response)
 export interface RefreshTokenResponse {
-  tokens: AuthTokens;
+  access_token: string;
+  refresh_token: string;
+  user?: {
+    id: string;
+    email: string;
+    plan: UserPlan;
+  };
   message?: string;
 }
 
@@ -178,8 +185,8 @@ export interface GoogleOAuthRequest {
 // OAuth Google Response (must match backend response)
 export interface GoogleOAuthResponse {
   user: User;
-  tokens: AuthTokens;
-  remaining_generations: number;
+  access_token: string;
+  refresh_token: string;
   message?: string;
 }
 
