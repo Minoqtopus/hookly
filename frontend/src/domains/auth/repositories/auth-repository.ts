@@ -59,10 +59,10 @@ export class AuthRepository {
 
   /**
    * Send Verification Email
-   * Endpoint: POST /auth/send-verification-email
+   * Endpoint: POST /auth/send-verification (requires authentication)
    */
   async sendVerificationEmail(request: SendVerificationEmailRequest): Promise<SendVerificationEmailResponse> {
-    const response = await apiClient.post<SendVerificationEmailResponse>('/auth/send-verification-email', request);
+    const response = await apiClient.post<SendVerificationEmailResponse>('/auth/send-verification', request);
     return response.data;
   }
 
@@ -89,8 +89,20 @@ export class AuthRepository {
    * Endpoint: POST /auth/forgot-password
    */
   async requestPasswordReset(request: PasswordResetRequest): Promise<PasswordResetResponse> {
-    const response = await apiClient.post<PasswordResetResponse>('/auth/forgot-password', request);
-    return response.data;
+    try {
+      const response = await apiClient.post<{ message: string }>('/auth/forgot-password', request);
+      // Backend returns 201 with message only, we need to add success flag
+      return {
+        success: true,
+        message: response.data.message
+      };
+    } catch (error) {
+      // If there's an error, return failure
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to send password reset email'
+      };
+    }
   }
 
   /**

@@ -206,7 +206,7 @@ export function useAuth() {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
-      const result = await resetPasswordUseCase.execute({ token, new_password: newPassword });
+      const result = await resetPasswordUseCase.execute({ token, password: newPassword });
       
       if (result.success) {
         notificationService.showSuccess('Password reset successful! You can now login with your new password.');
@@ -416,22 +416,41 @@ export function useAuth() {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
-      const response = await authService.getCurrentUser();
+      const profile = await authService.getCurrentUser();
       
-      // Calculate remaining generations
-      const remainingGenerations = response.user ? 
-        (response.user.is_email_verified ? 15 : 5) - response.user.trial_generations_used : 0;
+      // Backend returns profile directly with generations_remaining
+      const user = {
+        id: profile.id,
+        email: profile.email,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        profile_picture: profile.profile_picture,
+        plan: profile.plan,
+        role: profile.role,
+        auth_providers: profile.auth_providers,
+        provider_ids: profile.provider_ids,
+        monthly_generation_count: profile.monthly_generation_count,
+        monthly_reset_date: profile.monthly_reset_date,
+        trial_started_at: profile.trial_started_at,
+        trial_ends_at: profile.trial_ends_at,
+        trial_generations_used: profile.trial_generations_used,
+        is_email_verified: profile.is_email_verified,
+        email_verified_at: profile.email_verified_at,
+        password_changed_at: profile.password_changed_at,
+        created_at: profile.created_at,
+        updated_at: profile.updated_at,
+      };
       
       // Update local state
       setAuthState({
-        user: response.user,
+        user,
         isAuthenticated: true,
-        remainingGenerations,
+        remainingGenerations: profile.generations_remaining,
         isLoading: false,
         error: null,
       });
       
-      return { success: true, user: response.user, remainingGenerations };
+      return { success: true, user, remainingGenerations: profile.generations_remaining };
     } catch (error) {
       // If getCurrentUser fails, user is not authenticated
       setAuthState({

@@ -1,6 +1,7 @@
 import { cn } from "@/lib/cn";
 import type { Metadata } from "next";
 import { Inter as FontSans } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 const fontSans = FontSans({
@@ -27,6 +28,7 @@ export default function RootLayout({
         )}
       >
         {children}
+        <Toaster />
       </body>
     </html>
   );

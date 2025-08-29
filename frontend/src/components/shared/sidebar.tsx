@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/cn";
+import { useAuth } from "@/domains/auth";
 import { Logo } from "app/(public)/components/logo";
 import {
     History,
@@ -28,6 +29,11 @@ const settingsNav = [{ href: "/settings", icon: Settings, label: "Settings" }];
 export const Sidebar = () => {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const { user, remainingGenerations, logout, isLoading } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+  };
 
   const NavLink = ({ href, icon: Icon, label }: (typeof navItems)[0]) => (
     <Link
@@ -81,9 +87,14 @@ export const Sidebar = () => {
             <div className="p-4 rounded-lg bg-secondary space-y-3">
               <div className="text-center text-sm">
                 <p>
-                  <span className="font-semibold">5 / 15</span> Generations Used
+                  <span className="font-semibold">
+                    {user?.trial_generations_used || 0} / {remainingGenerations + (user?.trial_generations_used || 0)}
+                  </span> Generations Used
                 </p>
-                <Progress value={(5 / 15) * 100} className="mt-2 h-2" />
+                <Progress 
+                  value={((user?.trial_generations_used || 0) / ((remainingGenerations + (user?.trial_generations_used || 0)) || 1)) * 100} 
+                  className="mt-2 h-2" 
+                />
               </div>
               <Button size="sm" className="w-full">
                 Upgrade to Pro
@@ -92,13 +103,22 @@ export const Sidebar = () => {
             <div className="p-4 mt-4 rounded-lg bg-secondary">
               <div className="flex items-center gap-3">
                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
-                  U
+                  {user?.email?.[0]?.toUpperCase() || 'U'}
                 </div>
                 <div>
-                  <p className="font-semibold">User</p>
-                  <p className="text-xs text-muted-foreground">Trial Plan</p>
+                  <p className="font-semibold">{user?.first_name || user?.email?.split('@')[0] || 'User'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {user?.plan === 'trial' ? 'Trial Plan' : 
+                     user?.plan === 'starter' ? 'Starter Plan' :
+                     user?.plan === 'pro' ? 'Pro Plan' : 'Trial Plan'}
+                  </p>
                 </div>
-                <button className="ml-auto text-muted-foreground hover:text-foreground">
+                <button 
+                  className="ml-auto text-muted-foreground hover:text-foreground disabled:opacity-50"
+                  onClick={handleLogout}
+                  disabled={isLoading}
+                  title="Logout"
+                >
                   <LogOut className="w-5 h-5" />
                 </button>
               </div>

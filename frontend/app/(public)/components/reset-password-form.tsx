@@ -4,17 +4,31 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/domains/auth";
 import { Logo } from "./logo";
 
 export const ResetPasswordForm = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [success, setSuccess] = useState(false);
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  
+  const { resetPassword, isLoading, error } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle reset password logic here, using the token
+    
+    if (!password || !confirmPassword || !token) return;
+    
+    if (password !== confirmPassword) {
+      return; // Could add local error state here
+    }
+    
+    const result = await resetPassword(token, password);
+    if (result.success) {
+      setSuccess(true);
+    }
   };
 
   if (!token) {
@@ -44,40 +58,69 @@ export const ResetPasswordForm = () => {
           <div className="inline-block">
             <Logo />
           </div>
-          <h1 className="text-2xl font-bold mt-4">Reset your password</h1>
+          <h1 className="text-2xl font-bold mt-4">
+            {success ? "Password Reset Successful" : "Reset your password"}
+          </h1>
           <p className="text-muted-foreground text-sm">
-            Enter your new password below.
+            {success 
+              ? "Your password has been successfully reset. You can now log in."
+              : "Enter your new password below."
+            }
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium mb-2">New Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your new password"
-              className="w-full bg-background border border-border rounded-md px-4 py-2 text-sm"
-            />
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md text-sm">
+            {error}
           </div>
-           <div>
-            <label className="block text-xs font-medium mb-2">Confirm New Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm your new password"
-              className="w-full bg-background border border-border rounded-md px-4 py-2 text-sm"
-            />
+        )}
+
+        {success && (
+          <div className="mb-4 p-3 bg-green-100 border border-green-300 text-green-700 rounded-md text-sm">
+            Password reset successfully! <Link href="/login" className="underline font-medium">Click here to login</Link>
           </div>
-          <button
-            type="submit"
-            className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-semibold text-sm"
-          >
-            Reset Password
-          </button>
-        </form>
+        )}
+
+        {!success && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium mb-2">New Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your new password"
+                required
+                disabled={isLoading}
+                minLength={6}
+                className="w-full bg-background border border-border rounded-md px-4 py-2 text-sm disabled:opacity-50"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-2">Confirm New Password</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm your new password"
+                required
+                disabled={isLoading}
+                minLength={6}
+                className="w-full bg-background border border-border rounded-md px-4 py-2 text-sm disabled:opacity-50"
+              />
+              {password !== confirmPassword && confirmPassword && (
+                <p className="text-red-500 text-xs mt-1">Passwords do not match</p>
+              )}
+            </div>
+            <button
+              type="submit"
+              disabled={isLoading || !password || !confirmPassword || password !== confirmPassword}
+              className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? "Resetting..." : "Reset Password"}
+            </button>
+          </form>
+        )}
       </motion.div>
     </div>
   );

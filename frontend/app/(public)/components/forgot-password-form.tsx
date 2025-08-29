@@ -3,14 +3,25 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
+import { useAuth } from "@/domains/auth";
 import { Logo } from "./logo";
 
 export const ForgotPasswordForm = () => {
   const [email, setEmail] = useState("");
+  const [success, setSuccess] = useState(false);
+  
+  const { forgotPassword, isLoading, error } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle forgot password logic here
+    
+    if (!email) return;
+    
+    const result = await forgotPassword(email);
+    if (result.success) {
+      setSuccess(true);
+      setEmail(""); // Clear the input field on success
+    }
   };
 
   return (
@@ -26,9 +37,24 @@ export const ForgotPasswordForm = () => {
           </div>
           <h1 className="text-2xl font-bold mt-4">Forgot your password?</h1>
           <p className="text-muted-foreground text-sm">
-            Enter your email to receive a reset link.
+            {success 
+              ? "Check your email for a password reset link."
+              : "Enter your email to receive a reset link."
+            }
           </p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md text-sm">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 p-3 bg-green-100 border border-green-300 text-green-700 rounded-md text-sm">
+            Password reset link sent successfully! Check your email.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -38,14 +64,17 @@ export const ForgotPasswordForm = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
-              className="w-full bg-background border border-border rounded-md px-4 py-2 text-sm"
+              required
+              disabled={isLoading || success}
+              className="w-full bg-background border border-border rounded-md px-4 py-2 text-sm disabled:opacity-50"
             />
           </div>
           <button
             type="submit"
-            className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-semibold text-sm"
+            disabled={isLoading || success || !email}
+            className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Send Reset Link
+            {isLoading ? "Sending..." : success ? "Email Sent" : "Send Reset Link"}
           </button>
         </form>
 

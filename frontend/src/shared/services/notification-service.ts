@@ -1,9 +1,11 @@
 /**
  * Notification Service - User Feedback
  * 
- * Staff Engineer Design: Clean service for notifications
- * Business Logic: Handles user feedback and alerts
+ * Staff Engineer Design: Clean service for notifications with react-hot-toast
+ * Business Logic: Handles user feedback and alerts with real toast notifications
  */
+
+import toast from 'react-hot-toast';
 
 export type NotificationType = 'success' | 'error' | 'info' | 'warning';
 
@@ -16,32 +18,36 @@ export interface Notification {
 
 export class NotificationService {
   showSuccess(message: string, duration: number = 5000): void {
-    this.showNotification({ type: 'success', message, duration });
+    toast.success(message, {
+      duration,
+      position: 'top-right',
+    });
   }
 
   showError(message: string, duration: number = 7000): void {
-    this.showNotification({ type: 'error', message, duration });
+    toast.error(message, {
+      duration,
+      position: 'top-right',
+    });
   }
 
   showInfo(message: string, duration: number = 5000): void {
-    this.showNotification({ type: 'info', message, duration });
+    toast(message, {
+      duration,
+      position: 'top-right',
+      icon: '💡',
+    });
   }
 
   showWarning(message: string, duration: number = 5000): void {
-    this.showNotification({ type: 'warning', message, duration });
-  }
-
-  private showNotification(notification: Omit<Notification, 'id'>): void {
-    // For now, just log to console
-    // In a real app, this would integrate with a toast library
-    console.log(`[${notification.type.toUpperCase()}] ${notification.message}`);
-    
-    // TODO: Integrate with toast library (e.g., react-hot-toast, react-toastify)
-    // This is a placeholder implementation
+    toast(message, {
+      duration,
+      position: 'top-right',
+      icon: '⚠️',
+    });
   }
 
   clearAll(): void {
-    // TODO: Clear all notifications
-    console.log('Clearing all notifications');
+    toast.dismiss();
   }
 }

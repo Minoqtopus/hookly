@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Chrome } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { useAuth } from "@/domains/auth";
 import { Logo } from "./logo";
 
 interface AuthFormProps {
@@ -14,10 +15,26 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  
+  const { login, register, googleOAuth, isLoading, error } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle auth logic here
+    
+    // Basic validation
+    if (!email || !password) {
+      return;
+    }
+    
+    if (mode === "login") {
+      await login({ email, password });
+    } else {
+      await register({ email, password });
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    await googleOAuth();
   };
 
   return (
@@ -41,8 +58,19 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
           </p>
         </div>
 
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md text-sm">
+            {error}
+          </div>
+        )}
+
         <div className="space-y-4">
-          <button className="w-full bg-background border border-border py-2.5 rounded-md font-medium text-sm flex items-center justify-center gap-2">
+          <button 
+            type="button"
+            onClick={handleGoogleAuth}
+            disabled={isLoading}
+            className="w-full bg-background border border-border py-2.5 rounded-md font-medium text-sm flex items-center justify-center gap-2 hover:bg-secondary transition-colors disabled:opacity-50"
+          >
             <Chrome className="w-4 h-4" />
             Continue with Google
           </button>
@@ -78,7 +106,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
-                className="w-full bg-background border border-border rounded-md px-4 py-2 text-sm"
+                required
+                disabled={isLoading}
+                className="w-full bg-background border border-border rounded-md px-4 py-2 text-sm disabled:opacity-50"
               />
             </div>
             <div>
@@ -98,14 +128,20 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
-                className="w-full bg-background border border-border rounded-md px-4 py-2 text-sm"
+                required
+                disabled={isLoading}
+                className="w-full bg-background border border-border rounded-md px-4 py-2 text-sm disabled:opacity-50"
               />
             </div>
             <button
               type="submit"
-              className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-semibold text-sm"
+              disabled={isLoading}
+              className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {mode === "login" ? "Login" : "Create Account"}
+              {isLoading 
+                ? (mode === "login" ? "Signing in..." : "Creating account...") 
+                : (mode === "login" ? "Login" : "Create Account")
+              }
             </button>
           </form>
         </div>
