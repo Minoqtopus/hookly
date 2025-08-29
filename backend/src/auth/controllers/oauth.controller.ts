@@ -143,45 +143,16 @@ export class OAuthController {
     @Ip() ipAddress: string,
   ) {
     try {
-      console.log('[OAUTH_CONTROLLER] Google callback started');
-      console.log('[OAUTH_CONTROLLER] Request headers:', req.headers);
-      console.log('[OAUTH_CONTROLLER] Request user:', JSON.stringify(req.user, null, 2));
-      console.log('[OAUTH_CONTROLLER] IP Address:', ipAddress);
-      
       // Extract Google user information from Passport.js
       const googleUser = req.user;
       
       if (!googleUser) {
-        console.error('[OAUTH_CONTROLLER] req.user is undefined or null');
         throw new Error('No user data received from Google OAuth');
       }
       
-      console.log('[OAUTH_CONTROLLER] Google user data:', {
-        email: googleUser.email,
-        id: googleUser.id,
-        google_id: googleUser.google_id,
-        firstName: googleUser.firstName,
-        first_name: googleUser.first_name,
-        lastName: googleUser.lastName,
-        last_name: googleUser.last_name,
-        picture: googleUser.picture,
-        photos: googleUser.photos,
-        oauth_provider: googleUser.oauth_provider
-      });
-      
       const userAgent = req.get('User-Agent');
-      console.log('[OAUTH_CONTROLLER] User Agent:', userAgent);
       
       // Validate OAuth user and handle account linking/creation
-      console.log('[OAUTH_CONTROLLER] Calling validateOAuthUser with:', {
-        email: googleUser.email,
-        provider: AuthProvider.GOOGLE,
-        providerId: googleUser.google_id, // Fix: Use google_id instead of id
-        firstName: googleUser.first_name, // Fix: Use first_name instead of firstName
-        lastName: googleUser.last_name,   // Fix: Use last_name instead of lastName
-        picture: googleUser.picture || googleUser.photos?.[0]?.value, // Fix: Extract from photos array
-      });
-      
       const validationResult = await this.oauthAuthenticationService.validateOAuthUser({
         email: googleUser.email,
         provider: AuthProvider.GOOGLE,
@@ -190,8 +161,6 @@ export class OAuthController {
         lastName: googleUser.last_name,   // Fix: Use last_name instead of lastName
         picture: googleUser.picture || googleUser.photos?.[0]?.value, // Fix: Extract from photos array
       }, ipAddress, userAgent);
-
-      console.log('[OAUTH_CONTROLLER] Validation successful:', validationResult);
 
       // Generate JWT tokens for immediate authentication
       const tokens = await this.generateTokensWithStorage(
@@ -219,20 +188,11 @@ export class OAuthController {
       return res.redirect(redirectUrl);
     } catch (error) {
       // Log the error for monitoring
-      console.error('[OAUTH_CONTROLLER] Google OAuth callback error:', error);
-      console.error('[OAUTH_CONTROLLER] Error details:', {
-        name: error instanceof Error ? error.name : 'Unknown',
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : 'No stack trace',
-        response: (error as any)?.response || 'No response',
-        status: (error as any)?.status || 'No status'
-      });
+      console.error('Google OAuth callback error:', error);
       
       // Redirect to frontend with error
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       const errorUrl = `${frontendUrl}/auth/error?message=${encodeURIComponent('Authentication failed. Please try again.')}`;
-      
-      console.log('[OAUTH_CONTROLLER] Redirecting to error page:', errorUrl);
       return res.redirect(errorUrl);
     }
   }

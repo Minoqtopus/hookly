@@ -38,11 +38,9 @@ export default function OAuthCallbackPage() {
         const refreshToken = urlParams.get('refresh_token');
         const userParam = urlParams.get('user');
 
-        console.log('[OAUTH_CALLBACK] Processing backend OAuth redirect');
 
         // Validate required parameters
         if (!accessToken || !refreshToken || !userParam) {
-          console.error('[OAUTH_CALLBACK] Missing required parameters');
           setError('Missing authentication data from OAuth callback');
           setTimeout(() => router.push('/login'), 3000);
           return;
@@ -53,26 +51,24 @@ export default function OAuthCallbackPage() {
         try {
           userData = JSON.parse(decodeURIComponent(userParam));
         } catch (parseError) {
-          console.error('[OAUTH_CALLBACK] Failed to parse user data:', parseError);
           setError('Invalid user data from OAuth callback');
           setTimeout(() => router.push('/login'), 3000);
           return;
         }
 
-        console.log('[OAUTH_CALLBACK] User data parsed:', userData);
 
         // Store tokens in token service
         tokenService.setAccessToken(accessToken);
         tokenService.setRefreshToken(refreshToken);
 
+        // Small delay to ensure token storage is complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Get current user to update auth state
         await getCurrentUser();
-        
-        console.log('[OAUTH_CALLBACK] OAuth successful, redirecting to dashboard');
         router.push('/dashboard');
 
       } catch (error) {
-        console.error('[OAUTH_CALLBACK] Unexpected error:', error);
         setError('Unexpected error during OAuth callback');
         setTimeout(() => router.push('/login'), 3000);
       }

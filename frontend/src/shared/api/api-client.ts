@@ -40,18 +40,15 @@ export class ApiClient {
     const accessToken = this.getStoredAccessToken();
     
     const config: RequestInit = {
+      ...options,
       headers: {
         ...this.defaultHeaders,
         // Automatically include Authorization header if token exists
         ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
-        ...options.headers,
+        ...(options.headers || {}),
       },
-      ...options,
     };
 
-    console.log('[API_CLIENT] Making request to:', endpoint);
-    console.log('[API_CLIENT] Request headers:', config.headers);
-    console.log('[API_CLIENT] Stored token exists:', !!accessToken);
 
     try {
       const response = await fetch(url, config);
@@ -85,7 +82,7 @@ export class ApiClient {
   async get<T>(endpoint: string, headers?: Record<string, string>): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'GET',
-      headers,
+      ...(headers && { headers }),
     });
   }
 
@@ -99,7 +96,7 @@ export class ApiClient {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...headers,
+        ...(headers || {}),
       },
       body: data ? JSON.stringify(data) : undefined,
     });
@@ -113,7 +110,7 @@ export class ApiClient {
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'PUT',
-      headers,
+      ...(headers && { headers }),
       body: data ? JSON.stringify(data) : undefined,
     });
   }
@@ -122,20 +119,17 @@ export class ApiClient {
   async delete<T>(endpoint: string, headers?: Record<string, string>): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'DELETE',
-      headers,
+      ...(headers && { headers }),
     });
   }
 
   // Set auth token for authenticated requests
   setAuthToken(token: string): void {
-    console.log('[API_CLIENT] Setting auth token:', token.substring(0, 20) + '...');
     this.defaultHeaders['Authorization'] = `Bearer ${token}`;
-    console.log('[API_CLIENT] Authorization header set:', this.defaultHeaders['Authorization']);
   }
 
   // Clear auth token
   clearAuthToken(): void {
-    console.log('[API_CLIENT] Clearing auth token');
     delete this.defaultHeaders['Authorization'];
   }
 

@@ -22,8 +22,6 @@ export class TokenService {
   // Set access token in both localStorage and cookies
   setAccessToken(token: string): void {
     try {
-      console.log('[TOKEN_SERVICE] Setting access token:', token.substring(0, 20) + '...');
-      
       // Client-side storage
       localStorage.setItem(this.ACCESS_TOKEN_KEY, token);
       
@@ -34,9 +32,7 @@ export class TokenService {
       });
 
       // Immediately update API client with new token
-      console.log('[TOKEN_SERVICE] Updating API client with token');
       apiClient.setAuthToken(token);
-      console.log('[TOKEN_SERVICE] API client updated successfully');
     } catch (error) {
       console.error('Failed to set access token:', error);
     }
