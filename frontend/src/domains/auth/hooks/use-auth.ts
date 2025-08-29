@@ -226,14 +226,21 @@ export function useAuth() {
   }, []);
 
   // Google OAuth - Uses GoogleOAuthUseCase
-  const googleOAuth = useCallback(async (code: string, state?: string) => {
+  const googleOAuth = useCallback(async (code?: string, state?: string) => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
-      const result = await googleOAuthUseCase.execute({ code, state });
+      // If no code, initiate OAuth flow, otherwise handle callback
+      const result = await googleOAuthUseCase.execute(code ? { code, state } : undefined);
       
       if (result.success) {
-        // Handle UI concerns in hook using use-case result
+        // Handle OAuth initiation (redirect)
+        if (result.redirect) {
+          window.location.href = result.redirect;
+          return result;
+        }
+        
+        // Handle OAuth callback (authentication complete)
         if (result.tokens) {
           tokenService.setAccessToken(result.tokens.access_token);
           tokenService.setRefreshToken(result.tokens.refresh_token);
@@ -470,10 +477,60 @@ export function useAuth() {
     }
   }, []);
 
-  // Check auth status on mount
+  // Check auth status on mount and token expiration
   useEffect(() => {
-    getCurrentUser();
-  }, [getCurrentUser]);
+    const checkAuthStatus = async () => {
+      try {
+        // Check if we have valid tokens
+        const hasTokens = tokenService.hasValidToken();
+        
+        if (!hasTokens) {
+          setAuthState({
+            user: null,
+            isAuthenticated: false,
+            remainingGenerations: 0,
+            isLoading: false,
+            error: null,
+          });
+          return;
+        }
+
+        // Check if access token is expired
+        const accessToken = tokenService.getAccessToken();
+        if (accessToken && tokenService.isTokenExpired(accessToken)) {
+          // Try to refresh token
+          const refreshResult = await refreshToken();
+          if (!refreshResult.success) {
+            // Refresh failed, clear tokens and redirect to login
+            tokenService.clearTokens();
+            setAuthState({
+              user: null,
+              isAuthenticated: false,
+              remainingGenerations: 0,
+              isLoading: false,
+              error: 'Session expired. Please login again.',
+            });
+            navigationService.navigateTo('/login');
+            return;
+          }
+        }
+
+        // Get current user if we have valid tokens
+        await getCurrentUser();
+      } catch (error) {
+        console.error('Auth status check failed:', error);
+        setAuthState({
+          user: null,
+          isAuthenticated: false,
+          remainingGenerations: 0,
+          isLoading: false,
+          error: 'Authentication check failed',
+        });
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
 
   return {
     // State

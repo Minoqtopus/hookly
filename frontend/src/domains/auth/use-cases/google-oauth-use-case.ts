@@ -13,18 +13,29 @@ export interface GoogleOAuthUseCaseResult {
   success: boolean;
   user?: User;
   tokens?: AuthTokens;
+  redirect?: string;
   error?: string;
 }
 
 export class GoogleOAuthUseCase {
   constructor(private authService: AuthService) {}
 
-  async execute(request: GoogleOAuthRequest): Promise<GoogleOAuthUseCaseResult> {
+  async execute(request?: GoogleOAuthRequest): Promise<GoogleOAuthUseCaseResult> {
     try {
-      // 1. Business Logic: Call auth service for data access
+      // If no request provided, initiate OAuth flow
+      if (!request) {
+        // Business Logic: Initiate OAuth flow by redirecting to backend
+        const response = await this.authService.initiateGoogleOAuth();
+        return {
+          success: true,
+          redirect: response.redirectUrl
+        };
+      }
+
+      // Handle OAuth callback with code
       const response = await this.authService.googleOAuth(request);
       
-      // 2. Business Logic: Return business result
+      // Business Logic: Return authentication result
       return {
         success: true,
         user: response.user,

@@ -1,17 +1,72 @@
 /**
- * Public Layout
+ * Public Layout - Guest User Protection
  * 
- * Staff Engineer Design: Clean, scalable foundation
- * Business Logic: Basic layout structure for public pages
+ * Staff Engineer Implementation:
+ * - Redirects authenticated users away from public-only routes
+ * - Guest-only access for login, register, demo
+ * - Integration with useAuth hook for state management
  */
 
-import { ReactNode } from "react";
+'use client';
+
+import { ReactNode, useEffect } from 'react';
+import { useAuth } from '@/src/domains/auth';
+import { useRouter, usePathname } from 'next/navigation';
+
+// ================================
+// Types
+// ================================
 
 interface PublicLayoutProps {
   children: ReactNode;
 }
 
+// ================================
+// Component
+// ================================
+
 export default function PublicLayout({ children }: PublicLayoutProps) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Define public-only routes (guest users only)
+  const publicOnlyRoutes = ['/login', '/register', '/demo'];
+  const isPublicOnlyRoute = publicOnlyRoutes.includes(pathname);
+
+  // Guest user protection effect
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && isPublicOnlyRoute) {
+      console.log(`[PUBLIC_LAYOUT] Authenticated user redirected from ${pathname} to /dashboard`);
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, isLoading, router, pathname, isPublicOnlyRoute]);
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show redirect state for authenticated users on public-only routes
+  if (isAuthenticated && isPublicOnlyRoute) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Redirecting to dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Render public content for guest users
   return (
     <div className="min-h-screen bg-white">
       {/* Simple Navigation */}

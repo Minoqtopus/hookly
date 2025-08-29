@@ -63,6 +63,13 @@ export class AuthService {
   }
 
   /**
+   * Initiate Google OAuth Flow - Data Access Only
+   */
+  async initiateGoogleOAuth(): Promise<{ redirectUrl: string }> {
+    return this.authRepository.initiateGoogleOAuth();
+  }
+
+  /**
    * Google OAuth Login - Data Access Only
    */
   async googleOAuth(request: GoogleOAuthRequest): Promise<GoogleOAuthResponse> {

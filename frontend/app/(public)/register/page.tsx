@@ -37,10 +37,7 @@ export default function RegisterPage() {
   };
 
   const handleGoogleSignup = async () => {
-    // In a real app, this would redirect to Google OAuth
-    // For now, we'll simulate with a mock code
-    const mockCode = 'mock_google_oauth_code';
-    await googleOAuth(mockCode);
+    await googleOAuth();
   };
 
   return (

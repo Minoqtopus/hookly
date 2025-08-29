@@ -114,11 +114,22 @@ export class AuthRepository {
   }
 
   /**
-   * Google OAuth Login
-   * Endpoint: POST /auth/google
+   * Initiate Google OAuth Flow
+   * Endpoint: GET /auth/google (redirect)
+   */
+  async initiateGoogleOAuth(): Promise<{ redirectUrl: string }> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    return { redirectUrl: `${baseUrl}/auth/google` };
+  }
+
+  /**
+   * Google OAuth Callback Handler
+   * Endpoint: Process callback data
    */
   async googleOAuth(request: GoogleOAuthRequest): Promise<GoogleOAuthResponse> {
-    const response = await apiClient.post<GoogleOAuthResponse>('/auth/google', request);
+    // This would handle the callback data from the OAuth flow
+    // For now, this might not be used as OAuth flow handles redirects
+    const response = await apiClient.post<GoogleOAuthResponse>('/auth/google/callback', request);
     return response.data;
   }
 

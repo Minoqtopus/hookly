@@ -1,13 +1,18 @@
 /**
- * Protected Layout - Private Route Layout
+ * Protected Layout - Authentication Guard
  * 
- * Staff Engineer Design: Clean, scalable foundation
- * Business Logic: Basic layout structure for authenticated users
+ * Staff Engineer Implementation:
+ * - Client-side authentication checks
+ * - Automatic redirects for unauthenticated users
+ * - Loading states and error handling
+ * - Integration with useAuth hook
  */
 
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
+import { useAuth } from '@/src/domains/auth';
+import { useRouter } from 'next/navigation';
 
 // ================================
 // Types
@@ -22,6 +27,60 @@ interface ProtectedLayoutProps {
 // ================================
 
 export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
+  const { isAuthenticated, isLoading, error } = useAuth();
+  const router = useRouter();
+
+  // Authentication guard effect
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      console.log('[PROTECTED_LAYOUT] User not authenticated, redirecting to login');
+      router.push('/login');
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if authentication failed
+  if (error && !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-lg font-semibold mb-2">Authentication Error</div>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => router.push('/login')}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render protected content if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Render protected content for authenticated users
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation Header */}
