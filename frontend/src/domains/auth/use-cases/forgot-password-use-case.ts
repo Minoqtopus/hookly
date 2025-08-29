@@ -2,11 +2,10 @@
  * Forgot Password Use Case - Business Logic Layer
  * 
  * Staff Engineer Design: Clean use-case pattern
- * Business Logic: Handles password reset request business rules
- * No Mock Data: Uses real auth service for real data
+ * Business Logic: ONLY business rules and password reset request
+ * No UI Concerns: No notifications or UI state
  */
 
-import { NotificationService } from '../../../shared/services/notification-service';
 import { PasswordResetRequest } from '../contracts/auth';
 import { AuthService } from '../services/auth-service';
 
@@ -17,39 +16,21 @@ export interface ForgotPasswordUseCaseResult {
 }
 
 export class ForgotPasswordUseCase {
-  constructor(
-    private authService: AuthService,
-    private notificationService: NotificationService
-  ) {}
+  constructor(private authService: AuthService) {}
 
   async execute(request: PasswordResetRequest): Promise<ForgotPasswordUseCaseResult> {
     try {
-      // 1. Call auth service for data access
+      // 1. Business Logic: Call auth service for data access
       const response = await this.authService.requestPasswordReset(request);
       
-      // 2. Business logic: Handle password reset request
-      if (response.success) {
-        this.notificationService.showSuccess(
-          'Password reset email sent! Check your inbox for instructions.'
-        );
-        
-        return {
-          success: true,
-          message: response.message || 'Password reset email sent successfully',
-        };
-      } else {
-        // Handle failure response
-        this.notificationService.showError(response.message || 'Failed to send password reset email');
-        
-        return {
-          success: false,
-          error: response.message || 'Failed to send password reset email',
-        };
-      }
+      // 2. Business Logic: Return business result
+      return {
+        success: response.success,
+        message: response.message,
+      };
     } catch (error) {
       // Handle unexpected errors
-      const errorMessage = error instanceof Error ? error.message : 'Failed to process password reset request';
-      this.notificationService.showError(errorMessage);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process request';
       
       return {
         success: false,

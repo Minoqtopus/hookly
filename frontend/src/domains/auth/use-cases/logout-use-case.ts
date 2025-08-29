@@ -2,13 +2,10 @@
  * Logout Use Case - Business Logic Layer
  * 
  * Staff Engineer Design: Clean use-case pattern
- * Business Logic: Handles logout business rules and state management
- * No Mock Data: Uses real auth service for real data
+ * Business Logic: ONLY business rules and logout
+ * No UI Concerns: No notifications, navigation, or UI state
  */
 
-import { NavigationService } from '../../../shared/services/navigation-service';
-import { NotificationService } from '../../../shared/services/notification-service';
-import { TokenService } from '../../../shared/services/token-service';
 import { LogoutRequest } from '../contracts/auth';
 import { AuthService } from '../services/auth-service';
 
@@ -19,42 +16,25 @@ export interface LogoutUseCaseResult {
 }
 
 export class LogoutUseCase {
-  constructor(
-    private authService: AuthService,
-    private navigationService: NavigationService,
-    private notificationService: NotificationService,
-    private tokenService: TokenService
-  ) {}
+  constructor(private authService: AuthService) {}
 
   async execute(request: LogoutRequest): Promise<LogoutUseCaseResult> {
     try {
-      // 1. Call auth service for data access (if we have refresh token)
-      if (request.refresh_token) {
-        await this.authService.logout(request);
-      }
+      // 1. Business Logic: Call auth service for data access
+      const response = await this.authService.logout(request);
       
-      // 2. Business logic: Handle logout
-      // Clear local tokens
-      this.tokenService.clearTokens();
-      
-      // Show success notification
-      this.notificationService.showSuccess('Logged out successfully');
-      
-      // Navigate to login page
-      this.navigationService.navigateTo('/login');
-      
+      // 2. Business Logic: Return business result
       return {
-        success: true,
-        message: 'Logged out successfully',
+        success: response.success,
+        message: response.message,
       };
     } catch (error) {
-      // Even if logout fails, clear local state
-      this.tokenService.clearTokens();
-      this.navigationService.navigateTo('/login');
+      // Handle unexpected errors
+      const errorMessage = error instanceof Error ? error.message : 'Logout failed';
       
       return {
-        success: true,
-        message: 'Logged out successfully',
+        success: false,
+        error: errorMessage,
       };
     }
   }

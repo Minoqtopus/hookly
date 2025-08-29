@@ -1,8 +1,9 @@
 /**
  * Auth Hook - React Integration
  * 
- * Staff Engineer Design: Clean hook pattern with all use-cases integrated
- * Business Logic: Uses real auth use-cases for business logic
+ * Staff Engineer Design: Clean hook pattern with proper separation
+ * Business Logic: Uses use-cases for business logic only
+ * UI Concerns: Handles notifications, navigation, and token management
  * No Mock Data: Real backend integration through use-cases
  */
 
@@ -40,17 +41,17 @@ const tokenService = new TokenService();
 const navigationService = new NavigationService();
 const notificationService = new NotificationService();
 
-// Create use cases with dependencies
-const loginUseCase = new LoginUseCase(authService, navigationService, notificationService, tokenService);
-const registerUseCase = new RegisterUseCase(authService, navigationService, notificationService, tokenService);
-const forgotPasswordUseCase = new ForgotPasswordUseCase(authService, notificationService);
-const resetPasswordUseCase = new ResetPasswordUseCase(authService, navigationService, notificationService);
-const googleOAuthUseCase = new GoogleOAuthUseCase(authService, navigationService, notificationService, tokenService);
-const verifyEmailUseCase = new VerifyEmailUseCase(authService, navigationService, notificationService);
-const sendVerificationEmailUseCase = new SendVerificationEmailUseCase(authService, notificationService);
-const logoutUseCase = new LogoutUseCase(authService, navigationService, notificationService, tokenService);
-const changePasswordUseCase = new ChangePasswordUseCase(authService, notificationService);
-const refreshTokenUseCase = new RefreshTokenUseCase(authService, tokenService);
+// Create use cases with dependencies (only business logic)
+const loginUseCase = new LoginUseCase(authService);
+const registerUseCase = new RegisterUseCase(authService);
+const forgotPasswordUseCase = new ForgotPasswordUseCase(authService);
+const resetPasswordUseCase = new ResetPasswordUseCase(authService);
+const googleOAuthUseCase = new GoogleOAuthUseCase(authService);
+const verifyEmailUseCase = new VerifyEmailUseCase(authService);
+const sendVerificationEmailUseCase = new SendVerificationEmailUseCase(authService);
+const logoutUseCase = new LogoutUseCase(authService);
+const changePasswordUseCase = new ChangePasswordUseCase(authService);
+const refreshTokenUseCase = new RefreshTokenUseCase(authService);
 
 // Local state interface
 interface AuthState {
@@ -70,14 +71,34 @@ export function useAuth() {
     error: null,
   });
 
-  // Login - Uses LoginUseCase
+  // Login - Uses LoginUseCase for business logic, Hook handles UI concerns
   const login = useCallback(async (credentials: LoginRequest) => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
+      // Call use-case for business logic only
       const result = await loginUseCase.execute(credentials);
       
       if (result.success) {
+        // Handle UI concerns in hook
+        const response = await authService.login(credentials);
+        
+        // Store tokens
+        tokenService.setAccessToken(response.tokens.access_token);
+        tokenService.setRefreshToken(response.tokens.refresh_token);
+        
+        // Show notifications
+        notificationService.showSuccess('Login successful!');
+        
+        if (!response.user.is_email_verified) {
+          notificationService.showInfo(
+            `You have ${response.remaining_generations} generations remaining. Verify your email to unlock 15 total!`
+          );
+        }
+        
+        // Navigate
+        navigationService.navigateTo('/dashboard');
+        
         // Update local state
         setAuthState({
           user: result.user,
@@ -88,24 +109,46 @@ export function useAuth() {
         });
       } else {
         setAuthState(prev => ({ ...prev, isLoading: false, error: result.error || 'Login failed' }));
+        notificationService.showError(result.error || 'Login failed');
       }
       
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
       setAuthState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
+      notificationService.showError(errorMessage);
       return { success: false, error: errorMessage };
     }
   }, []);
 
-  // Register - Uses RegisterUseCase
+  // Register - Uses RegisterUseCase for business logic, Hook handles UI concerns
   const register = useCallback(async (userData: RegisterRequest) => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
+      // Call use-case for business logic only
       const result = await registerUseCase.execute(userData);
       
       if (result.success) {
+        // Handle UI concerns in hook
+        const response = await authService.register(userData);
+        
+        // Store tokens
+        tokenService.setAccessToken(response.tokens.access_token);
+        tokenService.setRefreshToken(response.tokens.refresh_token);
+        
+        // Show notifications
+        notificationService.showSuccess('Registration successful! Welcome to Hookly!');
+        
+        if (!response.user.is_email_verified) {
+          notificationService.showInfo(
+            `You have ${response.remaining_generations} generations remaining. Verify your email to unlock 15 total!`
+          );
+        }
+        
+        // Navigate
+        navigationService.navigateTo('/dashboard');
+        
         // Update local state
         setAuthState({
           user: result.user,
@@ -116,12 +159,14 @@ export function useAuth() {
         });
       } else {
         setAuthState(prev => ({ ...prev, isLoading: false, error: result.error || 'Registration failed' }));
+        notificationService.showError(result.error || 'Registration failed');
       }
       
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Registration failed';
       setAuthState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
+      notificationService.showError(errorMessage);
       return { success: false, error: errorMessage };
     }
   }, []);
@@ -132,11 +177,19 @@ export function useAuth() {
     
     try {
       const result = await forgotPasswordUseCase.execute({ email });
+      
+      if (result.success) {
+        notificationService.showSuccess('Password reset email sent! Check your inbox for instructions.');
+      } else {
+        notificationService.showError(result.error || 'Failed to send password reset email');
+      }
+      
       setAuthState(prev => ({ ...prev, isLoading: false }));
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to process request';
       setAuthState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
+      notificationService.showError(errorMessage);
       return { success: false, error: errorMessage };
     }
   }, []);
@@ -147,11 +200,20 @@ export function useAuth() {
     
     try {
       const result = await resetPasswordUseCase.execute({ token, new_password: newPassword });
+      
+      if (result.success) {
+        notificationService.showSuccess('Password reset successful! You can now login with your new password.');
+        navigationService.navigateTo('/login');
+      } else {
+        notificationService.showError(result.error || 'Failed to reset password');
+      }
+      
       setAuthState(prev => ({ ...prev, isLoading: false }));
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to reset password';
       setAuthState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
+      notificationService.showError(errorMessage);
       return { success: false, error: errorMessage };
     }
   }, []);
@@ -164,6 +226,25 @@ export function useAuth() {
       const result = await googleOAuthUseCase.execute({ code, state });
       
       if (result.success) {
+        // Handle UI concerns in hook
+        const response = await authService.googleOAuth({ code, state });
+        
+        // Store tokens
+        tokenService.setAccessToken(response.tokens.access_token);
+        tokenService.setRefreshToken(response.tokens.refresh_token);
+        
+        // Show notifications
+        notificationService.showSuccess('Google login successful! Welcome to Hookly!');
+        
+        if (!response.user.is_email_verified) {
+          notificationService.showInfo(
+            `You have ${response.remaining_generations} generations remaining. Verify your email to unlock 15 total!`
+          );
+        }
+        
+        // Navigate
+        navigationService.navigateTo('/dashboard');
+        
         // Update local state
         setAuthState({
           user: result.user,
@@ -174,12 +255,14 @@ export function useAuth() {
         });
       } else {
         setAuthState(prev => ({ ...prev, isLoading: false, error: result.error || 'Google login failed' }));
+        notificationService.showError(result.error || 'Google login failed');
       }
       
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Google login failed';
       setAuthState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
+      notificationService.showError(errorMessage);
       return { success: false, error: errorMessage };
     }
   }, []);
@@ -192,6 +275,13 @@ export function useAuth() {
       const result = await verifyEmailUseCase.execute({ token });
       
       if (result.success) {
+        // Handle UI concerns in hook
+        notificationService.showSuccess(
+          `Email verified successfully! You now have ${result.remainingGenerations} generations available.`
+        );
+        
+        navigationService.navigateTo('/dashboard');
+        
         // Update local state
         setAuthState(prev => ({
           ...prev,
@@ -201,12 +291,14 @@ export function useAuth() {
         }));
       } else {
         setAuthState(prev => ({ ...prev, isLoading: false, error: result.error || 'Email verification failed' }));
+        notificationService.showError(result.error || 'Email verification failed');
       }
       
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Email verification failed';
       setAuthState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
+      notificationService.showError(errorMessage);
       return { success: false, error: errorMessage };
     }
   }, []);
@@ -217,11 +309,19 @@ export function useAuth() {
     
     try {
       const result = await sendVerificationEmailUseCase.execute({ email });
+      
+      if (result.success) {
+        notificationService.showSuccess('Verification email sent! Check your inbox and click the verification link.');
+      } else {
+        notificationService.showError(result.error || 'Failed to send verification email');
+      }
+      
       setAuthState(prev => ({ ...prev, isLoading: false }));
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to send verification email';
       setAuthState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
+      notificationService.showError(errorMessage);
       return { success: false, error: errorMessage };
     }
   }, []);
@@ -234,6 +334,17 @@ export function useAuth() {
       const refreshToken = tokenService.getRefreshToken();
       const result = await logoutUseCase.execute({ refresh_token: refreshToken || '' });
       
+      // Handle UI concerns in hook
+      if (result.success) {
+        notificationService.showSuccess('Logged out successfully');
+      } else {
+        notificationService.showError(result.error || 'Logout failed');
+      }
+      
+      // Clear tokens and navigate regardless of result
+      tokenService.clearTokens();
+      navigationService.navigateTo('/login');
+      
       // Clear local state regardless of result
       setAuthState({
         user: null,
@@ -245,7 +356,10 @@ export function useAuth() {
       
       return result;
     } catch (error) {
-      // Even if logout fails, clear local state
+      // Even if logout fails, clear local state and navigate
+      tokenService.clearTokens();
+      navigationService.navigateTo('/login');
+      
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -264,11 +378,19 @@ export function useAuth() {
     
     try {
       const result = await changePasswordUseCase.execute({ current_password: currentPassword, new_password: newPassword });
+      
+      if (result.success) {
+        notificationService.showSuccess('Password changed successfully! You can now use your new password.');
+      } else {
+        notificationService.showError(result.error || 'Failed to change password');
+      }
+      
       setAuthState(prev => ({ ...prev, isLoading: false }));
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to change password';
       setAuthState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
+      notificationService.showError(errorMessage);
       return { success: false, error: errorMessage };
     }
   }, []);
@@ -284,7 +406,9 @@ export function useAuth() {
       const result = await refreshTokenUseCase.execute({ refresh_token: refreshTokenValue });
       
       if (result.success) {
-        // Token refreshed successfully
+        // Store new tokens
+        tokenService.setAccessToken(result.tokens.access_token);
+        tokenService.setRefreshToken(result.tokens.refresh_token);
         return result;
       } else {
         // Refresh failed, logout user

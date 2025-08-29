@@ -2,13 +2,10 @@
  * Register Use Case - Business Logic Layer
  * 
  * Staff Engineer Design: Clean use-case pattern
- * Business Logic: Handles registration business rules and state management
- * No Mock Data: Uses real auth service for real data
+ * Business Logic: ONLY business rules and validation
+ * No UI Concerns: No notifications, navigation, or UI state
  */
 
-import { NavigationService } from '../../../shared/services/navigation-service';
-import { NotificationService } from '../../../shared/services/notification-service';
-import { TokenService } from '../../../shared/services/token-service';
 import { RegisterRequest } from '../contracts/auth';
 import { AuthService } from '../services/auth-service';
 
@@ -25,19 +22,13 @@ export interface RegisterFormData {
 }
 
 export class RegisterUseCase {
-  constructor(
-    private authService: AuthService,
-    private navigationService: NavigationService,
-    private notificationService: NotificationService,
-    private tokenService: TokenService
-  ) {}
+  constructor(private authService: AuthService) {}
 
   async execute(formData: RegisterFormData): Promise<RegisterUseCaseResult> {
     try {
       // 1. Business Logic: Validate form data
       const validationResult = this.validateFormData(formData);
       if (!validationResult.isValid) {
-        this.notificationService.showError(validationResult.error);
         return {
           success: false,
           error: validationResult.error,
@@ -50,27 +41,10 @@ export class RegisterUseCase {
         password: formData.password,
       };
 
-      // 3. Call auth service for data access
+      // 3. Business Logic: Call auth service for data access
       const response = await this.authService.register(registerRequest);
       
-      // 4. Business Logic: Handle successful registration
-      // Store auth token
-      this.tokenService.setAccessToken(response.tokens.access_token);
-      this.tokenService.setRefreshToken(response.tokens.refresh_token);
-      
-      // Show success notification
-      this.notificationService.showSuccess('Registration successful! Welcome to Hookly!');
-      
-      // Check if user needs email verification
-      if (!response.user.is_email_verified) {
-        this.notificationService.showInfo(
-          `You have ${response.remaining_generations} generations remaining. Verify your email to unlock 15 total!`
-        );
-      }
-      
-      // Navigate to dashboard
-      this.navigationService.navigateTo('/dashboard');
-      
+      // 4. Business Logic: Return business result
       return {
         success: true,
         user: response.user,
@@ -79,7 +53,6 @@ export class RegisterUseCase {
     } catch (error) {
       // Handle unexpected errors
       const errorMessage = error instanceof Error ? error.message : 'Registration failed';
-      this.notificationService.showError(errorMessage);
       
       return {
         success: false,
