@@ -19,6 +19,11 @@ export interface RegisterUseCaseResult {
   error?: string;
 }
 
+export interface RegisterFormData {
+  email: string;
+  password: string;
+}
+
 export class RegisterUseCase {
   constructor(
     private authService: AuthService,
@@ -27,12 +32,28 @@ export class RegisterUseCase {
     private tokenService: TokenService
   ) {}
 
-  async execute(userData: RegisterRequest): Promise<RegisterUseCaseResult> {
+  async execute(formData: RegisterFormData): Promise<RegisterUseCaseResult> {
     try {
-      // 1. Call auth service for data access
-      const response = await this.authService.register(userData);
+      // 1. Business Logic: Validate form data
+      const validationResult = this.validateFormData(formData);
+      if (!validationResult.isValid) {
+        this.notificationService.showError(validationResult.error);
+        return {
+          success: false,
+          error: validationResult.error,
+        };
+      }
+
+      // 2. Business Logic: Prepare request for backend
+      const registerRequest: RegisterRequest = {
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+      };
+
+      // 3. Call auth service for data access
+      const response = await this.authService.register(registerRequest);
       
-      // 2. Business logic: Handle successful registration
+      // 4. Business Logic: Handle successful registration
       // Store auth token
       this.tokenService.setAccessToken(response.tokens.access_token);
       this.tokenService.setRefreshToken(response.tokens.refresh_token);
@@ -65,5 +86,35 @@ export class RegisterUseCase {
         error: errorMessage,
       };
     }
+  }
+
+  private validateFormData(formData: RegisterFormData): { isValid: boolean; error: string } {
+    // Email validation
+    if (!formData.email || !formData.email.trim()) {
+      return { isValid: false, error: 'Email is required' };
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      return { isValid: false, error: 'Please enter a valid email address' };
+    }
+
+    // Password validation
+    if (!formData.password || formData.password.length < 8) {
+      return { isValid: false, error: 'Password must be at least 8 characters long' };
+    }
+
+    const hasUpperCase = /[A-Z]/.test(formData.password);
+    const hasLowerCase = /[a-z]/.test(formData.password);
+    const hasNumbers = /\d/.test(formData.password);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+      return { 
+        isValid: false, 
+        error: 'Password must contain uppercase, lowercase, and numbers' 
+      };
+    }
+
+    return { isValid: true, error: '' };
   }
 }
