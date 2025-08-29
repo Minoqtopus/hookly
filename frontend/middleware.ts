@@ -4,10 +4,10 @@ import { NextRequest, NextResponse } from 'next/server';
  * Enhanced Middleware with Route Protection
  * 
  * Staff Engineer Implementation:
+ * - Two route types: Public (guest only) and Protected (authenticated only)
  * - Server-side authentication checks
  * - Proper route protection for public/private routes
  * - Security headers and redirects
- * - Token validation and user state management
  */
 
 export function middleware(request: NextRequest) {
@@ -20,19 +20,17 @@ export function middleware(request: NextRequest) {
   // Determine authentication status
   const isAuthenticated = !!(accessToken || refreshToken);
   
-  // Define route categories
-  const publicOnlyRoutes = ['/login', '/register', '/demo'];
+  // Define route categories - SIMPLIFIED to two types
+  const publicRoutes = ['/', '/login', '/register', '/pricing', '/demo'];
   const protectedRoutes = ['/dashboard', '/generate', '/settings', '/verification', '/history'];
-  const publicRoutes = ['/', '/pricing', '/demo'];
   
   // Check if current path matches any route category
-  const isPublicOnlyRoute = publicOnlyRoutes.some(route => pathname === route);
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
   const isPublicRoute = publicRoutes.some(route => pathname === route);
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
   
-  // Route protection logic
-  if (isAuthenticated && isPublicOnlyRoute) {
-    // Authenticated users trying to access login/register - redirect to dashboard
+  // Route protection logic - SIMPLIFIED
+  if (isAuthenticated && isPublicRoute) {
+    // Authenticated users trying to access public routes - redirect to dashboard
     console.log(`[MIDDLEWARE] Authenticated user redirected from ${pathname} to /dashboard`);
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }

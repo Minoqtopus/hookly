@@ -1,18 +1,18 @@
 /**
- * Route Guard Component - Additional Route-Level Protection
+ * Route Guard Component - Route-Level Protection
  * 
  * Staff Engineer Implementation:
+ * - Two route types: Public (guest only) and Protected (authenticated only)
  * - Reusable route protection component
- * - Configurable for different route types
  * - Loading states and redirects
  * - Integration with useAuth hook
  */
 
 'use client';
 
-import { ReactNode, useEffect } from 'react';
 import { useAuth } from '@/src/domains/auth';
 import { useRouter } from 'next/navigation';
+import { ReactNode, useEffect } from 'react';
 
 // ================================
 // Types
@@ -20,7 +20,7 @@ import { useRouter } from 'next/navigation';
 
 export interface RouteGuardProps {
   children: ReactNode;
-  type: 'public-only' | 'protected' | 'public';
+  type: 'public' | 'protected';
   fallback?: ReactNode;
   redirectTo?: string;
 }
@@ -42,11 +42,11 @@ export function RouteGuard({
     if (isLoading) return;
 
     switch (type) {
-      case 'public-only':
+      case 'public':
         // Guest users only - redirect authenticated users
         if (isAuthenticated) {
           const target = redirectTo || '/dashboard';
-          console.log(`[ROUTE_GUARD] Authenticated user redirected from public-only route to ${target}`);
+          console.log(`[ROUTE_GUARD] Authenticated user redirected from public route to ${target}`);
           router.push(target);
         }
         break;
@@ -58,10 +58,6 @@ export function RouteGuard({
           console.log(`[ROUTE_GUARD] Guest user redirected from protected route to ${target}`);
           router.push(target);
         }
-        break;
-
-      case 'public':
-        // Both user types can access - no redirects needed
         break;
     }
   }, [isAuthenticated, isLoading, type, redirectTo, router]);
@@ -78,8 +74,8 @@ export function RouteGuard({
     );
   }
 
-  // Show redirect state for public-only routes when authenticated
-  if (type === 'public-only' && isAuthenticated) {
+  // Show redirect state for public routes when authenticated
+  if (type === 'public' && isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">

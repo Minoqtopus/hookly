@@ -2,16 +2,16 @@
  * Public Layout - Guest User Protection
  * 
  * Staff Engineer Implementation:
- * - Redirects authenticated users away from public-only routes
- * - Guest-only access for login, register, demo
+ * - Redirects ALL authenticated users away from public routes
+ * - Public routes are guest-only (no authenticated users allowed)
  * - Integration with useAuth hook for state management
  */
 
 'use client';
 
-import { ReactNode, useEffect } from 'react';
 import { useAuth } from '@/src/domains/auth';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { ReactNode, useEffect } from 'react';
 
 // ================================
 // Types
@@ -28,19 +28,14 @@ interface PublicLayoutProps {
 export default function PublicLayout({ children }: PublicLayoutProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
-  // Define public-only routes (guest users only)
-  const publicOnlyRoutes = ['/login', '/register', '/demo'];
-  const isPublicOnlyRoute = publicOnlyRoutes.includes(pathname);
-
-  // Guest user protection effect
+  // Guest user protection effect - ALL public routes are guest-only
   useEffect(() => {
-    if (!isLoading && isAuthenticated && isPublicOnlyRoute) {
-      console.log(`[PUBLIC_LAYOUT] Authenticated user redirected from ${pathname} to /dashboard`);
+    if (!isLoading && isAuthenticated) {
+      console.log('[PUBLIC_LAYOUT] Authenticated user redirected from public route to /dashboard');
       router.push('/dashboard');
     }
-  }, [isAuthenticated, isLoading, router, pathname, isPublicOnlyRoute]);
+  }, [isAuthenticated, isLoading, router]);
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -54,8 +49,8 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
     );
   }
 
-  // Show redirect state for authenticated users on public-only routes
-  if (isAuthenticated && isPublicOnlyRoute) {
+  // Show redirect state for authenticated users on ALL public routes
+  if (isAuthenticated) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
@@ -66,7 +61,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
     );
   }
 
-  // Render public content for guest users
+  // Render public content for guest users only
   return (
     <div className="min-h-screen bg-white">
       {/* Simple Navigation */}
