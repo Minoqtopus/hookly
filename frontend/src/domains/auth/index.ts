@@ -27,5 +27,5 @@ export { ResetPasswordUseCase } from './use-cases/reset-password-use-case';
 export { SendVerificationEmailUseCase } from './use-cases/send-verification-email-use-case';
 export { VerifyEmailUseCase } from './use-cases/verify-email-use-case';
 
-// Export hooks
-export { useAuth } from './hooks/use-auth';
+// Export context and hooks
+export { AuthProvider, useAuth } from './contexts/auth-context';

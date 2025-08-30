@@ -51,6 +51,10 @@ export class ApiClient {
         ...this.defaultHeaders,
         // Automatically include Authorization header if token exists
         ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+        // Prevent HTTP caching for API calls to ensure fresh data
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
         ...(options.headers || {}),
       },
     };

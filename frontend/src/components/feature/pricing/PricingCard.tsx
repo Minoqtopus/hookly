@@ -33,10 +33,9 @@ export const PricingCard = ({ plan }: PricingCardProps) => {
         </span>
       </p>
       <Button
-        className="mt-8 w-full"
-        variant={plan.isRecommended ? "default" : "outline"}
+        className="mt-8 w-full bg-white text-black hover:bg-gray-50 border border-gray-200 font-semibold"
       >
-        Get Started
+        Upgrade to Pro
       </Button>
       <ul
         role="list"

@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# Important pages for crawlers
+Allow: /dashboard
+Allow: /generate
+Allow: /pricing
+
+# Block admin/auth pages from indexing
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /auth/
+
+# Sitemap location
+Sitemap: https://hookly.com/sitemap.xml
+
+# Crawl delay (optional, helps with server load)
+Crawl-delay: 1

@@ -69,7 +69,7 @@ const UpgradeCard = () => (
             </ul>
         </div>
         <Link href="/pricing" className="mt-6">
-            <Button className="w-full">Upgrade Now</Button>
+            <Button className="w-full bg-white text-black hover:bg-gray-50 border border-gray-200 font-semibold">Upgrade to Pro</Button>
         </Link>
     </div>
 );
