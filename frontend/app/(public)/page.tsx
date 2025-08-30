@@ -6,9 +6,7 @@
  */
 
 import { Metadata } from 'next';
-import { CTA } from "./(home)/components/cta";
-import { Features } from "./(home)/components/features";
-import { Hero } from "./(home)/components/hero";
+import { CTA, Features, Hero } from "@/components/composite";
 
 // ================================
 // SEO Metadata

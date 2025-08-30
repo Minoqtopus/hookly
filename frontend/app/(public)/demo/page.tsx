@@ -7,7 +7,7 @@
 
 'use client';
 
-import { Demo } from "./components/demo";
+import { Demo } from "@/components/feature/demo";
 
 export default function DemoPage() {
   return <Demo />;

@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { Repository, MoreThan, LessThan } from 'typeorm';
@@ -10,6 +12,8 @@ export class RefreshTokenService {
   constructor(
     @InjectRepository(RefreshToken)
     private refreshTokenRepository: Repository<RefreshToken>,
+    private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   /**
@@ -50,38 +54,107 @@ export class RefreshTokenService {
   /**
    * Validate refresh token and check if it's valid/not revoked
    * 
+   * Staff Engineer Design: Proper token validation with O(1) database lookup
+   * - Extracts user ID from JWT before database query (avoids O(n) token loading)
+   * - Uses targeted query instead of loading all tokens
+   * - Separates concerns: JWT validation, database lookup, and locking
+   * - Minimizes transaction time by doing bcrypt outside transaction when possible
+   * 
    * @param token - The JWT refresh token to validate
    * @returns RefreshToken entity if valid, null if invalid/revoked/expired
    */
   async validateRefreshToken(token: string): Promise<RefreshToken | null> {
-    // Find all non-revoked tokens for this user and compare with bcrypt
-    // Since bcrypt uses salt, we can't hash the token directly for lookup
-    const candidateTokens = await this.refreshTokenRepository.find({
-      where: { 
-        is_revoked: false,
-        expires_at: MoreThan(new Date())
-      },
-      relations: ['user'],
-    });
-
-    // Compare token against all candidate hashes
-    let matchedToken: RefreshToken | null = null;
-    for (const candidate of candidateTokens) {
-      if (await bcrypt.compare(token, candidate.token_hash)) {
-        matchedToken = candidate;
-        break;
+    try {
+      // Step 1: Extract user ID from JWT payload without full validation
+      // This allows us to query only relevant tokens (O(1) vs O(n))
+      let userId: string;
+      try {
+        const decoded = this.jwtService.decode(token) as any;
+        userId = decoded?.sub;
+        if (!userId) {
+          return null; // Invalid JWT structure
+        }
+      } catch (error) {
+        return null; // Malformed JWT
       }
+
+      // Step 2: Get candidate tokens for this specific user only
+      const candidateTokens = await this.refreshTokenRepository.find({
+        where: { 
+          user_id: userId,
+          is_revoked: false,
+          expires_at: MoreThan(new Date())
+        },
+        // Note: No relations here - we'll load user separately if needed
+        // No locking here - we'll lock only the specific token we find
+      });
+
+      if (candidateTokens.length === 0) {
+        return null; // No valid tokens for this user
+      }
+
+      // Step 3: Find matching token through bcrypt comparison (outside transaction)
+      let matchedToken: RefreshToken | null = null;
+      for (const candidate of candidateTokens) {
+        try {
+          if (await bcrypt.compare(token, candidate.token_hash)) {
+            matchedToken = candidate;
+            break;
+          }
+        } catch (error) {
+          // Bcrypt comparison failed - continue to next token
+          continue;
+        }
+      }
+
+      if (!matchedToken) {
+        return null; // Token hash doesn't match any stored tokens
+      }
+
+      // Step 4: Verify JWT signature and expiration with proper secret
+      try {
+        await this.jwtService.verifyAsync(token, {
+          secret: this.configService.get('JWT_REFRESH_SECRET')
+        });
+      } catch (error) {
+        // JWT signature invalid or expired - revoke this token for security
+        await this.revokeToken(matchedToken, 'Invalid JWT signature detected');
+        return null;
+      }
+
+      // Step 5: Update last used timestamp in a minimal transaction
+      // Lock only the specific token we're updating (not all tokens)
+      const updatedToken = await this.refreshTokenRepository.manager.transaction(async manager => {
+        const refreshTokenRepository = manager.getRepository(RefreshToken);
+        
+        // Lock and re-fetch this specific token to prevent race conditions
+        const lockedToken = await refreshTokenRepository.findOne({
+          where: { 
+            id: matchedToken.id,
+            is_revoked: false,
+            expires_at: MoreThan(new Date())
+          },
+          lock: { mode: 'pessimistic_write' }
+        });
+
+        if (!lockedToken) {
+          return null; // Token was revoked or expired between our checks
+        }
+
+        // Update last used timestamp for security auditing
+        lockedToken.last_used_at = new Date();
+        await refreshTokenRepository.save(lockedToken);
+
+        return lockedToken;
+      });
+
+      return updatedToken;
+
+    } catch (error) {
+      // Log error but don't expose internal details
+      console.error('RefreshTokenService.validateRefreshToken error:', error);
+      return null;
     }
-
-    if (!matchedToken) {
-      return null; // Token not found or invalid
-    }
-
-    // Update last used timestamp for security tracking
-    matchedToken.last_used_at = new Date();
-    await this.refreshTokenRepository.save(matchedToken);
-
-    return matchedToken;
   }
 
   /**

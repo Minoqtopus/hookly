@@ -27,6 +27,12 @@ function validateSecurityConfiguration() {
     throw error;
   }
   
+  // Validate session secret
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!sessionSecret || sessionSecret.length < 32) {
+    throw new Error('SESSION_SECRET is required and must be at least 32 characters for security');
+  }
+
   // Validate webhook secret for payment security
   const webhookSecret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET;
   if (!webhookSecret || webhookSecret.length < 16) {
@@ -63,10 +69,11 @@ async function bootstrap() {
     forbidNonWhitelisted: true,
   }));
   
-  // Add session middleware for OAuth support
+  // Add session middleware for OAuth support  
+  const sessionSecret = process.env.SESSION_SECRET!; // Already validated above
   app.use(
     session({
-      secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || 'temporary-session-secret',
+      secret: sessionSecret, // Use validated session secret (no fallbacks)
       resave: false,
       saveUninitialized: false,
       cookie: {

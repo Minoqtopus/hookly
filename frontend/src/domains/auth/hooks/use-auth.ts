@@ -87,16 +87,12 @@ export function useAuth() {
           tokenService.setRefreshToken(result.tokens.refresh_token);
         }
         
-        // Calculate remaining generations based on user data
-        const remainingGenerations = result.user ? 
-          (result.user.is_email_verified ? 15 : 5) - result.user.trial_generations_used : 0;
-        
-        // Show notifications
+        // UI STATE: Show notifications (business logic already handled in Use-Case)
         notificationService.showSuccess('Login successful!');
         
-        if (result.user && !result.user.is_email_verified) {
+        if (result.user && !result.user.is_email_verified && result.remainingGenerations !== undefined) {
           notificationService.showInfo(
-            `You have ${remainingGenerations} generations remaining. Verify your email to unlock 15 total!`
+            `You have ${result.remainingGenerations} generations remaining. Subscribe for unlimited access!`
           );
         }
         
@@ -107,7 +103,7 @@ export function useAuth() {
         setAuthState({
           user: result.user || null,
           isAuthenticated: true,
-          remainingGenerations,
+          remainingGenerations: result.remainingGenerations || 0,
           isLoading: false,
           error: null,
         });
@@ -140,16 +136,12 @@ export function useAuth() {
           tokenService.setRefreshToken(result.tokens.refresh_token);
         }
         
-        // Calculate remaining generations based on user data
-        const remainingGenerations = result.user ? 
-          (result.user.is_email_verified ? 15 : 5) - result.user.trial_generations_used : 0;
-        
-        // Show notifications
+        // UI STATE: Show notifications (business logic already handled in Use-Case)
         notificationService.showSuccess('Registration successful! Welcome to Hookly!');
         
-        if (result.user && !result.user.is_email_verified) {
+        if (result.user && !result.user.is_email_verified && result.remainingGenerations !== undefined) {
           notificationService.showInfo(
-            `You have ${remainingGenerations} generations remaining. Verify your email to unlock 15 total!`
+            `You have ${result.remainingGenerations} generations remaining. Subscribe for unlimited access!`
           );
         }
         
@@ -159,7 +151,7 @@ export function useAuth() {
         // Update local state
         setAuthState({
           user: result.user || null,
-          remainingGenerations,
+          remainingGenerations: result.remainingGenerations || 0,
           isAuthenticated: true,
           isLoading: false,
           error: null,
@@ -261,12 +253,9 @@ export function useAuth() {
       const result = await verifyEmailUseCase.execute({ token });
       
       if (result.success) {
-        // Calculate remaining generations after email verification
-        const remainingGenerations = result.user ? 15 - result.user.trial_generations_used : 0;
-        
-        // Handle UI concerns in hook
+        // UI STATE: Handle UI concerns in hook (business logic in Use-Case)
         notificationService.showSuccess(
-          `Email verified successfully! You now have ${remainingGenerations} generations available.`
+          `Email verified successfully! You now have ${result.remainingGenerations || 0} generations available.`
         );
         
         navigationService.navigateTo('/dashboard');
@@ -275,7 +264,7 @@ export function useAuth() {
         setAuthState(prev => ({
           ...prev,
           user: result.user || null,
-          remainingGenerations,
+          remainingGenerations: result.remainingGenerations || 0,
           isLoading: false,
         }));
       } else {
@@ -323,18 +312,8 @@ export function useAuth() {
       const refreshToken = tokenService.getRefreshToken();
       const result = await logoutUseCase.execute({ refresh_token: refreshToken || '' });
       
-      // Handle UI concerns in hook
-      if (result.success) {
-        notificationService.showSuccess('Logged out successfully');
-      } else {
-        notificationService.showError(result.error || 'Logout failed');
-      }
-      
-      // Clear tokens and navigate regardless of result
+      // Always clear local state regardless of backend result
       tokenService.clearTokens();
-      navigationService.navigateTo('/login');
-      
-      // Clear local state regardless of result
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -343,12 +322,14 @@ export function useAuth() {
         error: null,
       });
       
-      return result;
+      // UI feedback and navigation
+      notificationService.showSuccess('Logged out successfully');
+      navigationService.navigateTo('/login');
+      
+      return { success: true, message: 'Logged out successfully' };
     } catch (error) {
-      // Even if logout fails, clear local state and navigate
+      // Even if backend logout fails, clear local state
       tokenService.clearTokens();
-      navigationService.navigateTo('/login');
-      
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -356,6 +337,9 @@ export function useAuth() {
         isLoading: false,
         error: null,
       });
+      
+      notificationService.showSuccess('Logged out successfully');
+      navigationService.navigateTo('/login');
       
       return { success: true, message: 'Logged out successfully' };
     }
@@ -520,6 +504,22 @@ export function useAuth() {
     checkAuthStatus();
   }, []);
 
+  // Update remaining generations after use
+  const updateRemainingGenerations = useCallback((newCount: number) => {
+    setAuthState(prev => ({
+      ...prev,
+      remainingGenerations: newCount
+    }));
+  }, []);
+
+  // Decrement generation count when used
+  const decrementGenerationCount = useCallback(() => {
+    setAuthState(prev => ({
+      ...prev,
+      remainingGenerations: Math.max(0, prev.remainingGenerations - 1)
+    }));
+  }, []);
+
   return {
     // State
     user: authState.user,
@@ -540,5 +540,7 @@ export function useAuth() {
     changePassword,
     refreshToken,
     getCurrentUser,
+    updateRemainingGenerations,
+    decrementGenerationCount,
   };
 }

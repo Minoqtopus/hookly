@@ -57,7 +57,7 @@ export class CreateGenerationDto {
   })
   @IsString()
   @IsNotEmpty()
-  @MinLength(BUSINESS_CONSTANTS.MIN_CONTENT_LENGTH.HOOK)
+  @MinLength(BUSINESS_CONSTANTS.MIN_CONTENT_LENGTH.HOOK) // Use consistent 20 char minimum
   @MaxLength(200)
   @IsContentPolicyCompliant()
   @IsSpecificTargetAudience()

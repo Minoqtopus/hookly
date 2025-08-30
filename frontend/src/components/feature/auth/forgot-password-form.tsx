@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/domains/auth";
-import { Logo } from "./logo";
+import { Logo } from "@/components/layout";
 
 export const ForgotPasswordForm = () => {
   const [email, setEmail] = useState("");

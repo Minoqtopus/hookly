@@ -10,7 +10,7 @@ import {
   OrderCreatedWebhook,
   SubscriptionCreatedWebhook
 } from '../types/external-apis';
-import { PLATFORM_ACCESS } from '../constants/business-rules';
+import { getPlatformAccess } from '../pricing/pricing.config';
 
 @Injectable()
 export class PaymentService {
@@ -294,8 +294,13 @@ export class PaymentService {
     const plan = planName === 'starter' ? UserPlan.STARTER : UserPlan.PRO;
     const now = new Date();
 
-    // Get platform access from centralized constants
-    const platformAccess = PLATFORM_ACCESS[plan];
+    // Get platform access from centralized pricing config
+    const availablePlatforms = getPlatformAccess(plan);
+    const platformAccess = {
+      has_tiktok_access: availablePlatforms.includes('tiktok'),
+      has_instagram_access: availablePlatforms.includes('instagram'), 
+      has_youtube_access: availablePlatforms.includes('youtube')
+    };
 
     const updateData = {
       plan,

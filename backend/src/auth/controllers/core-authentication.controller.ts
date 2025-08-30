@@ -478,7 +478,10 @@ export class CoreAuthenticationController {
     if (user.plan === UserPlan.TRIAL) {
       // BUSINESS REQUIREMENT: Email verification affects trial generation limits
       const trialLimit = getGenerationLimit(user.plan, user.is_email_verified);
-      generations_remaining = trialLimit - user.trial_generations_used;
+      generations_remaining = Math.max(0, trialLimit - user.trial_generations_used);
+      
+      // DEBUG: Log calculation for troubleshooting
+      console.log(`👤 Profile calculation for ${user.id}: limit=${trialLimit}, used=${user.trial_generations_used}, remaining=${generations_remaining}`);
     } else if (user.plan === UserPlan.STARTER) {
       const monthlyCount = needsReset ? 0 : user.monthly_generation_count;
       generations_remaining = BUSINESS_CONSTANTS.GENERATION_LIMITS.STARTER_MONTHLY - monthlyCount;

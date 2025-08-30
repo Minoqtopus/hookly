@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowDown } from "lucide-react";
 import Link from "next/link";
-import { InfiniteMovingCards } from "./ui/infinite-moving-cards";
+import { InfiniteMovingCards } from "@/components/ui";
 
 const scriptIdeas = [
   {

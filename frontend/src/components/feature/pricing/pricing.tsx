@@ -1,18 +1,20 @@
 "use client";
 
 import { Switch } from "@/components/ui/switch";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaqItem } from "./FaqItem";
 import { PricingCard } from "./PricingCard";
+import { fetchPricingConfig, formatPrice, getPricingForBillingCycle, type PricingConfiguration, type PricingTier } from "@/lib/pricing-api";
 
-const plans = {
+// Fallback plans (if API fails)
+const fallbackPlans = {
   monthly: [
     {
       name: "Starter",
       price: "$24",
       description: "For creators getting started with viral content.",
       features: [
-        "Up to 15 generations/month",
+        "Up to 50 generations/month",
         "Access to TikTok & Instagram",
         "Standard AI model",
         "Basic performance analytics",
@@ -25,8 +27,8 @@ const plans = {
       price: "$59",
       description: "For creators scaling their content strategy.",
       features: [
-        "Up to 50 generations/month",
-        "Access to TikTok, Instagram & X",
+        "Up to 200 generations/month",
+        "Access to TikTok, Instagram & YouTube",
         "Premium AI model",
         "Advanced performance analytics",
         "Priority email support",
@@ -41,7 +43,7 @@ const plans = {
       price: "$19",
       description: "For creators getting started with viral content.",
       features: [
-        "Up to 15 generations/month",
+        "Up to 50 generations/month",
         "Access to TikTok & Instagram",
         "Standard AI model",
         "Basic performance analytics",
@@ -54,8 +56,8 @@ const plans = {
       price: "$49",
       description: "For creators scaling their content strategy.",
       features: [
-        "Up to 50 generations/month",
-        "Access to TikTok, Instagram & X",
+        "Up to 200 generations/month",
+        "Access to TikTok, Instagram & YouTube",
         "Premium AI model",
         "Advanced performance analytics",
         "Priority email support",
@@ -91,7 +93,44 @@ const faqs = [
 
 export const Pricing = () => {
   const [isYearly, setIsYearly] = useState(false);
-  const currentPlans = isYearly ? plans.yearly : plans.monthly;
+  const [pricingConfig, setPricingConfig] = useState<PricingConfiguration | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadPricing() {
+      try {
+        const config = await fetchPricingConfig();
+        setPricingConfig(config);
+      } catch (err) {
+        console.error('Failed to load pricing config:', err);
+        setError('Failed to load pricing');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadPricing();
+  }, []);
+
+  // Convert API data to component format
+  const getCurrentPlans = () => {
+    if (pricingConfig) {
+      const tiersWithPricing = getPricingForBillingCycle(pricingConfig.tiers, isYearly ? 'yearly' : 'monthly');
+      return tiersWithPricing.map(tier => ({
+        name: tier.name,
+        price: formatPrice(tier.displayPrice, pricingConfig.currencySymbol),
+        description: tier.description,
+        features: tier.features.map(f => f.name),
+        isRecommended: tier.isRecommended
+      }));
+    }
+    
+    // Fallback to static plans
+    return isYearly ? fallbackPlans.yearly : fallbackPlans.monthly;
+  };
+
+  const currentPlans = getCurrentPlans();
 
   return (
     <div className="py-24 sm:py-32">
@@ -99,11 +138,17 @@ export const Pricing = () => {
         {/* Header */}
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Pricing Plans for Every Creator
+            {pricingConfig?.headline || 'Pricing Plans for Every Creator'}
           </h1>
           <p className="mt-6 text-lg leading-8 text-muted-foreground">
-            Choose the plan that fits your content creation needs. Cancel anytime.
+            {pricingConfig?.subheadline || 'Choose the plan that fits your content creation needs. Cancel anytime.'}
           </p>
+          {loading && (
+            <p className="mt-4 text-sm text-muted-foreground">Loading pricing...</p>
+          )}
+          {error && (
+            <p className="mt-4 text-sm text-red-500">Using cached pricing data</p>
+          )}
         </div>
 
         {/* Billing Toggle */}

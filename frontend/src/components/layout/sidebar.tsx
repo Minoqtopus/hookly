@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/domains/auth";
-import { Logo } from "app/(public)/components/logo";
+import { Logo } from "./logo";
 import {
     History,
     LayoutDashboard,
@@ -87,12 +87,15 @@ export const Sidebar = () => {
             <div className="p-4 rounded-lg bg-secondary space-y-3">
               <div className="text-center text-sm">
                 <p>
-                  <span className="font-semibold">
-                    {user?.trial_generations_used || 0} / {remainingGenerations + (user?.trial_generations_used || 0)}
-                  </span> Generations Used
+                  <span className="font-semibold text-primary">
+                    {remainingGenerations}
+                  </span> Generations Left
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(user?.trial_generations_used || 0)} / {(user?.trial_generations_used || 0) + remainingGenerations} Used
                 </p>
                 <Progress 
-                  value={((user?.trial_generations_used || 0) / ((remainingGenerations + (user?.trial_generations_used || 0)) || 1)) * 100} 
+                  value={((user?.trial_generations_used || 0) / (((user?.trial_generations_used || 0) + remainingGenerations) || 1)) * 100} 
                   className="mt-2 h-2" 
                 />
               </div>

@@ -1,14 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -18,12 +10,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/domains/auth";
 import { useGeneration } from "@/domains/generation";
 import { useGenerationSocket } from "@/hooks/useGenerationSocket";
-import { StreamingContent } from "@/components/generation/StreamingContent";
-import { Copy, Sparkles, Zap } from "lucide-react";
+import { StreamingContent } from "@/components/feature/generation";
+import { Copy, Sparkles, Zap, ArrowRight, Link, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { TokenService } from "@/shared/services/token-service";
 
 export default function GeneratePage() {
   const [productName, setProductName] = useState("");
@@ -34,8 +28,13 @@ export default function GeneratePage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   
-  const { user, remainingGenerations } = useAuth();
-  const { recentGenerations, isLoading, createGeneration } = useGeneration();
+  // URL Analyzer state
+  const [productUrl, setProductUrl] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  
+  const { user, remainingGenerations, decrementGenerationCount, updateRemainingGenerations, getCurrentUser } = useAuth();
+  const { createGeneration } = useGeneration();
   
   // WebSocket streaming
   const {
@@ -43,15 +42,35 @@ export default function GeneratePage() {
     joinGeneration,
     currentStage,
     streamedContent,
-    disconnect
   } = useGenerationSocket({
-    onCompleted: (generation) => {
+    onCompleted: async (generation) => {
+      console.log('Generation completed:', generation);
       setIsGenerating(false);
-      setResult(`**Hook:** ${generation.hook}\n\n**Script:**\n${generation.script}`);
+      // Fetch fresh user data from backend to get updated counts
+      try {
+        const result = await getCurrentUser();
+        console.log('✅ User data refreshed after generation completion:', {
+          remainingGenerations: result?.remainingGenerations,
+          userTrialGenerationsUsed: result?.user?.trial_generations_used
+        });
+      } catch (error) {
+        console.error('Failed to refresh user data:', error);
+        // Fallback: decrement locally if refresh fails
+        console.log('⚠️ Using fallback: decrementing locally');
+        decrementGenerationCount();
+      }
+      // Don't set result here - let the streaming content display
     },
     onError: (error) => {
+      console.error('Generation error:', error);
       setIsGenerating(false);
       setGenerationError(error);
+    },
+    onContentChunk: (chunk) => {
+      console.log('Content chunk received in page:', chunk);
+    },
+    onStageUpdate: (stage) => {
+      console.log('Stage update in page:', stage);
     }
   });
 
@@ -89,10 +108,9 @@ export default function GeneratePage() {
     
     // Generate a unique streaming ID and join the room BEFORE starting generation
     const streamingId = `gen_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-    console.log('🚀 Starting generation with streaming ID:', streamingId);
     
-    // Join WebSocket room immediately
-    joinGeneration(streamingId, user?.id || '');
+    // Join WebSocket room immediately (this also clears previous content)
+    joinGeneration(streamingId);
     
     try {
       const response = await createGeneration({
@@ -100,26 +118,27 @@ export default function GeneratePage() {
         niche,
         targetAudience,
         platform: platform as "tiktok" | "instagram" | "youtube",
-        streamingId, // Pass the streaming ID to backend
+        streamingId,
       });
       
       if (response.success && 'data' in response && response.data) {
-        console.log('✅ Generation request successful, streaming should start');
+        // Update user stats if provided by backend
+        if ((response.data as any)?.user_stats?.generations_remaining !== undefined) {
+          updateRemainingGenerations((response.data as any).user_stats.generations_remaining);
+        }
         
         // Fallback in case WebSocket doesn't work
         setTimeout(() => {
           if (isGenerating) {
-            console.log('⏰ Fallback timeout reached, showing static results');
             setResult(`**Hook:** ${response.data?.hook}\n\n**Script:**\n${response.data?.script}`);
             setIsGenerating(false);
           }
-        }, 30000); // 30 second fallback
+        }, 30000);
       } else {
         setIsGenerating(false);
         setGenerationError('Failed to start generation');
       }
     } catch (error) {
-      console.error('❌ Generation request failed:', error);
       setIsGenerating(false);
       setGenerationError('Failed to start generation');
     }
@@ -131,222 +150,262 @@ export default function GeneratePage() {
     }
   };
 
+  // URL Analyzer function
+  const analyzeProduct = async () => {
+    if (!productUrl.trim()) return;
+    
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    
+    try {
+      const tokenService = new TokenService();
+      const accessToken = tokenService.getAccessToken();
+      
+      if (!accessToken) {
+        throw new Error('Authentication required');
+      }
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/generation/analyze-product`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ productUrl: productUrl.trim() }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to analyze product URL');
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Auto-fill form with analyzed data
+        if (result.data.product_name) {
+          setProductName(result.data.product_name);
+        }
+        if (result.data.niche) {
+          setNiche(result.data.niche);
+        }
+        if (result.data.target_audience) {
+          setTargetAudience(result.data.target_audience);
+        }
+        
+        // Show success message (you could add a toast here)
+        console.log('✅ Product analyzed successfully:', result.data);
+      } else {
+        throw new Error(result.message || 'Analysis failed');
+      }
+    } catch (error) {
+      console.error('❌ Product analysis failed:', error);
+      setAnalysisError(error instanceof Error ? error.message : 'Failed to analyze product URL');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const isFormValid = productName && 
+    productName.length >= 10 && 
+    niche && 
+    niche.length >= 3 && 
+    targetAudience && 
+    targetAudience.length >= 20 && 
+    remainingGenerations > 0;
+
   return (
-    <div className="grid gap-8 md:grid-cols-3">
-      {/* Left Column: Generation Form */}
-      <div className="md:col-span-1 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Generate Content</h1>
-          <p className="text-muted-foreground mt-1">
-            Fill in the details below to create your next viral script.
-          </p>
-        </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Content Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="productName">Product Name</Label>
-              <Textarea
-                id="productName"
-                value={productName}
-                onChange={(e) => setProductName(e.target.value)}
-                placeholder="e.g., FitTracker Pro Smartwatch"
-                rows={2}
-              />
+    <div className="max-w-6xl mx-auto p-6">
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold text-foreground mb-2">Generate Viral Content</h1>
+        <p className="text-lg text-muted-foreground">
+          Create compelling scripts that captivate your audience
+        </p>
+      </div>
+
+      <div className="grid lg:grid-cols-5 gap-8">
+        {/* Left Side: Input Form */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-card rounded-xl border border-border p-6">
+            <div className="space-y-5">
+              {/* NEW: URL Analyzer Section */}
+              <div className="border-b border-border pb-5">
+                <Label htmlFor="productUrl" className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Link className="h-4 w-4" />
+                  Paste your product URL (optional)
+                </Label>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Paste your website, landing page, or product URL to auto-fill the form below
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    id="productUrl"
+                    value={productUrl}
+                    onChange={(e) => setProductUrl(e.target.value)}
+                    placeholder="https://your-product-website.com"
+                    className="flex-1"
+                    disabled={isAnalyzing}
+                  />
+                  <Button 
+                    onClick={analyzeProduct}
+                    disabled={!productUrl.trim() || isAnalyzing}
+                    variant="outline"
+                    className="shrink-0"
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Analyze
+                      </>
+                    )}
+                  </Button>
+                </div>
+                {analysisError && (
+                  <p className="text-sm text-red-500 mt-2">{analysisError}</p>
+                )}
+                <p className="text-xs text-muted-foreground mt-2">
+                  Or fill out the form manually below
+                </p>
+              </div>
+              
+              <div>
+                <Label htmlFor="productName" className="text-sm font-medium text-foreground">
+                  What are you promoting?
+                </Label>
+                <Textarea
+                  id="productName"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  placeholder="e.g., FitTracker Pro Smartwatch, My New Course, etc."
+                  rows={2}
+                  className="mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="niche" className="text-sm font-medium text-foreground">
+                  What's your niche?
+                </Label>
+                <Textarea
+                  id="niche"
+                  value={niche}
+                  onChange={(e) => setNiche(e.target.value)}
+                  placeholder="e.g., Health & Fitness, Business & Productivity, etc."
+                  rows={2}
+                  className="mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="targetAudience" className="text-sm font-medium text-foreground">
+                  Who's your target audience?
+                </Label>
+                <Textarea
+                  id="targetAudience"
+                  value={targetAudience}
+                  onChange={(e) => setTargetAudience(e.target.value)}
+                  placeholder="e.g., Fitness enthusiasts aged 25-40 who want to track their workouts"
+                  rows={3}
+                  className="mt-1"
+                />
+                {targetAudience && targetAudience.length < 20 && (
+                  <p className="text-xs text-amber-500 mt-1">
+                    Please provide at least 20 characters for better results
+                  </p>
+                )}
+              </div>
+              
+              <div>
+                <Label htmlFor="platform" className="text-sm font-medium text-foreground">
+                  Platform
+                </Label>
+                <Select value={platform} onValueChange={setPlatform}>
+                  <SelectTrigger id="platform" className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="tiktok">TikTok</SelectItem>
+                    <SelectItem value="instagram" disabled={isPlatformDisabled('instagram')}>
+                      Instagram {isPlatformDisabled('instagram') && '(Starter+)'}
+                    </SelectItem>
+                    <SelectItem value="youtube" disabled={isPlatformDisabled('youtube')}>
+                      YouTube {isPlatformDisabled('youtube') && '(Pro)'}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="niche">Niche</Label>
-              <Textarea
-                id="niche"
-                value={niche}
-                onChange={(e) => setNiche(e.target.value)}
-                placeholder="e.g., Health & Fitness Wearables"
-                rows={2}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="targetAudience">Target Audience</Label>
-              <Textarea
-                id="targetAudience"
-                value={targetAudience}
-                onChange={(e) => setTargetAudience(e.target.value)}
-                placeholder="e.g., Fitness enthusiasts aged 25-40 who track workouts regularly"
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="platform">Platform</Label>
-              <Select value={platform} onValueChange={setPlatform}>
-                <SelectTrigger id="platform">
-                  <SelectValue placeholder="Select a platform" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tiktok">TikTok</SelectItem>
-                  <SelectItem value="instagram" disabled={isPlatformDisabled('instagram')}>
-                    <div className="flex items-center justify-between w-full">
-                      <span>Instagram</span>
-                      {isPlatformDisabled('instagram') && (
-                        <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5 ml-4">
-                          STARTER+
-                        </span>
-                      )}
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="youtube" disabled={isPlatformDisabled('youtube')}>
-                    <div className="flex items-center justify-between w-full">
-                      <span>YouTube</span>
-                      {isPlatformDisabled('youtube') && (
-                        <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5 ml-4">
-                          PRO
-                        </span>
-                      )}
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="twitter" disabled>
-                    <div className="flex items-center justify-between w-full">
-                      <span>X (Twitter)</span>
-                      <span className="text-xs bg-muted-foreground text-muted rounded-full px-2 py-0.5 ml-4">
-                        COMING SOON
-                      </span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-          <CardFooter>
+            
             <Button
               onClick={handleGenerate}
-              disabled={isLoading || isGenerating || !productName || !niche || !targetAudience || remainingGenerations <= 0}
-              className="w-full"
+              disabled={!isFormValid || isGenerating}
+              className="w-full mt-6 h-12"
+              size="lg"
             >
               {isGenerating ? (
                 <>
-                  <Zap className="w-4 h-4 mr-2 animate-pulse" />
-                  {currentStage?.message || "Generating with AI..."}
+                  <Zap className="w-5 h-5 mr-2 animate-pulse" />
+                  Generating...
                 </>
-              ) : isLoading ? (
-                "Loading..."
               ) : remainingGenerations <= 0 ? (
                 "No Generations Left"
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate Script ({remainingGenerations} left)
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  Generate Content ({remainingGenerations} left)
+                  <ArrowRight className="w-5 h-5 ml-2" />
                 </>
               )}
             </Button>
-          </CardFooter>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Template Library</span>
-              <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">
-                PRO
-              </span>
-            </CardTitle>
-            <CardDescription>
-              Get started with proven, high-performing templates.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 opacity-50">
-            <div className="p-3 bg-secondary rounded-md text-sm font-medium">
-              3-Step Educational Video
-            </div>
-             <div className="p-3 bg-secondary rounded-md text-sm font-medium">
-              Product Demo Hook
-            </div>
-             <div className="p-3 bg-secondary rounded-md text-sm font-medium">
-              Viral Storytelling Formula
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            
+            {!isConnected && (
+              <p className="text-sm text-amber-600 mt-2 text-center">
+                ⚡ Connecting for real-time streaming...
+              </p>
+            )}
+          </div>
+        </div>
 
-      {/* Right Column: Results & History */}
-      <div className="md:col-span-2 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              Generated Script
-              {result && (
-                <Button variant="ghost" size="sm" onClick={handleCopy}>
+        {/* Right Side: Generated Content */}
+        <div className="lg:col-span-3">
+          <div className="bg-card rounded-xl border border-border p-6 min-h-[500px]">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-foreground">Your Generated Content</h2>
+              {(result || (streamedContent.title || streamedContent.hook || streamedContent.script)) && (
+                <Button variant="outline" size="sm" onClick={handleCopy}>
                   <Copy className="w-4 h-4 mr-2" />
-                  Copy
+                  Copy All
                 </Button>
               )}
-            </CardTitle>
-            <CardDescription>
-              {isGenerating ? (
-                "Watch your content being generated in real-time"
+            </div>
+            
+            <div className="min-h-[400px]">
+              {isGenerating || currentStage || streamedContent.title || streamedContent.hook || streamedContent.script ? (
+                <StreamingContent
+                  title={streamedContent.title}
+                  hook={streamedContent.hook}
+                  script={streamedContent.script}
+                  stage={currentStage?.stage || null}
+                  progress={currentStage?.progress || 0}
+                  message={currentStage?.message || ''}
+                  error={generationError || undefined}
+                />
               ) : (
-                "Your AI-generated script will appear here."
-              )}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="min-h-[400px]">
-            {isGenerating || currentStage ? (
-              <StreamingContent
-                title={streamedContent.title}
-                hook={streamedContent.hook}
-                script={streamedContent.script}
-                stage={currentStage?.stage || null}
-                progress={currentStage?.progress || 0}
-                message={currentStage?.message || ''}
-                error={generationError || undefined}
-              />
-            ) : result ? (
-              <div className="p-4 bg-secondary rounded-lg whitespace-pre-wrap font-mono text-sm">
-                {result}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                <div className="text-center">
-                  <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Click "Generate Script" to start creating your viral content</p>
-                  {!isConnected && (
-                    <p className="text-sm text-orange-600 mt-2">
-                      ⚡ Real-time streaming connecting...
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Generations</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentGenerations.length > 0 ? (
-                recentGenerations.map((item) => (
-                  <div key={item.id} className="flex items-center">
-                    <div className="flex-1">
-                      <p className="font-medium">{item.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(item.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="text-sm text-muted-foreground capitalize">
-                      {item.platform}
-                    </div>
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <Sparkles className="w-16 h-16 mx-auto mb-4 text-muted-foreground/60" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">Ready to create viral content?</h3>
+                    <p className="text-muted-foreground">Fill out the form on the left and click "Generate Content" to get started</p>
                   </div>
-                ))
-              ) : (
-                <div className="text-center text-muted-foreground py-4">
-                  No recent generations yet. Create your first one above!
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

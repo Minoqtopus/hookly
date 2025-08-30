@@ -133,25 +133,4 @@ export class GenerationService {
     }
   }
 
-  /**
-   * Calculate Viral Score Average
-   * Business Logic: Calculates average viral score from user's generations
-   */
-  calculateViralScoreAverage(generations: any[]): number {
-    if (!generations || generations.length === 0) {
-      return 0;
-    }
-
-    const totalScore = generations.reduce((sum, gen) => {
-      // Simple viral score calculation based on performance metrics
-      if (gen.performance_data) {
-        const { views, clicks, engagement_rate } = gen.performance_data;
-        const score = Math.min(10, (engagement_rate + (clicks / views) * 100) / 2);
-        return sum + score;
-      }
-      return sum + 5; // Default score if no performance data
-    }, 0);
-
-    return Math.round((totalScore / generations.length) * 10) / 10;
-  }
 }

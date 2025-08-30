@@ -18,8 +18,12 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Logger, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../entities/user.entity';
 
 // Generation events for real-time streaming
 export enum GenerationEvents {
@@ -70,19 +74,63 @@ export class GenerationGateway implements OnGatewayConnection, OnGatewayDisconne
   private readonly logger = new Logger(GenerationGateway.name);
   private readonly activeGenerations = new Map<string, string>(); // socketId -> generationId
   private readonly generationSockets = new Map<string, Set<string>>(); // generationId -> socketIds
+  private readonly authenticatedUsers = new Map<string, string>(); // socketId -> userId
+
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
 
   async handleConnection(client: Socket) {
     try {
-      this.logger.log(`Client connected: ${client.id}`);
+      this.logger.log(`Client connecting: ${client.id}`);
+      
+      // Extract and verify JWT token from connection
+      const token = this.extractTokenFromSocket(client);
+      if (!token) {
+        this.logger.warn(`Client ${client.id} connected without valid token`);
+        client.emit(GenerationEvents.CONNECTION_STATUS, {
+          status: 'error',
+          error: 'Authentication required',
+          timestamp: new Date().toISOString(),
+        });
+        client.disconnect();
+        return;
+      }
+
+      // Verify token and get user
+      const userId = await this.verifyTokenAndGetUserId(token);
+      if (!userId) {
+        this.logger.warn(`Client ${client.id} provided invalid token`);
+        client.emit(GenerationEvents.CONNECTION_STATUS, {
+          status: 'error',
+          error: 'Invalid authentication token',
+          timestamp: new Date().toISOString(),
+        });
+        client.disconnect();
+        return;
+      }
+
+      // Store authenticated user
+      this.authenticatedUsers.set(client.id, userId);
+      this.logger.log(`Client ${client.id} authenticated as user ${userId}`);
       
       // Send connection confirmation
       client.emit(GenerationEvents.CONNECTION_STATUS, {
         status: 'connected',
         socketId: client.id,
+        userId: userId,
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
       this.logger.error(`Connection error for ${client.id}:`, error);
+      client.emit(GenerationEvents.CONNECTION_STATUS, {
+        status: 'error',
+        error: 'Authentication failed',
+        timestamp: new Date().toISOString(),
+      });
       client.disconnect();
     }
   }
@@ -95,16 +143,31 @@ export class GenerationGateway implements OnGatewayConnection, OnGatewayDisconne
     if (generationId) {
       this.removeClientFromGeneration(client.id, generationId);
     }
+
+    // Clean up authentication tracking
+    this.authenticatedUsers.delete(client.id);
   }
 
   @SubscribeMessage(GenerationEvents.JOIN_GENERATION)
   async handleJoinGeneration(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { generationId: string; userId: string },
+    @MessageBody() payload: { generationId: string },
   ) {
-    const { generationId, userId } = payload;
+    const { generationId } = payload;
     
-    this.logger.log(`🔗 Client ${client.id} joining generation ${generationId} for user ${userId}`);
+    // Get authenticated userId from our secure mapping
+    const authenticatedUserId = this.authenticatedUsers.get(client.id);
+    if (!authenticatedUserId) {
+      this.logger.warn(`Client ${client.id} attempted to join generation without authentication`);
+      client.emit(GenerationEvents.GENERATION_ERROR, {
+        generationId,
+        error: 'Authentication required',
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
+    
+    this.logger.log(`🔗 Client ${client.id} joining generation ${generationId} for authenticated user ${authenticatedUserId}`);
     
     // Add client to generation tracking
     this.activeGenerations.set(client.id, generationId);
@@ -214,5 +277,54 @@ export class GenerationGateway implements OnGatewayConnection, OnGatewayDisconne
    */
   getActiveClientCount(generationId: string): number {
     return this.generationSockets.get(generationId)?.size || 0;
+  }
+
+  /**
+   * Extract JWT token from WebSocket connection
+   */
+  private extractTokenFromSocket(client: Socket): string | null {
+    // Try to get token from auth header
+    const authHeader = client.handshake.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      return authHeader.slice(7);
+    }
+
+    // Try to get token from query parameters (for WebSocket connections)
+    const tokenQuery = client.handshake.query.token;
+    if (tokenQuery && typeof tokenQuery === 'string') {
+      return tokenQuery;
+    }
+
+    return null;
+  }
+
+  /**
+   * Verify JWT token and extract userId
+   */
+  private async verifyTokenAndGetUserId(token: string): Promise<string | null> {
+    try {
+      const decoded = this.jwtService.verify(token, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+      });
+
+      if (!decoded || !decoded.sub) {
+        return null;
+      }
+
+      // Verify user still exists in database
+      const user = await this.userRepository.findOne({
+        where: { id: decoded.sub },
+        select: ['id'],
+      });
+
+      if (!user) {
+        return null;
+      }
+
+      return user.id;
+    } catch (error) {
+      this.logger.warn('JWT verification failed:', error instanceof Error ? error.message : 'Unknown error');
+      return null;
+    }
   }
 }

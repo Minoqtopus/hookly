@@ -10,6 +10,11 @@
 
 import { UserPlan } from '../entities/user.entity';
 import { UserGenerationLimits, PlatformSpecifications } from '../types/external-apis';
+// IMPORTANT: Pricing logic now centralized in pricing.config.ts
+import { 
+  getGenerationLimit as getPricingGenerationLimit, 
+  getPlatformAccess as getPricingPlatformAccess 
+} from '../pricing/pricing.config';
 
 // ================================
 // Plan Limits and Features
@@ -42,27 +47,7 @@ export const PLAN_PRICING = {
   [UserPlan.PRO]: 5900      // $59.00
 } as const;
 
-/**
- * Platform access matrix by plan
- * Critical for enforcing platform restrictions
- */
-export const PLATFORM_ACCESS = {
-  [UserPlan.TRIAL]: {
-    has_tiktok_access: true,
-    has_instagram_access: false,
-    has_youtube_access: false
-  },
-  [UserPlan.STARTER]: {
-    has_tiktok_access: true,
-    has_instagram_access: true,
-    has_youtube_access: false
-  },
-  [UserPlan.PRO]: {
-    has_tiktok_access: true,
-    has_instagram_access: true,
-    has_youtube_access: true
-  }
-} as const;
+// REMOVED: Platform access now centralized in pricing.config.ts (SINGLE SOURCE OF TRUTH)
 
 // ================================
 // AI Content Generation Specs
@@ -241,42 +226,32 @@ export const SUCCESS_MESSAGES = {
 
 /**
  * Helper function to get generation limit by plan and email verification status
+ * 
+ * IMPORTANT: This now delegates to centralized pricing configuration
+ * Maintains backward compatibility while using single source of truth
+ * 
  * @param plan User plan
  * @param isEmailVerified Whether user's email is verified (only affects trial)
  * @returns Generation limit for the plan
  */
 export function getGenerationLimit(plan: UserPlan, isEmailVerified: boolean = true): number {
-  switch (plan) {
-    case UserPlan.TRIAL:
-      // BUSINESS REQUIREMENT: Email verification affects trial generation limits
-      return isEmailVerified 
-        ? BUSINESS_CONSTANTS.GENERATION_LIMITS.TRIAL_VERIFIED 
-        : BUSINESS_CONSTANTS.GENERATION_LIMITS.TRIAL_UNVERIFIED;
-    case UserPlan.STARTER:
-      return BUSINESS_CONSTANTS.GENERATION_LIMITS.STARTER_MONTHLY;
-    case UserPlan.PRO:
-      return BUSINESS_CONSTANTS.GENERATION_LIMITS.PRO_MONTHLY;
-    default:
-      throw new Error(`Unknown plan: ${plan}`);
-  }
+  // Delegate to centralized pricing system
+  return getPricingGenerationLimit(plan, isEmailVerified);
 }
 
-/**
- * DEPRECATED: Helper function to get generation limit by plan (backward compatibility)
- * @deprecated Use getGenerationLimit(plan, isEmailVerified) instead
- * @param plan User plan
- * @returns Generation limit for the plan (assumes verified for trial)
- */
-export function getGenerationLimitLegacy(plan: UserPlan): number {
-  return getGenerationLimit(plan, true);
-}
+// REMOVED: getGenerationLimitLegacy function to prevent inconsistent limit calculations
 
 /**
  * Helper function to check if platform is available for plan
+ * 
+ * IMPORTANT: This now delegates to centralized pricing configuration
+ * 
  * @param plan User plan
  * @param platform Platform to check
  * @returns Boolean indicating if platform is available
  */
 export function isPlatformAvailable(plan: UserPlan, platform: string): boolean {
-  return PLAN_LIMITS[plan]?.platforms.includes(platform) || false;
+  // Delegate to centralized pricing system
+  const availablePlatforms = getPricingPlatformAccess(plan);
+  return availablePlatforms.includes(platform);
 }

@@ -1,10 +1,13 @@
 /**
  * API Client - Real Backend Integration
  * 
- * Staff Engineer Design: Clean, scalable API client
+ * Staff Engineer Design: Clean, scalable API client with centralized auth
  * Business Logic: Connects to real backend endpoints
+ * Authentication: Uses TokenService for consistent token management
  * No Mock Data: All calls go to actual API
  */
+
+import { TokenService } from '../services/token-service';
 
 export interface ApiResponse<T = any> {
   data: T;
@@ -21,6 +24,7 @@ export interface ApiError {
 export class ApiClient {
   private baseURL: string;
   private defaultHeaders: Record<string, string>;
+  private tokenService: TokenService;
 
   constructor() {
     // Use environment variable or default to local backend
@@ -28,16 +32,18 @@ export class ApiClient {
     this.defaultHeaders = {
       'Content-Type': 'application/json',
     };
+    this.tokenService = new TokenService();
   }
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retryAttempt = 0
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
     
-    // Get stored access token for authentication
-    const accessToken = this.getStoredAccessToken();
+    // Get fresh token from TokenService
+    const accessToken = this.tokenService.getAccessToken();
     
     const config: RequestInit = {
       ...options,
@@ -49,9 +55,39 @@ export class ApiClient {
       },
     };
 
-
     try {
       const response = await fetch(url, config);
+      
+      // Handle 401 with automatic token refresh (only retry once)
+      if (response.status === 401 && retryAttempt === 0) {
+        const refreshToken = this.tokenService.getRefreshToken();
+        if (refreshToken) {
+          try {
+            // Try to refresh the token
+            const refreshResponse = await fetch(`${this.baseURL}/auth/refresh`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refresh_token: refreshToken })
+            });
+
+            if (refreshResponse.ok) {
+              const tokenData = await refreshResponse.json();
+              this.tokenService.setAccessToken(tokenData.access_token);
+              this.tokenService.setRefreshToken(tokenData.refresh_token);
+              
+              // Retry the original request with new token
+              return this.request(endpoint, options, retryAttempt + 1);
+            }
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+            // Clear tokens - user will need to login again
+            this.tokenService.clearTokens();
+          }
+        }
+        
+        // If refresh fails or no refresh token, clear tokens
+        this.tokenService.clearTokens();
+      }
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -123,27 +159,19 @@ export class ApiClient {
     });
   }
 
-  // Set auth token for authenticated requests
+  // Set auth token for authenticated requests (legacy method - use TokenService instead)
   setAuthToken(token: string): void {
-    this.defaultHeaders['Authorization'] = `Bearer ${token}`;
+    this.tokenService.setAccessToken(token);
   }
 
-  // Clear auth token
+  // Clear auth token (legacy method - use TokenService instead)
   clearAuthToken(): void {
-    delete this.defaultHeaders['Authorization'];
+    this.tokenService.clearTokens();
   }
 
-  // Get stored access token from localStorage
-  private getStoredAccessToken(): string | null {
-    try {
-      if (typeof window !== 'undefined') {
-        return localStorage.getItem('access_token');
-      }
-      return null;
-    } catch (error) {
-      console.error('Failed to get stored access token:', error);
-      return null;
-    }
+  // Get current token service instance (for advanced use cases)
+  getTokenService(): TokenService {
+    return this.tokenService;
   }
 }
 

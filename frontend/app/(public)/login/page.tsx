@@ -8,7 +8,7 @@
 
 'use client';
 
-import { AuthForm } from "../components/auth-form";
+import { AuthForm } from "@/components/feature/auth";
 
 export default function LoginPage() {
   return <AuthForm mode="login" />;

@@ -5,7 +5,7 @@ import { Chrome } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/domains/auth";
-import { Logo } from "./logo";
+import { Logo } from "@/components/layout";
 
 interface AuthFormProps {
   mode: "login" | "register";

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/domains/auth";
-import { Logo } from "./logo";
+import { Logo } from "@/components/layout";
 
 export const ResetPasswordForm = () => {
   const [password, setPassword] = useState("");

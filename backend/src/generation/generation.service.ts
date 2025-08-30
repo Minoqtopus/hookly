@@ -4,12 +4,15 @@ import { Repository } from 'typeorm';
 import { AiService } from '../ai/ai.service';
 import { Generation, GenerationStatus, GenerationType } from '../entities/generation.entity';
 import { User, UserPlan } from '../entities/user.entity';
-import { BUSINESS_CONSTANTS, ERROR_MESSAGES } from '../constants/business-rules';
+import { BUSINESS_CONSTANTS, ERROR_MESSAGES, getGenerationLimit } from '../constants/business-rules';
 import { UserPlanModel } from '../domain/models/user-plan.model';
 import { GenerationRequestModel, GenerationRequestData } from '../domain/models/generation-request.model';
 import { GenerationDomainService } from '../domain/services/generation-domain.service';
 import { ValidationService } from '../domain/services/validation.service';
 import { GenerationGateway } from './generation.gateway';
+// FUTURE: Tiered content generation system
+// import { ViralContentPrompts } from '../ai/prompts/viral-content-prompts';
+// import { getContentQualityTier, getCostOptimization, getQualityIndicator } from '../ai/quality-tiers.config';
 
 @Injectable()
 export class GenerationService {
@@ -46,6 +49,10 @@ export class GenerationService {
     const demoGenerations = await Promise.all(
       platforms.map(async (platform, index) => {
         try {
+          // FUTURE: Use DEMO tier for public demos - basic quality to encourage signups
+          // const tieredPrompt = ViralContentPrompts.generateTieredPrompt(...)
+          // const costConfig = getCostOptimization('demo');
+          
           const generatedContent = await this.aiService.generateContent({
             productName,
             niche,
@@ -162,8 +169,10 @@ What's been your experience with ${niche}? Let me know! 👇`,
       }
 
       // Create domain models for business logic
+      // CRITICAL FIX: Include email verification status
       const userPlan = UserPlanModel.fromUserEntity({
         plan: user.plan,
+        is_email_verified: user.is_email_verified, // CRITICAL: Added missing field
         trial_ends_at: user.trial_ends_at,
         monthly_generation_count: user.monthly_generation_count,
         trial_generations_used: user.trial_generations_used,
@@ -229,25 +238,57 @@ What's been your experience with ${niche}? Let me know! 👇`,
         progress: 95
       });
 
-      // Create and save generation with enhanced metrics
-      const generation = this.generationRepository.create({
-        user,
-        title: generatedContent.title,
-        platform: platformValue,
-        niche: generationRequest.niche,
-        target_audience: generationRequest.targetAudience,
-        hook: generatedContent.hook,
-        script: generatedContent.script,
-        performance_data: performanceMetrics,
-        status: GenerationStatus.COMPLETED,
-        is_demo: false,
-        is_favorite: false
+      // CRITICAL FIX: Wrap database operations in transaction with re-validation for race condition prevention
+      const savedGeneration = await this.generationRepository.manager.transaction(async manager => {
+        // CRITICAL: Re-fetch user with row lock to prevent race conditions
+        const userWithLock = await manager.findOne(User, {
+          where: { id: userId },
+          lock: { mode: 'pessimistic_write' }
+        });
+
+        if (!userWithLock) {
+          throw new ForbiddenException('User not found during generation creation');
+        }
+
+        // CRITICAL: Re-validate limits with fresh data inside transaction
+        const freshUserPlan = UserPlanModel.fromUserEntity({
+          plan: userWithLock.plan,
+          is_email_verified: userWithLock.is_email_verified,
+          trial_ends_at: userWithLock.trial_ends_at,
+          monthly_generation_count: userWithLock.monthly_generation_count,
+          trial_generations_used: userWithLock.trial_generations_used,
+          monthly_reset_date: userWithLock.monthly_reset_date
+        });
+
+        const finalValidationResult = this.validationService.validateGenerationRequest(freshUserPlan, generationRequest);
+        
+        if (!finalValidationResult.isValid) {
+          this.validationService.throwValidationException(finalValidationResult, 'Generation limit exceeded during creation');
+        }
+
+        // Create generation entity
+        const generation = manager.create(Generation, {
+          user: userWithLock,
+          title: generatedContent.title,
+          platform: platformValue,
+          niche: generationRequest.niche,
+          target_audience: generationRequest.targetAudience,
+          hook: generatedContent.hook,
+          script: generatedContent.script,
+          performance_data: performanceMetrics,
+          status: GenerationStatus.COMPLETED,
+          is_demo: false,
+          is_favorite: false
+        });
+
+        // Save generation record
+        const savedGeneration = await manager.save(Generation, generation);
+
+        // Update user generation counts atomically within transaction
+        await this.updateUserGenerationCountInTransaction(manager, userWithLock);
+
+        return savedGeneration;
       });
-
-      const savedGeneration = await this.generationRepository.save(generation);
-
-      // Update user generation counts atomically
-      await this.updateUserGenerationCount(user);
 
       // Emit completion
       this.generationGateway.emitGenerationCompleted(streamingId, savedGeneration);
@@ -265,20 +306,18 @@ What's been your experience with ${niche}? Let me know! 👇`,
   // This separation of concerns makes the code more testable and maintainable
 
   /**
-   * Update user generation count with atomic database operation to prevent race conditions
-   * 
-   * Staff Engineer Note: This is CRITICAL. Race conditions here could allow users to exceed limits
-   * or cause billing inconsistencies. We use SQL increment operations for atomicity.
+   * Update user generation count within a database transaction
+   * CRITICAL FIX: Transaction-aware version for data consistency
    */
-  private async updateUserGenerationCount(user: User): Promise<void> {
+  private async updateUserGenerationCountInTransaction(manager: any, user: User): Promise<void> {
     const now = new Date();
     const currentMonth = now.getMonth();
     const resetMonth = user.monthly_reset_date ? new Date(user.monthly_reset_date).getMonth() : -1;
     const needsReset = currentMonth !== resetMonth;
 
     if (user.plan === UserPlan.TRIAL) {
-      // Atomic increment for trial users
-      await this.userRepository
+      // Atomic increment for trial users within transaction
+      await manager
         .createQueryBuilder()
         .update(User)
         .set({
@@ -289,8 +328,8 @@ What's been your experience with ${niche}? Let me know! 👇`,
         .execute();
     } else {
       if (needsReset) {
-        // Reset monthly count and update date atomically
-        await this.userRepository
+        // Reset monthly count and update date atomically within transaction
+        await manager
           .createQueryBuilder()
           .update(User)
           .set({
@@ -301,8 +340,8 @@ What's been your experience with ${niche}? Let me know! 👇`,
           .where('id = :id', { id: user.id })
           .execute();
       } else {
-        // Atomic increment for monthly count
-        await this.userRepository
+        // Atomic increment for monthly count within transaction
+        await manager
           .createQueryBuilder()
           .update(User)
           .set({
@@ -313,5 +352,37 @@ What's been your experience with ${niche}? Let me know! 👇`,
           .execute();
       }
     }
+  }
+
+  // REMOVED: Legacy updateUserGenerationCount method - now using transaction-aware version only
+
+  /**
+   * Get user by ID
+   */
+  async getUserById(userId: string): Promise<User> {
+    return this.userRepository.findOne({
+      where: { id: userId },
+      select: [
+        'id', 'plan', 'trial_generations_used', 'monthly_generation_count', 
+        'monthly_reset_date', 'is_email_verified', 'trial_ends_at'
+      ]
+    });
+  }
+
+  /**
+   * Calculate remaining generations for a user
+   */
+  calculateRemainingGenerations(user: User): number {
+    if (!user) return 0;
+
+    if (user.plan === UserPlan.TRIAL) {
+      // Use centralized pricing system (simplified to 5 generations)
+      const maxTrialGenerations = getGenerationLimit(user.plan, user.is_email_verified);
+      return Math.max(0, maxTrialGenerations - user.trial_generations_used);
+    }
+
+    // For paid plans, check monthly limits using centralized pricing
+    const monthlyLimit = getGenerationLimit(user.plan);
+    return Math.max(0, monthlyLimit - user.monthly_generation_count);
   }
 }

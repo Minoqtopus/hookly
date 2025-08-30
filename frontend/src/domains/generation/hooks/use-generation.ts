@@ -22,6 +22,7 @@ import {
   generationRepository,
   GenerationService
 } from '../index';
+import type { GetUserGenerationsResult } from '../use-cases/get-user-generations-use-case';
 
 // Create singleton instances following auth pattern
 const generationService = new GenerationService(generationRepository);
@@ -113,16 +114,14 @@ export function useGeneration() {
     setGenerationState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
-      const result = await getUserGenerationsUseCase.execute(limit);
+      const result = await getUserGenerationsUseCase.execute(limit) as GetUserGenerationsResult;
       
       if (result.success && result.data) {
-        // Calculate viral score average
-        const viralScoreAverage = generationService.calculateViralScoreAverage(result.data);
-        
+        // UI STATE: Update state with Use-Case result (business logic already handled)
         setGenerationState(prev => ({
           ...prev,
           generations: result.data || [],
-          viralScoreAverage,
+          viralScoreAverage: result.viralScoreAverage || 0,
           isLoading: false,
         }));
         

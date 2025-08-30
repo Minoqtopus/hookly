@@ -11,7 +11,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:conversion": "jest __tests__/conversion-flow.test.tsx"
+    "test:conversion": "jest __tests__/conversion-flow.test.tsx",
+    "analyze": "ANALYZE=true npm run build",
+    "build:standalone": "BUILD_STANDALONE=true npm run build"
   },
   "keywords": [],
   "author": "",
@@ -39,6 +41,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.5.2",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.4.8",
     "@testing-library/react": "^16.1.0",
