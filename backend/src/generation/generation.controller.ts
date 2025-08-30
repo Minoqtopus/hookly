@@ -153,17 +153,27 @@ export class GenerationController {
     @Request() req: any
   ) {
     try {
+      // Use provided streaming ID or generate a new one
+      const streamingId = createData.streamingId || `gen_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+      console.log(`🎯 Controller received generation request with streamingId: ${streamingId}`);
+      
       const generation = await this.generationService.createUserGeneration(
         req.user.sub,
-        createData
+        createData,
+        streamingId
       );
       
       return {
         success: true,
         message: 'Generation created successfully',
-        data: generation
+        data: {
+          ...generation,
+          id: streamingId, // Ensure frontend gets the streaming ID
+        }
       };
     } catch (error) {
+      const errorId = createData.streamingId || 'unknown';
+      console.error(`❌ Controller error for ${errorId}:`, error);
       return {
         success: false,
         message: 'Failed to create generation',

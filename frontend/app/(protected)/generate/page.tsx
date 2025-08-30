@@ -18,46 +18,111 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Copy, Sparkles } from "lucide-react";
-import { useState } from "react";
-
-// This would come from an API in a real app
-const recentGenerations = [
-  {
-    id: 1,
-    topic: "My top 5 tips for learning a new language",
-    date: "2 days ago",
-    platform: "TikTok",
-  },
-  {
-    id: 2,
-    topic: "Unboxing the new Acme phone",
-    date: "4 days ago",
-    platform: "YouTube",
-  },
-  {
-    id: 3,
-    topic: "A 3-step guide to improve your cooking",
-    date: "1 week ago",
-    platform: "Instagram",
-  },
-];
+import { useAuth } from "@/domains/auth";
+import { useGeneration } from "@/domains/generation";
+import { useGenerationSocket } from "@/hooks/useGenerationSocket";
+import { StreamingContent } from "@/components/generation/StreamingContent";
+import { Copy, Sparkles, Zap } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function GeneratePage() {
-  const [topic, setTopic] = useState("");
+  const [productName, setProductName] = useState("");
+  const [niche, setNiche] = useState("");
+  const [targetAudience, setTargetAudience] = useState("");
+  const [platform, setPlatform] = useState<string>("tiktok");
   const [result, setResult] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  
+  const { user, remainingGenerations } = useAuth();
+  const { recentGenerations, isLoading, createGeneration } = useGeneration();
+  
+  // WebSocket streaming
+  const {
+    isConnected,
+    joinGeneration,
+    currentStage,
+    streamedContent,
+    disconnect
+  } = useGenerationSocket({
+    onCompleted: (generation) => {
+      setIsGenerating(false);
+      setResult(`**Hook:** ${generation.hook}\n\n**Script:**\n${generation.script}`);
+    },
+    onError: (error) => {
+      setIsGenerating(false);
+      setGenerationError(error);
+    }
+  });
 
-  const handleGenerate = () => {
-    if (!topic) return;
-    setIsLoading(true);
+  // Platform restrictions based on user plan
+  const getAvailablePlatforms = () => {
+    const userPlan = user?.plan || 'trial';
+    
+    switch (userPlan) {
+      case 'pro':
+        return ['tiktok', 'instagram', 'youtube'];
+      case 'starter':
+        return ['tiktok', 'instagram'];
+      case 'trial':
+      default:
+        return ['tiktok'];
+    }
+  };
+
+  const availablePlatforms = getAvailablePlatforms();
+  const isPlatformDisabled = (platform: string) => !availablePlatforms.includes(platform);
+
+  // Reset platform to first available if current platform is not available
+  useEffect(() => {
+    if (isPlatformDisabled(platform) && availablePlatforms.length > 0) {
+      setPlatform(availablePlatforms[0]);
+    }
+  }, [platform, availablePlatforms, isPlatformDisabled]);
+
+  const handleGenerate = async () => {
+    if (!productName || !niche || !targetAudience || remainingGenerations <= 0) return;
+    
     setResult(null);
-    setTimeout(() => {
-      setResult(
-        `**Hook:** You've been making coffee wrong your whole life.\n\n**Script:**\n1. Start with fresh, whole beans.\n2. Grind them right before you brew.\n3. Use water that's just off the boil.\n\n**CTA:** Follow for more coffee tips!`
-      );
-      setIsLoading(false);
-    }, 2000);
+    setGenerationError(null);
+    setIsGenerating(true);
+    
+    // Generate a unique streaming ID and join the room BEFORE starting generation
+    const streamingId = `gen_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    console.log('🚀 Starting generation with streaming ID:', streamingId);
+    
+    // Join WebSocket room immediately
+    joinGeneration(streamingId, user?.id || '');
+    
+    try {
+      const response = await createGeneration({
+        productName,
+        niche,
+        targetAudience,
+        platform: platform as "tiktok" | "instagram" | "youtube",
+        streamingId, // Pass the streaming ID to backend
+      });
+      
+      if (response.success && 'data' in response && response.data) {
+        console.log('✅ Generation request successful, streaming should start');
+        
+        // Fallback in case WebSocket doesn't work
+        setTimeout(() => {
+          if (isGenerating) {
+            console.log('⏰ Fallback timeout reached, showing static results');
+            setResult(`**Hook:** ${response.data?.hook}\n\n**Script:**\n${response.data?.script}`);
+            setIsGenerating(false);
+          }
+        }, 30000); // 30 second fallback
+      } else {
+        setIsGenerating(false);
+        setGenerationError('Failed to start generation');
+      }
+    } catch (error) {
+      console.error('❌ Generation request failed:', error);
+      setIsGenerating(false);
+      setGenerationError('Failed to start generation');
+    }
   };
 
   const handleCopy = () => {
@@ -82,30 +147,68 @@ export default function GeneratePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="topic">Topic or Idea</Label>
+              <Label htmlFor="productName">Product Name</Label>
               <Textarea
-                id="topic"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                placeholder="e.g., How to make the perfect cold brew"
-                rows={4}
+                id="productName"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                placeholder="e.g., FitTracker Pro Smartwatch"
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="niche">Niche</Label>
+              <Textarea
+                id="niche"
+                value={niche}
+                onChange={(e) => setNiche(e.target.value)}
+                placeholder="e.g., Health & Fitness Wearables"
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="targetAudience">Target Audience</Label>
+              <Textarea
+                id="targetAudience"
+                value={targetAudience}
+                onChange={(e) => setTargetAudience(e.target.value)}
+                placeholder="e.g., Fitness enthusiasts aged 25-40 who track workouts regularly"
+                rows={3}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="platform">Platform</Label>
-              <Select defaultValue="tiktok">
+              <Select value={platform} onValueChange={setPlatform}>
                 <SelectTrigger id="platform">
                   <SelectValue placeholder="Select a platform" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="tiktok">TikTok</SelectItem>
-                  <SelectItem value="instagram">Instagram</SelectItem>
-                  <SelectItem value="youtube">YouTube</SelectItem>
+                  <SelectItem value="instagram" disabled={isPlatformDisabled('instagram')}>
+                    <div className="flex items-center justify-between w-full">
+                      <span>Instagram</span>
+                      {isPlatformDisabled('instagram') && (
+                        <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5 ml-4">
+                          STARTER+
+                        </span>
+                      )}
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="youtube" disabled={isPlatformDisabled('youtube')}>
+                    <div className="flex items-center justify-between w-full">
+                      <span>YouTube</span>
+                      {isPlatformDisabled('youtube') && (
+                        <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5 ml-4">
+                          PRO
+                        </span>
+                      )}
+                    </div>
+                  </SelectItem>
                   <SelectItem value="twitter" disabled>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between w-full">
                       <span>X (Twitter)</span>
-                      <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5 ml-4">
-                        PRO
+                      <span className="text-xs bg-muted-foreground text-muted rounded-full px-2 py-0.5 ml-4">
+                        COMING SOON
                       </span>
                     </div>
                   </SelectItem>
@@ -116,15 +219,22 @@ export default function GeneratePage() {
           <CardFooter>
             <Button
               onClick={handleGenerate}
-              disabled={isLoading || !topic}
+              disabled={isLoading || isGenerating || !productName || !niche || !targetAudience || remainingGenerations <= 0}
               className="w-full"
             >
-              {isLoading ? (
-                "Generating..."
+              {isGenerating ? (
+                <>
+                  <Zap className="w-4 h-4 mr-2 animate-pulse" />
+                  {currentStage?.message || "Generating with AI..."}
+                </>
+              ) : isLoading ? (
+                "Loading..."
+              ) : remainingGenerations <= 0 ? (
+                "No Generations Left"
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 mr-2" />
-                  Generate Script
+                  Generate Script ({remainingGenerations} left)
                 </>
               )}
             </Button>
@@ -161,27 +271,49 @@ export default function GeneratePage() {
       <div className="md:col-span-2 space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Generated Script</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              Generated Script
+              {result && (
+                <Button variant="ghost" size="sm" onClick={handleCopy}>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy
+                </Button>
+              )}
+            </CardTitle>
             <CardDescription>
-              Your AI-generated script will appear here.
+              {isGenerating ? (
+                "Watch your content being generated in real-time"
+              ) : (
+                "Your AI-generated script will appear here."
+              )}
             </CardDescription>
           </CardHeader>
-          <CardContent className="min-h-[200px]">
-            {result ? (
-              <div>
-                <div className="flex justify-end">
-                  <Button variant="ghost" size="sm" onClick={handleCopy}>
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy
-                  </Button>
-                </div>
-                <div className="mt-2 p-4 bg-secondary rounded-lg whitespace-pre-wrap font-mono text-sm">
-                  {result}
-                </div>
+          <CardContent className="min-h-[400px]">
+            {isGenerating || currentStage ? (
+              <StreamingContent
+                title={streamedContent.title}
+                hook={streamedContent.hook}
+                script={streamedContent.script}
+                stage={currentStage?.stage || null}
+                progress={currentStage?.progress || 0}
+                message={currentStage?.message || ''}
+                error={generationError || undefined}
+              />
+            ) : result ? (
+              <div className="p-4 bg-secondary rounded-lg whitespace-pre-wrap font-mono text-sm">
+                {result}
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground">
-                Waiting for generation...
+                <div className="text-center">
+                  <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Click "Generate Script" to start creating your viral content</p>
+                  {!isConnected && (
+                    <p className="text-sm text-orange-600 mt-2">
+                      ⚡ Real-time streaming connecting...
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </CardContent>
@@ -193,19 +325,25 @@ export default function GeneratePage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentGenerations.map((item) => (
-                <div key={item.id} className="flex items-center">
-                  <div className="flex-1">
-                    <p className="font-medium">{item.topic}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {item.date}
-                    </p>
+              {recentGenerations.length > 0 ? (
+                recentGenerations.map((item) => (
+                  <div key={item.id} className="flex items-center">
+                    <div className="flex-1">
+                      <p className="font-medium">{item.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(item.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-sm text-muted-foreground capitalize">
+                      {item.platform}
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {item.platform}
-                  </div>
+                ))
+              ) : (
+                <div className="text-center text-muted-foreground py-4">
+                  No recent generations yet. Create your first one above!
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>

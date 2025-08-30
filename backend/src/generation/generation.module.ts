@@ -5,6 +5,7 @@ import { Generation } from '../entities/generation.entity';
 import { User } from '../entities/user.entity';
 import { GenerationController } from './generation.controller';
 import { GenerationService } from './generation.service';
+import { GenerationGateway } from './generation.gateway';
 import { GenerationDomainService } from '../domain/services/generation-domain.service';
 import { ValidationService } from '../domain/services/validation.service';
 
@@ -16,9 +17,10 @@ import { ValidationService } from '../domain/services/validation.service';
   controllers: [GenerationController],
   providers: [
     GenerationService,
+    GenerationGateway,
     GenerationDomainService,
     ValidationService
   ],
-  exports: [GenerationService]
+  exports: [GenerationService, GenerationGateway]
 })
 export class GenerationModule {}

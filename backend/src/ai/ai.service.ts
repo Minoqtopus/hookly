@@ -9,6 +9,11 @@ export interface GenerationRequest {
   platform: 'instagram' | 'tiktok' | 'youtube';
 }
 
+export interface StreamingOptions {
+  streamingId: string;
+  onContentChunk?: (section: string, content: string, isComplete: boolean, progress: number) => void;
+}
+
 export interface GeneratedContent {
   title: string;
   hook: string;
@@ -40,23 +45,134 @@ export class AiService {
     this.logger.log('Gemini AI service initialized successfully');
   }
 
-  async generateContent(request: GenerationRequest): Promise<GeneratedContent> {
+  async generateContent(request: GenerationRequest, streamingOptions?: StreamingOptions): Promise<GeneratedContent> {
     if (!this.model) {
       this.logger.warn('Gemini API not available, using fallback generation');
-      return this.generateFallbackContent(request);
+      return this.generateFallbackContent(request, streamingOptions);
     }
 
     try {
       const prompt = this.buildPrompt(request);
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      
+      if (streamingOptions?.onContentChunk) {
+        // Use streaming generation for real-time content
+        return await this.generateStreamingContent(request, prompt, streamingOptions);
+      } else {
+        // Use regular non-streaming generation
+        const result = await this.model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
 
-      return this.parseAiResponse(text, request);
+        return this.parseAiResponse(text, request);
+      }
     } catch (error) {
       this.logger.error('AI generation failed, using fallback', error instanceof Error ? error.message : 'Unknown error');
-      return this.generateFallbackContent(request);
+      return this.generateFallbackContent(request, streamingOptions);
     }
+  }
+
+  private async generateStreamingContent(
+    request: GenerationRequest, 
+    prompt: string, 
+    streamingOptions: StreamingOptions
+  ): Promise<GeneratedContent> {
+    try {
+      // Use streaming for real-time content generation
+      const result = await this.model.generateContentStream(prompt);
+      
+      let accumulatedText = '';
+      let currentSection = 'title';
+      let progress = 40; // Start after validation stage (30%)
+      
+      // Process streaming chunks
+      for await (const chunk of result.stream) {
+        const chunkText = chunk.text();
+        accumulatedText += chunkText;
+        
+        // Simulate section-by-section streaming
+        if (accumulatedText.includes('"title":') && currentSection === 'title') {
+          const titleMatch = accumulatedText.match(/"title"\s*:\s*"([^"]+)"/);
+          if (titleMatch) {
+            streamingOptions.onContentChunk?.('title', titleMatch[1], true, progress);
+            currentSection = 'hook';
+            progress = 55;
+          }
+        }
+        
+        if (accumulatedText.includes('"hook":') && currentSection === 'hook') {
+          const hookMatch = accumulatedText.match(/"hook"\s*:\s*"([^"]+)"/);
+          if (hookMatch) {
+            streamingOptions.onContentChunk?.('hook', hookMatch[1], true, progress);
+            currentSection = 'script';
+            progress = 70;
+          }
+        }
+        
+        if (accumulatedText.includes('"script":') && currentSection === 'script') {
+          const scriptMatch = accumulatedText.match(/"script"\s*:\s*"([^"]+)"/);
+          if (scriptMatch) {
+            // Stream script content word by word for typewriter effect
+            const scriptWords = scriptMatch[1].split(' ');
+            let streamedScript = '';
+            
+            for (let i = 0; i < scriptWords.length; i++) {
+              streamedScript += (i > 0 ? ' ' : '') + scriptWords[i];
+              const isComplete = i === scriptWords.length - 1;
+              const scriptProgress = progress + (i / scriptWords.length) * 15;
+              
+              streamingOptions.onContentChunk?.('script', streamedScript, isComplete, Math.floor(scriptProgress));
+              
+              // Small delay for typewriter effect
+              if (!isComplete) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+              }
+            }
+            
+            break; // Exit the stream processing
+          }
+        }
+      }
+      
+      // Parse the final response
+      return this.parseAiResponse(accumulatedText, request);
+      
+    } catch (error) {
+      this.logger.error('Streaming generation failed', error instanceof Error ? error.message : 'Unknown error');
+      // Fall back to simulated streaming with fallback content
+      return this.simulateStreamingFallback(request, streamingOptions);
+    }
+  }
+
+  private async simulateStreamingFallback(
+    request: GenerationRequest,
+    streamingOptions: StreamingOptions
+  ): Promise<GeneratedContent> {
+    const fallbackContent = this.generateFallbackContent(request);
+    
+    // Simulate streaming of fallback content
+    streamingOptions.onContentChunk?.('title', fallbackContent.title, true, 50);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    streamingOptions.onContentChunk?.('hook', fallbackContent.hook, true, 65);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Stream script with typewriter effect
+    const scriptWords = fallbackContent.script.split(' ');
+    let streamedScript = '';
+    
+    for (let i = 0; i < scriptWords.length; i++) {
+      streamedScript += (i > 0 ? ' ' : '') + scriptWords[i];
+      const isComplete = i === scriptWords.length - 1;
+      const scriptProgress = 65 + (i / scriptWords.length) * 15;
+      
+      streamingOptions.onContentChunk?.('script', streamedScript, isComplete, Math.floor(scriptProgress));
+      
+      if (!isComplete) {
+        await new Promise(resolve => setTimeout(resolve, 80));
+      }
+    }
+    
+    return fallbackContent;
   }
 
   private buildPrompt(request: GenerationRequest): string {
@@ -91,11 +207,21 @@ STRUCTURE GUIDELINES:
 - Include a soft call-to-action
 - Use platform-appropriate formatting and hashtags
 
+CRITICAL FORMATTING INSTRUCTIONS:
+- Write content as FINAL USER-READABLE TEXT only
+- DO NOT include video directions like "(Video opens with...)" or "(Creator looks...)"
+- DO NOT include technical markers like "[0-3 seconds - HOOK]" or timing indicators
+- DO NOT include scene descriptions like "(Scene: ...)" or "(Video shows...)"
+- DO NOT include markdown formatting (**bold**, *italic*) - write plain text
+- DO NOT include production notes or behind-the-camera instructions
+- Write ONLY what the user would actually see/read in the final content
+- Focus on the actual spoken/written words that appear to the audience
+
 FORMAT YOUR RESPONSE AS JSON:
 {
   "title": "Your compelling title here",
-  "hook": "Your attention-grabbing hook here",
-  "script": "Your complete script here with proper formatting"
+  "hook": "Your attention-grabbing hook here", 
+  "script": "Your complete script here - ONLY the final user-readable content without any technical directions, timing markers, or video production notes"
 }
 
 Generate content that feels authentic, personal, and viral-worthy for ${request.targetAudience} interested in ${request.niche}.`;
@@ -200,7 +326,7 @@ Generate content that feels authentic, personal, and viral-worthy for ${request.
     return hookMatch ? hookMatch[1].trim() : null;
   }
 
-  private generateFallbackContent(request: GenerationRequest): GeneratedContent {
+  private generateFallbackContent(request: GenerationRequest, streamingOptions?: StreamingOptions): GeneratedContent {
     return {
       title: `How ${request.productName} Transformed My ${request.niche} Game`,
       hook: `I was struggling with ${request.niche} until I discovered ${request.productName}. The results were incredible...`,
@@ -213,10 +339,11 @@ Generate content that feels authentic, personal, and viral-worthy for ${request.
     return `I was struggling with ${request.niche} until I discovered ${request.productName}. The results were incredible...
 
 Here's what happened:
-• Week 1: I noticed immediate improvements
-• Week 2: Friends started asking what changed  
-• Week 3: I realized this was a game-changer
-• Week 4: I couldn't imagine going back
+
+Week 1: I noticed immediate improvements
+Week 2: Friends started asking what changed  
+Week 3: I realized this was a game-changer
+Week 4: I couldn't imagine going back
 
 ${request.productName} completely transformed how I approach ${request.niche}.
 
@@ -224,7 +351,7 @@ Perfect for ${request.targetAudience} who want real results.
 
 If you're struggling like I was, don't wait. This actually works.
 
-What's been your biggest challenge with ${request.niche}? Let me know below! 👇`;
+What's been your biggest challenge with ${request.niche}? Let me know below!`;
   }
 
   private generatePerformanceData() {

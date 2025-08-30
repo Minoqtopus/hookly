@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import session from 'express-session';
 import { AppModule } from './app.module';
 import { JWTSecurityUtil } from './common/utils/jwt-security.util';
@@ -52,6 +53,9 @@ async function bootstrap() {
   // Validate security configuration before starting the application
   validateSecurityConfiguration();
   const app = await NestFactory.create(AppModule);
+  
+  // Enable WebSocket support
+  app.useWebSocketAdapter(new IoAdapter(app));
   
   app.useGlobalPipes(new ValidationPipe({
     transform: true,

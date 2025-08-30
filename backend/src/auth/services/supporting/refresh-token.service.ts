@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
+import { Repository, MoreThan, LessThan } from 'typeorm';
 import { RefreshToken } from '../../../entities/refresh-token.entity';
 
 @Injectable()
@@ -59,7 +59,7 @@ export class RefreshTokenService {
     const candidateTokens = await this.refreshTokenRepository.find({
       where: { 
         is_revoked: false,
-        expires_at: { greaterThan: new Date() } as any
+        expires_at: MoreThan(new Date())
       },
       relations: ['user'],
     });
@@ -149,7 +149,7 @@ export class RefreshTokenService {
     cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
     const result = await this.refreshTokenRepository.delete({
-      expires_at: { lessThan: cutoffDate } as any,
+      expires_at: LessThan(cutoffDate),
     });
 
     return result.affected || 0;
@@ -166,7 +166,7 @@ export class RefreshTokenService {
       where: {
         user_id: userId,
         is_revoked: false,
-        expires_at: { greaterThan: new Date() } as any,
+        expires_at: MoreThan(new Date()),
       },
     });
   }

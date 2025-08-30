@@ -16,10 +16,11 @@ export interface DemoGenerationRequest {
 }
 
 export interface CreateGenerationRequest {
-  topic: string;
+  productName: string;
+  niche: string;
+  targetAudience: string;
   platform: 'instagram' | 'tiktok' | 'youtube';
-  niche?: string;
-  targetAudience?: string;
+  streamingId?: string;
 }
 
 // ================================

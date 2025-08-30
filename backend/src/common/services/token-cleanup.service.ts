@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { RefreshTokenService } from '../../auth/services/supporting/refresh-token.service';
-import { Repository } from 'typeorm';
+import { Repository, LessThan } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EmailVerification, VerificationStatus } from '../../entities/email-verification.entity';
 
@@ -47,7 +47,7 @@ export class TokenCleanupService {
       cutoffDate.setDate(cutoffDate.getDate() - 7);
 
       const result = await this.emailVerificationRepository.delete({
-        created_at: { lessThan: cutoffDate } as any,
+        created_at: LessThan(cutoffDate),
       });
 
       const deletedCount = result.affected || 0;
@@ -94,7 +94,7 @@ export class TokenCleanupService {
       const result = await this.emailVerificationRepository.update(
         {
           status: VerificationStatus.PENDING,
-          expires_at: { lessThan: new Date() } as any,
+          expires_at: LessThan(new Date()),
         },
         {
           status: VerificationStatus.EXPIRED,
@@ -173,14 +173,14 @@ export class TokenCleanupService {
       cutoffDate.setDate(cutoffDate.getDate() - 7);
       
       const emailResult = await this.emailVerificationRepository.delete({
-        created_at: { lessThan: cutoffDate } as any,
+        created_at: LessThan(cutoffDate),
       });
       
       // Update expired verification statuses
       const statusResult = await this.emailVerificationRepository.update(
         {
           status: VerificationStatus.PENDING,
-          expires_at: { lessThan: new Date() } as any,
+          expires_at: LessThan(new Date()),
         },
         {
           status: VerificationStatus.EXPIRED,

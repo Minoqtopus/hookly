@@ -9,6 +9,7 @@ import { UserPlanModel } from '../domain/models/user-plan.model';
 import { GenerationRequestModel, GenerationRequestData } from '../domain/models/generation-request.model';
 import { GenerationDomainService } from '../domain/services/generation-domain.service';
 import { ValidationService } from '../domain/services/validation.service';
+import { GenerationGateway } from './generation.gateway';
 
 @Injectable()
 export class GenerationService {
@@ -20,6 +21,7 @@ export class GenerationService {
     private aiService: AiService,
     private generationDomainService: GenerationDomainService,
     private validationService: ValidationService,
+    private generationGateway: GenerationGateway,
   ) {}
 
   /**
@@ -137,69 +139,126 @@ What's been your experience with ${niche}? Let me know! 👇`,
    */
   async createUserGeneration(
     userId: string,
-    requestData: GenerationRequestData
+    requestData: GenerationRequestData,
+    generationId?: string
   ): Promise<Generation> {
-    // Get user with current limits
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new ForbiddenException('User not found');
-    }
-
-    // Create domain models for business logic
-    const userPlan = UserPlanModel.fromUserEntity({
-      plan: user.plan,
-      trial_ends_at: user.trial_ends_at,
-      monthly_generation_count: user.monthly_generation_count,
-      trial_generations_used: user.trial_generations_used,
-      monthly_reset_date: user.monthly_reset_date
-    });
-
-    const generationRequest = GenerationRequestModel.fromRequestData(requestData, userId);
-
-    // Comprehensive validation using centralized validation service
-    const validationResult = this.validationService.validateGenerationRequest(userPlan, generationRequest);
+    const streamingId = generationId || `gen_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     
-    // If validation fails, throw exception with detailed error information
-    if (!validationResult.isValid) {
-      this.validationService.throwValidationException(validationResult, 'Generation request validation failed');
+    try {
+      console.log(`🚀 Starting streaming generation with ID: ${streamingId}`);
+      
+      // Emit generation started stage
+      this.generationGateway.emitGenerationStage(streamingId, {
+        stage: 'analyzing',
+        message: 'Analyzing your request and preparing AI generation...',
+        progress: 10
+      });
+      console.log(`📡 Emitted 'analyzing' stage for ${streamingId}`);
+
+      // Get user with current limits
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new ForbiddenException('User not found');
+      }
+
+      // Create domain models for business logic
+      const userPlan = UserPlanModel.fromUserEntity({
+        plan: user.plan,
+        trial_ends_at: user.trial_ends_at,
+        monthly_generation_count: user.monthly_generation_count,
+        trial_generations_used: user.trial_generations_used,
+        monthly_reset_date: user.monthly_reset_date
+      });
+
+      const generationRequest = GenerationRequestModel.fromRequestData(requestData, userId);
+
+      // Comprehensive validation using centralized validation service
+      const validationResult = this.validationService.validateGenerationRequest(userPlan, generationRequest);
+      
+      // If validation fails, throw exception with detailed error information
+      if (!validationResult.isValid) {
+        this.validationService.throwValidationException(validationResult, 'Generation request validation failed');
+      }
+
+      // Emit validation completed stage
+      this.generationGateway.emitGenerationStage(streamingId, {
+        stage: 'generating',
+        message: 'Validation successful! Starting AI content generation...',
+        progress: 30
+      });
+      console.log(`📡 Emitted 'generating' stage for ${streamingId}`);
+
+      // Generate AI content with streaming support
+      console.log(`🤖 Starting AI content generation for ${streamingId}`);
+      const generatedContent = await this.aiService.generateContent({
+        productName: generationRequest.productName,
+        niche: generationRequest.niche,
+        targetAudience: generationRequest.targetAudience,
+        platform: generationRequest.platform
+      }, {
+        streamingId,
+        onContentChunk: (section, content, isComplete, progress) => {
+          console.log(`🎯 Content chunk for ${streamingId}: ${section} (${progress}% complete)`);
+          this.generationGateway.emitContentChunk(streamingId, {
+            section: section as 'title' | 'hook' | 'script' | 'cta',
+            content,
+            isComplete,
+            totalProgress: progress
+          });
+        }
+      });
+      console.log(`✅ AI content generation completed for ${streamingId}`);
+
+      // Emit optimization stage
+      this.generationGateway.emitGenerationStage(streamingId, {
+        stage: 'optimizing',
+        message: 'Optimizing content and calculating performance metrics...',
+        progress: 85
+      });
+
+      // Calculate performance metrics using domain service
+      const performanceMetrics = this.generationDomainService.calculatePerformanceMetrics(generationRequest);
+
+      // Ensure platform enum compatibility
+      const platformValue = generationRequest.platform as GenerationType;
+
+      // Emit saving stage
+      this.generationGateway.emitGenerationStage(streamingId, {
+        stage: 'saving',
+        message: 'Saving your generated content...',
+        progress: 95
+      });
+
+      // Create and save generation with enhanced metrics
+      const generation = this.generationRepository.create({
+        user,
+        title: generatedContent.title,
+        platform: platformValue,
+        niche: generationRequest.niche,
+        target_audience: generationRequest.targetAudience,
+        hook: generatedContent.hook,
+        script: generatedContent.script,
+        performance_data: performanceMetrics,
+        status: GenerationStatus.COMPLETED,
+        is_demo: false,
+        is_favorite: false
+      });
+
+      const savedGeneration = await this.generationRepository.save(generation);
+
+      // Update user generation counts atomically
+      await this.updateUserGenerationCount(user);
+
+      // Emit completion
+      this.generationGateway.emitGenerationCompleted(streamingId, savedGeneration);
+
+      return savedGeneration;
+    } catch (error) {
+      // Emit error to connected clients
+      const errorMessage = error instanceof Error ? error.message : 'Generation failed';
+      this.generationGateway.emitGenerationError(streamingId, errorMessage);
+      throw error;
     }
-
-    // Note: Domain context validation already completed above through centralized validation service
-
-    // Generate AI content
-    const generatedContent = await this.aiService.generateContent({
-      productName: generationRequest.productName,
-      niche: generationRequest.niche,
-      targetAudience: generationRequest.targetAudience,
-      platform: generationRequest.platform
-    });
-
-    // Calculate performance metrics using domain service
-    const performanceMetrics = this.generationDomainService.calculatePerformanceMetrics(generationRequest);
-
-    // Quality score calculation available via domain service for future analytics features
-
-    // Create and save generation with enhanced metrics
-    const generation = this.generationRepository.create({
-      user,
-      title: generatedContent.title,
-      platform: generationRequest.platform.toUpperCase() as GenerationType,
-      niche: generationRequest.niche,
-      target_audience: generationRequest.targetAudience,
-      hook: generatedContent.hook,
-      script: generatedContent.script,
-      performance_data: performanceMetrics, // Keep original structure for now
-      status: GenerationStatus.COMPLETED,
-      is_demo: false,
-      is_favorite: false
-    });
-
-    const savedGeneration = await this.generationRepository.save(generation);
-
-    // Update user generation counts atomically
-    await this.updateUserGenerationCount(user);
-
-    return savedGeneration;
   }
 
   // Staff Engineer Note: Platform access and limit validation now handled by domain models

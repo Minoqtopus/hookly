@@ -24,48 +24,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useGeneration } from "@/domains/generation";
 import { FileText, MoreHorizontal, Search, Trash2 } from "lucide-react";
-
-// Mock data
-const generations = [
-  {
-    id: "gen_1",
-    topic: "My top 5 tips for learning a new language",
-    platform: "TikTok",
-    date: "2023-10-27",
-    viralScore: 8.7,
-  },
-  {
-    id: "gen_2",
-    topic: "Unboxing the new Acme phone",
-    platform: "YouTube",
-    date: "2023-10-25",
-    viralScore: 9.1,
-  },
-  {
-    id: "gen_3",
-    topic: "A 3-step guide to improve your cooking",
-    platform: "Instagram",
-    date: "2023-10-22",
-    viralScore: 7.5,
-  },
-  {
-    id: "gen_4",
-    topic: "Day in the life of a remote worker",
-    platform: "TikTok",
-    date: "2023-10-20",
-    viralScore: 8.2,
-  },
-    {
-    id: "gen_5",
-    topic: "How to start a successful side hustle",
-    platform: "YouTube",
-    date: "2023-10-18",
-    viralScore: 9.5,
-  },
-];
+import { useMemo, useState } from "react";
 
 export default function HistoryPage() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [platformFilter, setPlatformFilter] = useState("all");
+  
+  const { generations, isLoading } = useGeneration();
+
+  const filteredGenerations = useMemo(() => {
+    return generations.filter((gen) => {
+      const matchesSearch = gen.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesPlatform = platformFilter === "all" || gen.platform === platformFilter;
+      return matchesSearch && matchesPlatform;
+    });
+  }, [generations, searchTerm, platformFilter]);
+
+  const calculateViralScore = (gen: any) => {
+    if (gen.performance_data) {
+      const { views, clicks, engagement_rate } = gen.performance_data;
+      return Math.min(10, (engagement_rate + (clicks / views) * 100) / 2).toFixed(1);
+    }
+    return "5.0";
+  };
   return (
     <div className="space-y-8">
       <div>
@@ -82,9 +65,14 @@ export default function HistoryPage() {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search by topic..." className="pl-10" />
+                <Input 
+                  placeholder="Search by title..." 
+                  className="pl-10" 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-              <Select defaultValue="all">
+              <Select value={platformFilter} onValueChange={setPlatformFilter}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="All Platforms" />
                 </SelectTrigger>
@@ -103,7 +91,7 @@ export default function HistoryPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Topic</TableHead>
+                <TableHead>Title</TableHead>
                 <TableHead>Platform</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Viral Score</TableHead>
@@ -111,34 +99,50 @@ export default function HistoryPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {generations.map((gen) => (
-                <TableRow key={gen.id}>
-                  <TableCell className="font-medium">{gen.topic}</TableCell>
-                  <TableCell>{gen.platform}</TableCell>
-                  <TableCell>{gen.date}</TableCell>
-                  <TableCell>{gen.viralScore}/10</TableCell>
-                  <TableCell className="text-right">
-                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <FileText className="mr-2 h-4 w-4" />
-                          <span>View Details</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          <span>Delete</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8">
+                    Loading generations...
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : filteredGenerations.length > 0 ? (
+                filteredGenerations.map((gen) => (
+                  <TableRow key={gen.id}>
+                    <TableCell className="font-medium">{gen.title}</TableCell>
+                    <TableCell className="capitalize">{gen.platform}</TableCell>
+                    <TableCell>{new Date(gen.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>{calculateViralScore(gen)}/10</TableCell>
+                    <TableCell className="text-right">
+                       <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>
+                            <FileText className="mr-2 h-4 w-4" />
+                            <span>View Details</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Delete</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8">
+                    {searchTerm || platformFilter !== "all" 
+                      ? "No generations found matching your filters." 
+                      : "No generations yet. Create your first one in the Generate tab!"}
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
