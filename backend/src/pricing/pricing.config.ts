@@ -13,43 +13,42 @@
 import { PricingConfiguration, PricingTier, TrialConfiguration } from './pricing.types';
 import { UserPlan } from '../entities/user.entity';
 
-// Trial Configuration - PROFIT FOCUSED: 5 generations max
+// Trial Configuration - CREATOR FOCUSED: 5 generations for both platforms
 const TRIAL_CONFIG: TrialConfiguration = {
   durationDays: 7,
   generationsTotal: 5,
   generationsUnverified: 5,
   generationsVerified: 5, // Same as unverified - keep it simple and conversion-focused
-  platforms: ['tiktok'],
+  platforms: ['tiktok', 'instagram'],
   aiModel: 'standard',
   requiresEmailVerification: false // No need to complicate with email verification
 };
 
-// Pricing Tiers (matches your current backend business logic)
+// Pricing Tiers - HONEST VALUE PROPOSITION (matches what we actually deliver)
 const PRICING_TIERS: PricingTier[] = [
   {
     id: UserPlan.STARTER,
-    name: 'Starter',
-    description: 'Perfect for creators getting started with viral content.',
+    name: 'Creator',
+    description: 'Perfect for individual creators building their personal brand and content.',
     
-    // Pricing
-    monthlyPrice: 2400, // $24.00
-    yearlyPrice: 1900,  // $19.00 (20.8% discount)
-    yearlyDiscount: 21,
+    // Pricing - SIMPLIFIED AND COMPETITIVE
+    monthlyPrice: 1500, // $15.00 - much more reasonable for what we deliver
+    yearlyPrice: 1200,  // $12.00 (20% discount)
+    yearlyDiscount: 20,
     
-    // Core limits (MATCHES BACKEND REALITY)
-    generationsPerMonth: 50, // Backend gives 50, not 15!
+    // Core limits (HONEST - what we actually deliver)
+    generationsPerMonth: 50,
     
-    // Platform access
+    // Platform access (CREATOR FOCUSED - TikTok + Instagram)
     platforms: ['tiktok', 'instagram'],
     
-    // Features
+    // Features (HONEST UGC CREATOR FEATURES)
     features: [
-      { name: '50 AI generations per month', included: true },
-      { name: 'TikTok & Instagram access', included: true },
-      { name: 'Standard AI model', included: true },
-      { name: 'Basic performance analytics', included: true },
-      { name: 'Email support', included: true },
-      { name: 'Content templates library', included: true }
+      { name: '50 UGC scripts per month', included: true },
+      { name: 'TikTok & Instagram scripts', included: true },
+      { name: 'AI script generation', included: true },
+      { name: 'Real-time typewriter effect', included: true },
+      { name: 'Copy & paste scripts', included: true }
     ],
     
     aiModel: 'standard',
@@ -64,32 +63,28 @@ const PRICING_TIERS: PricingTier[] = [
   },
   {
     id: UserPlan.PRO,
-    name: 'Pro',
-    description: 'For serious creators scaling their content strategy.',
+    name: 'Business',
+    description: 'For creators and agencies scaling their UGC content operations.',
     
-    // Pricing
-    monthlyPrice: 5900, // $59.00
-    yearlyPrice: 4900,  // $49.00 (17% discount)
-    yearlyDiscount: 17,
+    // Pricing - REASONABLE FOR BUSINESS USE
+    monthlyPrice: 3900, // $39.00 - much more honest pricing
+    yearlyPrice: 2900,  // $29.00 (26% discount)
+    yearlyDiscount: 26,
     
-    // Core limits (MATCHES BACKEND REALITY)
-    generationsPerMonth: 200, // Backend gives 200, not 50!
+    // Core limits (HONEST - what we actually deliver)
+    generationsPerMonth: 200,
     
-    // Platform access
-    platforms: ['tiktok', 'instagram', 'youtube'],
+    // Platform access (CREATOR FOCUSED - TikTok + Instagram)
+    platforms: ['tiktok', 'instagram'],
     
-    // Features
+    // Features (HONEST UGC CREATOR FEATURES)
     features: [
-      { name: '200 AI generations per month', included: true },
-      { name: 'All platforms (TikTok, Instagram, YouTube)', included: true },
-      { name: 'Premium AI model (GPT-4)', included: true },
-      { name: 'Advanced performance analytics', included: true },
-      { name: 'Priority email support', included: true },
-      { name: 'Content templates library', included: true },
-      { name: 'Brand voice training', included: true, limit: 3 },
-      { name: 'Content calendar', included: true },
-      { name: 'Batch generation (up to 10)', included: true },
-      { name: 'Early access to new features', included: true }
+      { name: '200 UGC scripts per month', included: true },
+      { name: 'TikTok & Instagram scripts', included: true },
+      { name: 'AI script generation', included: true },
+      { name: 'Real-time typewriter effect', included: true },
+      { name: 'Copy & paste scripts', included: true },
+      { name: 'Use scripts commercially', included: true }
     ],
     
     aiModel: 'premium',
@@ -97,7 +92,7 @@ const PRICING_TIERS: PricingTier[] = [
     
     isRecommended: true,
     isPopular: false,
-    badge: 'Recommended',
+    badge: 'Best Value',
     
     isActive: true,
     sortOrder: 2
@@ -112,22 +107,20 @@ export const PRICING_CONFIG: PricingConfiguration = {
   currencySymbol: '$',
   billingCycles: ['monthly', 'yearly'],
   
-  // Marketing copy
-  headline: 'Pricing Plans for Every Creator',
-  subheadline: 'Choose the plan that fits your content creation needs. Cancel anytime.',
-  ctaText: 'Get Started',
+  // Marketing copy - CREATOR-FOCUSED UGC
+  headline: 'Simple Pricing for Viral UGC Content',
+  subheadline: 'Generate TikTok & Instagram scripts that actually convert. Perfect for creators building their brand. Start with 5 free scripts, then choose your plan. Cancel anytime.',
+  ctaText: 'Start Creating',
   
-  // All features for comparison
+  // All features for comparison - UGC CREATOR FOCUSED
   allFeatures: [
-    'AI generations per month',
-    'Platform access',
-    'AI model quality',
-    'Performance analytics',
+    'UGC scripts per month',
+    'TikTok & Instagram scripts',
+    'AI-powered viral hooks',
+    'Real-time generation',
+    'Product URL analyzer',
     'Support level',
-    'Brand voice training',
-    'Content calendar',
-    'Batch generation',
-    'Early access to features'
+    'Commercial usage rights'
   ],
   
   lastUpdated: new Date().toISOString(),
@@ -139,7 +132,7 @@ export function getPricingTier(planId: string): PricingTier | null {
   return PRICING_TIERS.find(tier => tier.id === planId) || null;
 }
 
-export function getGenerationLimit(planId: string, isEmailVerified?: boolean): number {
+export function getGenerationLimit(planId: string): number {
   // Handle trial plan with simplified logic (5 generations regardless of email verification)
   if (planId === UserPlan.TRIAL) {
     return TRIAL_CONFIG.generationsTotal;

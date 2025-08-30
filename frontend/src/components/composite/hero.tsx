@@ -67,11 +67,10 @@ export const Hero = () => {
         className="text-center z-10 p-4"
       >
         <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70">
-          The AI Scriptwriter for Viral Content
+          Create Viral UGC That Builds Your Brand
         </h1>
         <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
-          Hookly generates high-converting scripts, hooks, and ideas for your
-          social media content.
+          AI-powered UGC scripts for TikTok & Instagram. Perfect for creators building their personal brand and converting viewers into customers.
         </p>
         <div className="flex justify-center gap-4">
           <Link

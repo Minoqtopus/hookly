@@ -27,12 +27,14 @@ import {
 import { useGeneration } from "@/domains/generation";
 import { FileText, MoreHorizontal, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function HistoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
   
   const { generations, isLoading } = useGeneration();
+  const router = useRouter();
 
   const filteredGenerations = useMemo(() => {
     return generations.filter((gen) => {
@@ -52,16 +54,16 @@ export default function HistoryPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Generation History</h1>
+        <h1 className="text-3xl font-bold">UGC Script History</h1>
         <p className="text-muted-foreground mt-1">
-          Review, manage, and export your past generations.
+          Review and manage your generated TikTok & Instagram UGC scripts.
         </p>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Your Generations</CardTitle>
+            <CardTitle>Your UGC Scripts</CardTitle>
             <div className="flex items-center gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -80,8 +82,6 @@ export default function HistoryPage() {
                   <SelectItem value="all">All Platforms</SelectItem>
                   <SelectItem value="tiktok">TikTok</SelectItem>
                   <SelectItem value="instagram">Instagram</SelectItem>
-                  <SelectItem value="youtube">YouTube</SelectItem>
-                  <SelectItem value="twitter">X (Twitter)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -121,7 +121,7 @@ export default function HistoryPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(`/history/${gen.id}`)}>
                             <FileText className="mr-2 h-4 w-4" />
                             <span>View Details</span>
                           </DropdownMenuItem>
@@ -138,8 +138,8 @@ export default function HistoryPage() {
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8">
                     {searchTerm || platformFilter !== "all" 
-                      ? "No generations found matching your filters." 
-                      : "No generations yet. Create your first one in the Generate tab!"}
+                      ? "No UGC scripts found matching your filters." 
+                      : "No UGC scripts yet. Create your first viral script in the Generate tab!"}
                   </TableCell>
                 </TableRow>
               )}

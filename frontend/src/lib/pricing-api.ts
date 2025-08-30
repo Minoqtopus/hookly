@@ -70,8 +70,11 @@ export async function fetchPricingConfig(): Promise<PricingConfiguration> {
   const response = await fetch(`${baseUrl}/pricing/config`, {
     headers: {
       'Accept': 'application/json',
-      'Cache-Control': 'max-age=3600', // 1 hour cache
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     },
+    cache: 'no-store',
   });
   
   if (!response.ok) {

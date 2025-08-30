@@ -13,6 +13,7 @@ export interface DemoGenerationRequest {
   productName: string;
   niche: string;
   targetAudience: string;
+  platform?: 'tiktok' | 'instagram';
 }
 
 export interface CreateGenerationRequest {

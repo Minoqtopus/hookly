@@ -74,18 +74,17 @@ export default function GeneratePage() {
     }
   });
 
-  // Platform restrictions based on user plan
+  // Platform restrictions based on user plan - MATCHES PRICING CONFIG
   const getAvailablePlatforms = () => {
     const userPlan = user?.plan || 'trial';
     
+    // All plans get TikTok & Instagram access (no YouTube)
     switch (userPlan) {
       case 'pro':
-        return ['tiktok', 'instagram', 'youtube'];
-      case 'starter':
-        return ['tiktok', 'instagram'];
+      case 'starter':  
       case 'trial':
       default:
-        return ['tiktok'];
+        return ['tiktok', 'instagram'];
     }
   };
 
@@ -216,9 +215,9 @@ export default function GeneratePage() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-foreground mb-2">Generate Viral Content</h1>
+        <h1 className="text-4xl font-bold text-foreground mb-2">Generate Viral UGC Scripts</h1>
         <p className="text-lg text-muted-foreground">
-          Create compelling scripts that captivate your audience
+          Generate TikTok & Instagram scripts that actually convert. Perfect for creators building their brand.
         </p>
       </div>
 
@@ -274,21 +273,26 @@ export default function GeneratePage() {
               
               <div>
                 <Label htmlFor="productName" className="text-sm font-medium text-foreground">
-                  What are you promoting?
+                  What are you promoting? (Product or Personal Brand)
                 </Label>
                 <Textarea
                   id="productName"
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
-                  placeholder="e.g., FitTracker Pro Smartwatch, My New Course, etc."
+                  placeholder="e.g., FitTracker Pro Smartwatch, My Personal Fitness Journey, My New Course, etc."
                   rows={2}
                   className="mt-1"
                 />
+                {productName && productName.length < 10 && (
+                  <p className="text-xs text-amber-500 mt-1">
+                    Please provide at least 10 characters for better UGC scripts
+                  </p>
+                )}
               </div>
               
               <div>
                 <Label htmlFor="niche" className="text-sm font-medium text-foreground">
-                  What's your niche?
+                  What niche are you in?
                 </Label>
                 <Textarea
                   id="niche"
@@ -308,13 +312,13 @@ export default function GeneratePage() {
                   id="targetAudience"
                   value={targetAudience}
                   onChange={(e) => setTargetAudience(e.target.value)}
-                  placeholder="e.g., Fitness enthusiasts aged 25-40 who want to track their workouts"
+                  placeholder="e.g., Fitness enthusiasts aged 25-40 who want to track their workouts and improve their health"
                   rows={3}
                   className="mt-1"
                 />
                 {targetAudience && targetAudience.length < 20 && (
                   <p className="text-xs text-amber-500 mt-1">
-                    Please provide at least 20 characters for better results
+                    Please provide at least 20 characters for better UGC scripts
                   </p>
                 )}
               </div>
@@ -329,12 +333,7 @@ export default function GeneratePage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="tiktok">TikTok</SelectItem>
-                    <SelectItem value="instagram" disabled={isPlatformDisabled('instagram')}>
-                      Instagram {isPlatformDisabled('instagram') && '(Starter+)'}
-                    </SelectItem>
-                    <SelectItem value="youtube" disabled={isPlatformDisabled('youtube')}>
-                      YouTube {isPlatformDisabled('youtube') && '(Pro)'}
-                    </SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -352,11 +351,11 @@ export default function GeneratePage() {
                   Generating...
                 </>
               ) : remainingGenerations <= 0 ? (
-                "No Generations Left"
+                "No UGC Scripts Left"
               ) : (
                 <>
                   <Sparkles className="w-5 h-5 mr-2" />
-                  Generate Content ({remainingGenerations} left)
+                  Generate UGC Script ({remainingGenerations} left)
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </>
               )}
@@ -374,7 +373,7 @@ export default function GeneratePage() {
         <div className="lg:col-span-3">
           <div className="bg-card rounded-xl border border-border p-6 min-h-[500px]">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-foreground">Your Generated Content</h2>
+              <h2 className="text-xl font-semibold text-foreground">Your Generated UGC Script</h2>
               {(result || (streamedContent.title || streamedContent.hook || streamedContent.script)) && (
                 <Button variant="outline" size="sm" onClick={handleCopy}>
                   <Copy className="w-4 h-4 mr-2" />
@@ -398,8 +397,8 @@ export default function GeneratePage() {
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
                     <Sparkles className="w-16 h-16 mx-auto mb-4 text-muted-foreground/60" />
-                    <h3 className="text-lg font-medium text-foreground mb-2">Ready to create viral content?</h3>
-                    <p className="text-muted-foreground">Fill out the form on the left and click "Generate Content" to get started</p>
+                    <h3 className="text-lg font-medium text-foreground mb-2">Ready to create viral UGC scripts?</h3>
+                    <p className="text-muted-foreground">Fill out the form on the left and click "Generate UGC Script" to get started</p>
                   </div>
                 </div>
               )}

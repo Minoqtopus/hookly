@@ -5,21 +5,21 @@ import { Copy, Film, TrendingUp } from "lucide-react";
 
 const features = [
   {
-    title: "1. Describe Your Idea",
+    title: "1. Tell Us About Your Brand",
     description:
-      "Start by providing a simple description of your product, service, or content idea. The more context you give the AI, the better the results.",
+      "Describe your product, your niche, and your audience. Whether you're promoting a product or building your personal brand, our AI understands your creator goals.",
     icon: Copy,
   },
   {
-    title: "2. Let the AI Work Its Magic",
+    title: "2. AI Creates Your UGC Script",
     description:
-      "Our AI analyzes your input and generates a variety of hooks, scripts, and calls-to-action optimized for different platforms.",
+      "Our AI generates authentic UGC scripts for TikTok & Instagram that feel natural and convert viewers into followers and customers.",
     icon: Film,
   },
   {
-    title: "3. Go Viral",
+    title: "3. Build Your Creator Empire",
     description:
-      "Choose the best-performing script, export it with a single click, and post it to your social media. It's that simple.",
+      "Copy your viral script and create content that builds your personal brand, grows your audience, and converts viewers into loyal customers.",
     icon: TrendingUp,
   },
 ];
@@ -30,11 +30,11 @@ export const Features = () => {
       <div className="container">
         <div className="text-center max-w-3xl mx-auto">
           <h2 className="text-4xl font-bold mb-4">
-            Transform Your Ideas Into Viral Scripts
+            Transform Your Ideas Into Viral UGC
           </h2>
           <p className="text-muted-foreground mb-16">
-            In three simple steps, Hookly turns your concepts into
-            high-converting content ready for TikTok, Instagram, and YouTube.
+            In three simple steps, Hookly turns your ideas into
+            authentic UGC scripts that build your personal brand on TikTok & Instagram.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">

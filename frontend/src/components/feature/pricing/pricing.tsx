@@ -6,67 +6,6 @@ import { FaqItem } from "./FaqItem";
 import { PricingCard } from "./PricingCard";
 import { fetchPricingConfig, formatPrice, getPricingForBillingCycle, type PricingConfiguration, type PricingTier } from "@/lib/pricing-api";
 
-// Fallback plans (if API fails)
-const fallbackPlans = {
-  monthly: [
-    {
-      name: "Starter",
-      price: "$24",
-      description: "For creators getting started with viral content.",
-      features: [
-        "Up to 50 generations/month",
-        "Access to TikTok & Instagram",
-        "Standard AI model",
-        "Basic performance analytics",
-        "Email support",
-      ],
-      isRecommended: false,
-    },
-    {
-      name: "Pro",
-      price: "$59",
-      description: "For creators scaling their content strategy.",
-      features: [
-        "Up to 200 generations/month",
-        "Access to TikTok, Instagram & YouTube",
-        "Premium AI model",
-        "Advanced performance analytics",
-        "Priority email support",
-        "Access to new features",
-      ],
-      isRecommended: true,
-    },
-  ],
-  yearly: [
-    {
-      name: "Starter",
-      price: "$19",
-      description: "For creators getting started with viral content.",
-      features: [
-        "Up to 50 generations/month",
-        "Access to TikTok & Instagram",
-        "Standard AI model",
-        "Basic performance analytics",
-        "Email support",
-      ],
-      isRecommended: false,
-    },
-    {
-      name: "Pro",
-      price: "$49",
-      description: "For creators scaling their content strategy.",
-      features: [
-        "Up to 200 generations/month",
-        "Access to TikTok, Instagram & YouTube",
-        "Premium AI model",
-        "Advanced performance analytics",
-        "Priority email support",
-        "Access to new features",
-      ],
-      isRecommended: true,
-    },
-  ],
-};
 
 const faqs = [
   {
@@ -75,19 +14,29 @@ const faqs = [
       "Yes, you can cancel your subscription at any time. Your subscription will remain active until the end of the current billing cycle.",
   },
   {
-    question: "What counts as a 'generation'?",
+    question: "What counts as a 'script generation'?",
     answer:
-      "A generation is counted each time you run the AI to create a new script or set of ideas. Editing or refining a script does not count as a new generation.",
+      "Each time you generate a UGC script for TikTok or Instagram (title, hook, and full script) counts as one generation. You can copy and edit the generated content without using additional generations.",
   },
   {
-    question: "What is the difference between the Standard and Premium AI models?",
+    question: "What platforms do you support?",
     answer:
-      "The Premium AI model is a more advanced and powerful model that generally produces higher-quality, more creative, and more nuanced content.",
+      "We support TikTok and Instagram - the two biggest platforms for UGC creators. Our AI generates authentic, creator-focused scripts optimized for maximum engagement and audience building.",
+  },
+  {
+    question: "How does the AI generate UGC scripts?",
+    answer:
+      "Our AI analyzes viral UGC patterns and creates authentic scripts that feel natural for creators. Each script includes compelling hooks, storytelling elements, and calls-to-action tailored to your personal brand and audience.",
   },
   {
     question: "Can I upgrade or downgrade my plan?",
     answer:
-      "Yes, you can upgrade or downgrade your plan at any time from your account settings. The changes will be prorated.",
+      "Yes, you can upgrade or downgrade your plan at any time from your account settings. The changes will be prorated and take effect immediately.",
+  },
+  {
+    question: "Do I get commercial usage rights?",
+    answer:
+      "Creator plan scripts are perfect for personal brand building. Business plan includes full commercial usage rights, meaning you can use the scripts for client work and agency purposes.",
   },
 ];
 
@@ -100,11 +49,14 @@ export const Pricing = () => {
   useEffect(() => {
     async function loadPricing() {
       try {
+        console.log('Fetching fresh pricing config...');
         const config = await fetchPricingConfig();
+        console.log('Received pricing config:', config);
         setPricingConfig(config);
+        setError(null);
       } catch (err) {
         console.error('Failed to load pricing config:', err);
-        setError('Failed to load pricing');
+        setError('Failed to load pricing - please refresh');
       } finally {
         setLoading(false);
       }
@@ -113,24 +65,35 @@ export const Pricing = () => {
     loadPricing();
   }, []);
 
-  // Convert API data to component format
+  // Convert API data to component format - BACKEND ONLY, NO FALLBACKS
   const getCurrentPlans = () => {
-    if (pricingConfig) {
-      const tiersWithPricing = getPricingForBillingCycle(pricingConfig.tiers, isYearly ? 'yearly' : 'monthly');
-      return tiersWithPricing.map(tier => ({
-        name: tier.name,
-        price: formatPrice(tier.displayPrice, pricingConfig.currencySymbol),
-        description: tier.description,
-        features: tier.features.map(f => f.name),
-        isRecommended: tier.isRecommended
-      }));
+    if (!pricingConfig || !pricingConfig.tiers || pricingConfig.tiers.length === 0) {
+      return []; // Force empty state until backend loads
     }
     
-    // Fallback to static plans
-    return isYearly ? fallbackPlans.yearly : fallbackPlans.monthly;
+    const tiersWithPricing = getPricingForBillingCycle(pricingConfig.tiers, isYearly ? 'yearly' : 'monthly');
+    return tiersWithPricing.map(tier => ({
+      name: tier.name,
+      price: formatPrice(tier.displayPrice, pricingConfig.currencySymbol),
+      description: tier.description,
+      features: tier.features.map(f => f.name),
+      isRecommended: tier.isRecommended
+    }));
   };
 
   const currentPlans = getCurrentPlans();
+
+  // Show full page loading initially
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading pricing...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-24 sm:py-32">
@@ -143,11 +106,8 @@ export const Pricing = () => {
           <p className="mt-6 text-lg leading-8 text-muted-foreground">
             {pricingConfig?.subheadline || 'Choose the plan that fits your content creation needs. Cancel anytime.'}
           </p>
-          {loading && (
-            <p className="mt-4 text-sm text-muted-foreground">Loading pricing...</p>
-          )}
           {error && (
-            <p className="mt-4 text-sm text-red-500">Using cached pricing data</p>
+            <p className="mt-4 text-sm text-red-500">{error}</p>
           )}
         </div>
 
@@ -168,9 +128,15 @@ export const Pricing = () => {
 
         {/* Pricing Cards */}
         <div className="isolate mt-12 grid max-w-md grid-cols-1 gap-8 mx-auto lg:max-w-4xl lg:grid-cols-2">
-          {currentPlans.map((plan) => (
-            <PricingCard key={plan.name} plan={plan} />
-          ))}
+          {currentPlans.length > 0 ? (
+            currentPlans.map((plan) => (
+              <PricingCard key={plan.name} plan={plan} />
+            ))
+          ) : (
+            <div className="col-span-2 text-center">
+              <p className="text-red-500">Failed to load pricing data. Please refresh the page.</p>
+            </div>
+          )}
         </div>
 
         {/* FAQ */}

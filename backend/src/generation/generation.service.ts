@@ -32,17 +32,18 @@ export class GenerationService {
    * Uses Gemini AI to generate high-quality, personalized viral content
    * No user authentication required - perfect for landing page demos
    */
-  async createDemoGenerations(demoData?: { productName: string; niche: string; targetAudience: string }): Promise<Generation[]> {
+  async createDemoGenerations(demoData?: { productName: string; niche: string; targetAudience: string; platform?: 'tiktok' | 'instagram' }): Promise<Generation[]> {
     // Use provided data or fallback defaults
     const productName = demoData?.productName || 'Our Amazing Product';
     const niche = demoData?.niche || 'Productivity';
     const targetAudience = demoData?.targetAudience || 'Working professionals aged 25-40';
+    const selectedPlatform = demoData?.platform || 'tiktok';
 
-    // Define platforms for demo content generation
+    // Generate content for selected platform only to showcase the streaming experience properly
     const platforms = [
-      { type: GenerationType.INSTAGRAM, name: 'instagram' as const },
-      { type: GenerationType.TIKTOK, name: 'tiktok' as const },
-      { type: GenerationType.YOUTUBE, name: 'youtube' as const }
+      selectedPlatform === 'instagram' 
+        ? { type: GenerationType.INSTAGRAM, name: 'instagram' as const }
+        : { type: GenerationType.TIKTOK, name: 'tiktok' as const }
     ];
 
     // Generate AI content for each platform

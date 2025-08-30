@@ -11,8 +11,8 @@ const fontSans = FontSans({
 });
 
 export const metadata: Metadata = {
-  title: "Hookly - AI-Powered Viral Content Generation",
-  description: "Transform your business into a viral content creator with AI-powered UGC ads for TikTok, Instagram, and YouTube.",
+  title: "Hookly - AI UGC Script Generator for Creators",
+  description: "AI-powered UGC scripts for TikTok & Instagram creators. Build your personal brand and convert viewers into customers. Perfect for individual creators.",
 };
 
 export default function RootLayout({

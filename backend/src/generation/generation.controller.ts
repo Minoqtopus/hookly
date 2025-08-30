@@ -19,23 +19,23 @@ export class GenerationController {
   @Post('demo')
   @RateLimit(RateLimits.GENERATION_GUEST)
   @ApiOperation({
-    summary: 'Create demo generations (public endpoint)',
-    description: `Generate high-quality demo content customized for your product to showcase the platform's capabilities.
+    summary: 'Create demo UGC script (public endpoint)',
+    description: `Generate viral UGC scripts for TikTok or Instagram customized for creators and their products.
     
-    **Public Endpoint** - No authentication required. Perfect for users to test the platform before signing up.
+    **Public Endpoint** - No authentication required. Perfect for creators to test the platform before signing up.
     
-    **Features:**
-    - Creates 3 viral-quality demo generations across different platforms (Facebook, Instagram, TikTok)
-    - Content is customized using your product name, niche, and target audience
-    - Shows realistic performance metrics to demonstrate potential
-    - Returns fresh demo content on each request
-    - Perfect for product demonstrations and lead generation
+    **Creator-Focused Features:**
+    - Creates viral-quality UGC scripts for TikTok or Instagram
+    - Content optimized for individual creators building their brand
+    - Perfect for product promotion, personal branding, and audience building
+    - Shows realistic performance metrics to demonstrate viral potential
+    - Real-time typewriter effect for premium experience
     
     **Use Cases:**
-    - Landing page demonstrations
-    - Trial user engagement  
-    - Lead generation and conversion
-    - Showcasing viral potential to prospects`
+    - Content creators testing viral potential
+    - Personal brand building demos
+    - Product promotion script generation
+    - Landing page demonstrations for creator signups`
   })
   @ApiResponse({
     status: 201,
@@ -140,7 +140,7 @@ export class GenerationController {
           type: 'object',
           properties: {
             content_angles: { type: 'array', items: { type: 'string' }, example: ['transformation', 'problem-solution', 'social-proof'] },
-            platforms: { type: 'array', items: { type: 'string' }, example: ['tiktok', 'instagram', 'youtube'] }
+            platforms: { type: 'array', items: { type: 'string' }, example: ['tiktok', 'instagram'] }
           }
         }
       }
@@ -191,14 +191,14 @@ export class GenerationController {
     
     **Features:**
     - AI-powered content generation using Gemini
-    - Platform-specific optimization (TikTok, Instagram, YouTube)
+    - Platform-specific optimization (TikTok, Instagram)
     - Usage limit enforcement based on user plan
     - Real-time performance metrics simulation
     
     **Plan Limits:**
-    - Trial: 15 total generations, TikTok only
-    - Starter: 50/month, TikTok + Instagram  
-    - Pro: 200/month, TikTok + Instagram + YouTube
+    - Trial: 5 total generations, TikTok + Instagram
+    - Creator: 50/month, TikTok + Instagram  
+    - Business: 200/month, TikTok + Instagram
     
     **Rate Limiting:**
     - USER_GENERATION limit applies (5 per hour for quality control)`
@@ -216,7 +216,7 @@ export class GenerationController {
           properties: {
             id: { type: 'string', format: 'uuid' },
             title: { type: 'string', example: 'How This Product Changed My Life' },
-            platform: { type: 'string', enum: ['tiktok', 'instagram', 'youtube'] },
+            platform: { type: 'string', enum: ['tiktok', 'instagram'] },
             hook: { type: 'string' },
             script: { type: 'string' },
             performance_data: { type: 'object' },
@@ -387,20 +387,20 @@ export class GenerationController {
     const audience = analysis.target_audience?.toLowerCase() || '';
     const niche = analysis.niche?.toLowerCase() || '';
     
-    // Platform suggestions based on audience and niche
+    // Platform suggestions based on audience and niche - UGC CREATOR FOCUSED
     if (audience.includes('founder') || audience.includes('business') || niche.includes('saas')) {
-      return ['linkedin', 'tiktok', 'youtube']; // B2B focus
+      return ['tiktok', 'instagram']; // B2B creators focus on TikTok & Instagram
     }
     
     if (audience.includes('creative') || niche.includes('design')) {
-      return ['instagram', 'tiktok', 'youtube']; // Visual focus
+      return ['instagram', 'tiktok']; // Visual creators focus on Instagram first
     }
     
     if (audience.includes('fitness') || audience.includes('health')) {
-      return ['instagram', 'tiktok', 'youtube']; // Lifestyle focus
+      return ['instagram', 'tiktok']; // Fitness creators focus on Instagram & TikTok
     }
     
-    // Default for general audiences
-    return ['tiktok', 'instagram', 'youtube'];
+    // Default for all UGC creators - TikTok & Instagram only
+    return ['tiktok', 'instagram'];
   }
 }

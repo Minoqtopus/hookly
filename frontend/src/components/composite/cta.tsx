@@ -15,11 +15,10 @@ export const CTA = () => {
           className="bg-secondary/30 border border-border rounded-2xl p-8 md:p-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Ready to Unleash Your Viral Potential?
+            Ready to Build Your Creator Brand?
           </h2>
           <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
-            Try the demo and see how Hookly can transform your content strategy
-            in seconds. No credit card required.
+            Try the demo and see how Hookly creates viral UGC scripts that build your personal brand on TikTok & Instagram. No credit card required.
           </p>
           <Link
             href="/demo"
