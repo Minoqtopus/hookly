@@ -155,7 +155,7 @@ export interface PasswordResetResponse {
 // Reset Password with Token Request (must match backend endpoint)
 export interface ResetPasswordWithTokenRequest {
   token: string;
-  new_password: string;
+  password: string;
 }
 
 // Reset Password with Token Response (must match backend response)
@@ -177,7 +177,8 @@ export interface ChangePasswordResponse {
 }
 
 // Get Current User Response (must match backend endpoint)
-export interface GetCurrentUserResponse {
-  user: User;
-  remaining_generations: number;
+// Backend returns user profile directly with calculated fields
+export interface GetCurrentUserResponse extends User {
+  generations_remaining: number;
+  monthly_limit: number;
 }

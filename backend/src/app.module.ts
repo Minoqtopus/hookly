@@ -8,6 +8,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { PaymentModule } from './payment/payment.module';
 import { AuthModule } from './auth/auth.module';
 import { GenerationModule } from './generation/generation.module';
+import { PricingModule } from './pricing/pricing.module';
 // import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { RateLimitGuard } from './common/guards/rate-limit.guard';
 // import { ErrorLoggingInterceptor } from './common/interceptors/error-logging.interceptor';
@@ -47,6 +48,7 @@ import { HealthModule } from './health/health.module';
     AnalyticsModule,
     PaymentModule,
     GenerationModule,
+    PricingModule,
     HealthModule,
   ],
   providers: [

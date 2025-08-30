@@ -6,36 +6,34 @@
  */
 
 import { Metadata } from 'next';
-import { CTA } from "./(home)/components/cta";
-import { Features } from "./(home)/components/features";
-import { Hero } from "./(home)/components/hero";
+import { CTA, Features, Hero } from "@/components/composite";
 
 // ================================
 // SEO Metadata
 // ================================
 
 export const metadata: Metadata = {
-  title: 'Viral Content Generator - Create Viral Social Media Content with AI',
-  description: 'Generate high-converting viral content for TikTok, Instagram, and YouTube. AI-powered social media content creation platform with 15 free generations.',
+  title: 'Hookly - AI UGC Script Generator for Creators',
+  description: 'Generate viral UGC scripts for TikTok & Instagram that build your personal brand and convert viewers into customers. Perfect for individual creators. 5 free scripts to start.',
   keywords: [
-    'viral content generator', 
-    'AI social media', 
+    'UGC content generator', 
+    'AI UGC scripts', 
     'TikTok content creator', 
-    'Instagram viral posts',
-    'YouTube content ideas',
-    'social media automation',
-    'viral marketing tool'
+    'Instagram UGC creator',
+    'personal brand building',
+    'creator economy tools',
+    'viral UGC generator'
   ],
   openGraph: {
-    title: 'Viral Content Generator - AI-Powered Social Media Content',
-    description: 'Create viral social media content that converts. Get 15 free generations and start growing your audience today.',
+    title: 'Hookly - AI UGC Script Generator for Creators',
+    description: 'Generate viral UGC scripts for TikTok & Instagram. Perfect for creators building their personal brand. Get 5 free scripts to start.',
     type: 'website',
-    url: 'https://viralcontentgenerator.com',
+    url: 'https://hookly.com',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Viral Content Generator - AI Social Media Tool',
-    description: 'Generate viral content for TikTok, Instagram & YouTube. 15 free generations to start.',
+    title: 'Hookly - AI UGC Scripts for Creators',
+    description: 'Generate viral UGC scripts for TikTok & Instagram. Build your personal brand and convert viewers into customers. 5 free scripts to start.',
   },
   robots: {
     index: true,

@@ -10,25 +10,31 @@
 
 import { UserPlan } from '../entities/user.entity';
 import { UserGenerationLimits, PlatformSpecifications } from '../types/external-apis';
+// IMPORTANT: Pricing logic now centralized in pricing.config.ts
+import { 
+  getGenerationLimit as getPricingGenerationLimit, 
+  getPlatformAccess as getPricingPlatformAccess 
+} from '../pricing/pricing.config';
 
 // ================================
 // Plan Limits and Features
 // ================================
 
-// TEST-DRIVEN VALUES: These implement exactly what tests define as business requirements
+// DEPRECATED: Legacy plan limits for test compatibility only
+// NEW VALUES NOW COME FROM pricing.config.ts - SINGLE SOURCE OF TRUTH
 export const PLAN_LIMITS: UserGenerationLimits = {
   trial: {
-    total: 15, // TEST REQUIREMENT: core-authentication.service.test.ts expects 15 generations
-    platforms: ['tiktok'],
-    durationDays: 7 // TEST REQUIREMENT: core-authentication.service.test.ts expects 7-day trial
+    total: 5, // UPDATED: Now matches pricing.config.ts (5 generations for trial)
+    platforms: ['tiktok', 'instagram'], // UPDATED: Now matches pricing.config.ts
+    durationDays: 7 // Kept for test compatibility
   },
   starter: {
-    monthly: 50, // TEST REQUIREMENT: core-authentication.controller.test.ts expects 50 generations
-    platforms: ['tiktok', 'instagram']
+    monthly: 50, // UPDATED: Now matches pricing.config.ts
+    platforms: ['tiktok', 'instagram'] // UPDATED: Now matches pricing.config.ts
   },
   pro: {
-    monthly: 200,
-    platforms: ['tiktok', 'instagram', 'youtube'],
+    monthly: 200, // UPDATED: Now matches pricing.config.ts
+    platforms: ['tiktok', 'instagram'], // UPDATED: Removed YouTube, now matches pricing.config.ts
     batchSize: 10
   }
 };
@@ -42,27 +48,7 @@ export const PLAN_PRICING = {
   [UserPlan.PRO]: 5900      // $59.00
 } as const;
 
-/**
- * Platform access matrix by plan
- * Critical for enforcing platform restrictions
- */
-export const PLATFORM_ACCESS = {
-  [UserPlan.TRIAL]: {
-    has_tiktok_access: true,
-    has_instagram_access: false,
-    has_youtube_access: false
-  },
-  [UserPlan.STARTER]: {
-    has_tiktok_access: true,
-    has_instagram_access: true,
-    has_youtube_access: false
-  },
-  [UserPlan.PRO]: {
-    has_tiktok_access: true,
-    has_instagram_access: true,
-    has_youtube_access: true
-  }
-} as const;
+// REMOVED: Platform access now centralized in pricing.config.ts (SINGLE SOURCE OF TRUTH)
 
 // ================================
 // AI Content Generation Specs
@@ -145,14 +131,14 @@ export const SECURITY_CONSTANTS = {
 
 // CRITICAL: These constants implement test-defined business requirements
 export const BUSINESS_CONSTANTS = {
-  // Generation limits - DIRECTLY FROM TESTS WITH EMAIL VERIFICATION RULE
+  // Generation limits - NOW DELEGATES TO PRICING.CONFIG.TS (SINGLE SOURCE OF TRUTH)
   GENERATION_LIMITS: {
-    // NEW BUSINESS REQUIREMENT: Email verification affects trial generation limits
-    TRIAL_UNVERIFIED: 5, // TEST SOURCE: Unverified users get 5 generations to encourage verification
-    TRIAL_VERIFIED: 15, // TEST SOURCE: Verified users get full 15 generations
-    TRIAL_TOTAL: 15, // DEPRECATED: Use TRIAL_VERIFIED instead, kept for backward compatibility
-    STARTER_MONTHLY: 50, // TEST SOURCE: core-authentication.controller.test.ts line 145  
-    PRO_MONTHLY: 200 // Maintained for consistency, no current test coverage
+    // SIMPLIFIED: No more email verification dependency, matches pricing.config.ts
+    TRIAL_UNVERIFIED: 5, // UPDATED: Now matches pricing.config.ts (5 generations total)
+    TRIAL_VERIFIED: 5, // UPDATED: Now matches pricing.config.ts (simplified, no email verification complexity)
+    TRIAL_TOTAL: 5, // UPDATED: Now matches pricing.config.ts (5 generations total)
+    STARTER_MONTHLY: 50, // UPDATED: Confirmed match with pricing.config.ts  
+    PRO_MONTHLY: 200 // UPDATED: Confirmed match with pricing.config.ts
   },
   
   // Trial settings - TEST DRIVEN
@@ -241,42 +227,32 @@ export const SUCCESS_MESSAGES = {
 
 /**
  * Helper function to get generation limit by plan and email verification status
+ * 
+ * IMPORTANT: This now delegates to centralized pricing configuration
+ * Maintains backward compatibility while using single source of truth
+ * 
  * @param plan User plan
  * @param isEmailVerified Whether user's email is verified (only affects trial)
  * @returns Generation limit for the plan
  */
 export function getGenerationLimit(plan: UserPlan, isEmailVerified: boolean = true): number {
-  switch (plan) {
-    case UserPlan.TRIAL:
-      // BUSINESS REQUIREMENT: Email verification affects trial generation limits
-      return isEmailVerified 
-        ? BUSINESS_CONSTANTS.GENERATION_LIMITS.TRIAL_VERIFIED 
-        : BUSINESS_CONSTANTS.GENERATION_LIMITS.TRIAL_UNVERIFIED;
-    case UserPlan.STARTER:
-      return BUSINESS_CONSTANTS.GENERATION_LIMITS.STARTER_MONTHLY;
-    case UserPlan.PRO:
-      return BUSINESS_CONSTANTS.GENERATION_LIMITS.PRO_MONTHLY;
-    default:
-      throw new Error(`Unknown plan: ${plan}`);
-  }
+  // Delegate to centralized pricing system (simplified - no email verification dependency)
+  return getPricingGenerationLimit(plan);
 }
 
-/**
- * DEPRECATED: Helper function to get generation limit by plan (backward compatibility)
- * @deprecated Use getGenerationLimit(plan, isEmailVerified) instead
- * @param plan User plan
- * @returns Generation limit for the plan (assumes verified for trial)
- */
-export function getGenerationLimitLegacy(plan: UserPlan): number {
-  return getGenerationLimit(plan, true);
-}
+// REMOVED: getGenerationLimitLegacy function to prevent inconsistent limit calculations
 
 /**
  * Helper function to check if platform is available for plan
+ * 
+ * IMPORTANT: This now delegates to centralized pricing configuration
+ * 
  * @param plan User plan
  * @param platform Platform to check
  * @returns Boolean indicating if platform is available
  */
 export function isPlatformAvailable(plan: UserPlan, platform: string): boolean {
-  return PLAN_LIMITS[plan]?.platforms.includes(platform) || false;
+  // Delegate to centralized pricing system
+  const availablePlatforms = getPricingPlatformAccess(plan);
+  return availablePlatforms.includes(platform);
 }

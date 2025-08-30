@@ -55,6 +55,18 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -65,6 +77,10 @@ module.exports = {
         sans: ["var(--font-sans)", ...fontFamily.sans],
       },
       keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
         scroll: {
           to: {
             transform: "translate(calc(-50% - 0.5rem))",
@@ -84,6 +100,7 @@ module.exports = {
         },
       },
       animation: {
+        "fadeIn": "fadeIn 0.3s ease-in-out",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "shine": "shine 2s linear infinite",

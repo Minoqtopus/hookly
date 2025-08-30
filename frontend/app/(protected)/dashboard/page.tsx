@@ -1,6 +1,11 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/domains/auth";
+import { useGeneration } from "@/domains/generation";
 import { Sparkles, Zap } from "lucide-react";
 import Link from "next/link";
+import { useMemo } from "react";
 
 const StatCard = ({
   title,
@@ -70,10 +75,35 @@ const UpgradeCard = () => (
 );
 
 export default function DashboardPage() {
+  const { user, remainingGenerations, isLoading: authLoading } = useAuth();
+  const { viralScoreAverage, isLoading: generationLoading } = useGeneration();
+
+  // Calculate dynamic values
+  const generationsUsed = user?.trial_generations_used || 0;
+  const totalGenerations = user?.is_email_verified ? 15 : 5;
+  const displayName = user?.first_name || user?.email?.split('@')[0] || 'User';
+  
+  // Calculate trial status
+  const trialDaysRemaining = useMemo(() => {
+    if (!user?.trial_ends_at) return 'Unknown';
+    
+    const trialEnd = new Date(user.trial_ends_at);
+    const now = new Date();
+    const diffTime = trialEnd.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 0) return 'Expired';
+    return `${diffDays} days`;
+  }, [user?.trial_ends_at]);
+
+  const planDisplayName = user?.plan === 'trial' ? 'Trial Plan' : 
+                         user?.plan === 'starter' ? 'Starter Plan' :
+                         user?.plan === 'pro' ? 'Pro Plan' : 'Trial Plan';
+
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Welcome back!</h1>
+        <h1 className="text-3xl font-bold">Welcome back, {displayName}!</h1>
         <p className="text-muted-foreground mt-1">
           Here's a quick overview of your account.
         </p>
@@ -82,18 +112,18 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-3">
         <StatCard
           title="Generations Used"
-          value="5 / 15"
-          description="Trial Plan"
+          value={authLoading ? "Loading..." : `${generationsUsed} / ${totalGenerations}`}
+          description={planDisplayName}
         />
         <StatCard
           title="Viral Score Average"
-          value="8.2"
+          value={generationLoading ? "Loading..." : viralScoreAverage.toString()}
           description="Across all content"
         />
         <StatCard
-          title="Next Billing Date"
-          value="N/A"
-          description="Trial ends in 12 days"
+          title="Trial Status"
+          value={user?.plan === 'trial' ? trialDaysRemaining : 'Active'}
+          description={user?.plan === 'trial' ? `Trial ends in ${trialDaysRemaining}` : 'Subscription active'}
         />
       </div>
 

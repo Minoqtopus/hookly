@@ -12,7 +12,7 @@ export default function EmailVerificationPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Verify Your Email</h1>
         <p className="text-gray-600">
-          Verify your email to unlock 10 additional generations and full access to all features.
+          Verify your email to secure your account and unlock additional features.
         </p>
       </div>
 
@@ -27,7 +27,7 @@ export default function EmailVerificationPage() {
               Email Verification Required
             </h3>
             <p className="text-sm text-blue-700 mt-1">
-              You currently have access to 5 generations. Verify your email to unlock 15 total generations.
+              Verify your email to secure your account and ensure you don't lose access to your generations.
             </p>
           </div>
         </div>
@@ -70,8 +70,8 @@ export default function EmailVerificationPage() {
               <span className="text-green-600 text-sm">✓</span>
             </div>
             <div>
-              <h3 className="font-medium text-gray-900">More Generations</h3>
-              <p className="text-sm text-gray-600">Unlock 10 additional generations (15 total)</p>
+              <h3 className="font-medium text-gray-900">Account Security</h3>
+              <p className="text-sm text-gray-600">Secure your account and preserve your generations</p>
             </div>
           </div>
           
@@ -141,7 +141,7 @@ export default function EmailVerificationPage() {
             Continue Using the App
           </h3>
           <p className="text-gray-600 mb-4">
-            You can continue generating content with your 5 available generations while waiting for verification.
+            You can continue using your 5 available generations while waiting for email verification.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a 

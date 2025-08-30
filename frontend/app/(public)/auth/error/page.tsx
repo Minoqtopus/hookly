@@ -10,7 +10,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { OAuthErrorContent } from './OAuthErrorContent';
+import { OAuthErrorContent } from '@/components/feature/auth';
 
 export default function OAuthErrorPage() {
   return (

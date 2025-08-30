@@ -40,6 +40,7 @@ export class UserPlanModel {
   constructor(
     public readonly plan: UserPlan,
     public readonly isActive: boolean,
+    public readonly isEmailVerified: boolean = true, // CRITICAL: Added email verification status
     public readonly trialEndsAt?: Date,
     public readonly currentGenerationsUsed: number = 0,
     public readonly trialGenerationsUsed: number = 0,
@@ -74,7 +75,8 @@ export class UserPlanModel {
     const needsMonthlyReset = currentMonth !== resetMonth;
 
     if (this.plan === UserPlan.TRIAL) {
-      const trialLimit = BUSINESS_CONSTANTS.GENERATION_LIMITS.TRIAL_TOTAL;
+      // CRITICAL FIX: Use email verification status to determine correct limit
+      const trialLimit = getGenerationLimit(this.plan, this.isEmailVerified);
       return {
         total: trialLimit,
         remaining: Math.max(0, trialLimit - this.trialGenerationsUsed)
@@ -132,12 +134,19 @@ export class UserPlanModel {
   }
 
   /**
-   * Check if plan needs upgrade for specific feature
+   * Check if plan needs upgrade for specific platform or feature
    */
-  needsUpgradeFor(feature: 'youtube' | 'batch' | 'advanced_analytics'): UserPlan | null {
-    switch (feature) {
+  needsUpgradeFor(platformOrFeature: 'tiktok' | 'instagram' | 'youtube' | 'batch' | 'advanced_analytics'): UserPlan | null {
+    // Use centralized pricing config to determine required plan
+    const availablePlatforms = this.getFeatures().platforms;
+    
+    switch (platformOrFeature) {
+      case 'tiktok':
+        return availablePlatforms.includes('tiktok') ? null : UserPlan.STARTER;
+      case 'instagram':
+        return availablePlatforms.includes('instagram') ? null : UserPlan.STARTER;
       case 'youtube':
-        return this.plan === UserPlan.PRO ? null : UserPlan.PRO;
+        return availablePlatforms.includes('youtube') ? null : UserPlan.PRO;
       case 'batch':
         return this.plan === UserPlan.PRO ? null : UserPlan.PRO;  
       case 'advanced_analytics':
@@ -168,6 +177,7 @@ export class UserPlanModel {
    */
   static fromUserEntity(userData: {
     plan: UserPlan;
+    is_email_verified: boolean; // CRITICAL: Added missing email verification field
     trial_ends_at?: Date;
     monthly_generation_count: number;
     trial_generations_used: number;
@@ -176,6 +186,7 @@ export class UserPlanModel {
     return new UserPlanModel(
       userData.plan,
       true, // Assuming active if user exists
+      userData.is_email_verified, // CRITICAL: Pass email verification status
       userData.trial_ends_at,
       userData.monthly_generation_count,
       userData.trial_generations_used,

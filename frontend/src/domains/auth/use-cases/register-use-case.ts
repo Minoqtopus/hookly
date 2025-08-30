@@ -12,6 +12,7 @@ import { AuthService } from '../services/auth-service';
 export interface RegisterUseCaseResult {
   success: boolean;
   user?: User;
+  remainingGenerations?: number;
   tokens?: AuthTokens;
   error?: string;
 }
@@ -44,10 +45,14 @@ export class RegisterUseCase {
       // 3. Business Logic: Call auth service for data access
       const response = await this.authService.register(registerRequest);
       
-      // 4. Business Logic: Transform backend response to expected format
+      // 4. BUSINESS LOGIC: Calculate remaining generations for new user
+      const remainingGenerations = this.calculateRemainingGenerations(response.user);
+      
+      // 5. Business Logic: Transform backend response to expected format
       return {
         success: true,
         user: response.user,
+        remainingGenerations,
         tokens: {
           access_token: response.access_token,
           refresh_token: response.refresh_token,
@@ -93,5 +98,14 @@ export class RegisterUseCase {
     }
 
     return { isValid: true, error: '' };
+  }
+
+  // BUSINESS RULE: Calculate remaining generations for new users (premium product - 5 total trial)
+  private calculateRemainingGenerations(user: any): number {
+    if (!user) return 0;
+    
+    const maxTrialGenerations = 5; // Premium positioning - same for all trial users
+    const used = user.trial_generations_used || 0;
+    return Math.max(0, maxTrialGenerations - used);
   }
 }

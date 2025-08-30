@@ -6,7 +6,7 @@
  * API documentation through Swagger decorators.
  */
 
-import { IsString, IsNotEmpty, MaxLength, MinLength, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, MaxLength, MinLength, IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { BUSINESS_CONSTANTS } from '../../constants/business-rules';
 import { 
@@ -57,7 +57,7 @@ export class CreateGenerationDto {
   })
   @IsString()
   @IsNotEmpty()
-  @MinLength(BUSINESS_CONSTANTS.MIN_CONTENT_LENGTH.HOOK)
+  @MinLength(BUSINESS_CONSTANTS.MIN_CONTENT_LENGTH.HOOK) // Use consistent 20 char minimum
   @MaxLength(200)
   @IsContentPolicyCompliant()
   @IsSpecificTargetAudience()
@@ -70,4 +70,13 @@ export class CreateGenerationDto {
   })
   @IsEnum(GenerationPlatform)
   platform: GenerationPlatform;
+
+  @ApiProperty({
+    description: 'Optional streaming ID for WebSocket real-time updates',
+    example: 'gen_1756512096754_sa9p22zwi',
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  streamingId?: string;
 }

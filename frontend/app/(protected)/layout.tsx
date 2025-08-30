@@ -10,7 +10,7 @@
 
 'use client';
 
-import { Sidebar } from "@/components/shared/sidebar";
+import { Sidebar } from "@/components/layout";
 
 export default function ProtectedLayout({
   children,

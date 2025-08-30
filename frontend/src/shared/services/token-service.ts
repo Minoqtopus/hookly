@@ -22,17 +22,19 @@ export class TokenService {
   // Set access token in both localStorage and cookies
   setAccessToken(token: string): void {
     try {
-      // Client-side storage
-      localStorage.setItem(this.ACCESS_TOKEN_KEY, token);
-      
-      // Server-side accessible cookies
-      this.setCookie(this.ACCESS_TOKEN_KEY, token, {
-        ...this.COOKIE_OPTIONS,
-        maxAge: 15 * 60, // 15 minutes (access token lifetime)
-      });
+      // Client-side storage only
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(this.ACCESS_TOKEN_KEY, token);
+        
+        // Server-side accessible cookies
+        this.setCookie(this.ACCESS_TOKEN_KEY, token, {
+          ...this.COOKIE_OPTIONS,
+          maxAge: 15 * 60, // 15 minutes (access token lifetime)
+        });
 
-      // Immediately update API client with new token
-      apiClient.setAuthToken(token);
+        // Immediately update API client with new token
+        apiClient.setAuthToken(token);
+      }
     } catch (error) {
       console.error('Failed to set access token:', error);
     }
@@ -41,19 +43,22 @@ export class TokenService {
   // Set refresh token in both localStorage and cookies
   setRefreshToken(token: string): void {
     try {
-      // Client-side storage
-      localStorage.setItem(this.REFRESH_TOKEN_KEY, token);
-      
-      // Server-side accessible cookies
-      this.setCookie(this.REFRESH_TOKEN_KEY, token, this.COOKIE_OPTIONS);
+      // Client-side storage only
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(this.REFRESH_TOKEN_KEY, token);
+        
+        // Server-side accessible cookies
+        this.setCookie(this.REFRESH_TOKEN_KEY, token, this.COOKIE_OPTIONS);
+      }
     } catch (error) {
       console.error('Failed to set refresh token:', error);
     }
   }
 
-  // Get access token from localStorage
+  // Get access token from localStorage (client-side only)
   getAccessToken(): string | null {
     try {
+      if (typeof window === 'undefined') return null; // Server-side guard
       return localStorage.getItem(this.ACCESS_TOKEN_KEY);
     } catch (error) {
       console.error('Failed to get access token:', error);
@@ -61,9 +66,10 @@ export class TokenService {
     }
   }
 
-  // Get refresh token from localStorage
+  // Get refresh token from localStorage (client-side only)
   getRefreshToken(): string | null {
     try {
+      if (typeof window === 'undefined') return null; // Server-side guard
       return localStorage.getItem(this.REFRESH_TOKEN_KEY);
     } catch (error) {
       console.error('Failed to get refresh token:', error);
@@ -81,23 +87,28 @@ export class TokenService {
   // Clear all tokens from both storage mechanisms
   clearTokens(): void {
     try {
-      // Clear localStorage
-      localStorage.removeItem(this.ACCESS_TOKEN_KEY);
-      localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-      
-      // Clear cookies
-      this.deleteCookie(this.ACCESS_TOKEN_KEY);
-      this.deleteCookie(this.REFRESH_TOKEN_KEY);
+      // Client-side only operations
+      if (typeof window !== 'undefined') {
+        // Clear localStorage
+        localStorage.removeItem(this.ACCESS_TOKEN_KEY);
+        localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+        
+        // Clear cookies
+        this.deleteCookie(this.ACCESS_TOKEN_KEY);
+        this.deleteCookie(this.REFRESH_TOKEN_KEY);
 
-      // Clear API client authorization
-      apiClient.clearAuthToken();
+        // Clear API client authorization
+        apiClient.clearAuthToken();
+      }
     } catch (error) {
       console.error('Failed to clear tokens:', error);
     }
   }
 
-  // Private helper methods for cookie management
+  // Private helper methods for cookie management (client-side only)
   private setCookie(name: string, value: string, options: any = {}): void {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    
     const cookieValue = `${name}=${encodeURIComponent(value)}`;
     const cookieOptions = Object.entries(options)
       .map(([key, val]) => `${key}=${val}`)
@@ -107,6 +118,8 @@ export class TokenService {
   }
 
   private deleteCookie(name: string): void {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
   }
 
@@ -138,5 +151,14 @@ export class TokenService {
     // Refresh if token expires in next 5 minutes
     const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
     return expiration < fiveMinutesFromNow;
+  }
+
+  // Simple token format validation
+  isValidTokenFormat(token: string): boolean {
+    try {
+      return token.split('.').length === 3;
+    } catch (error) {
+      return false;
+    }
   }
 }

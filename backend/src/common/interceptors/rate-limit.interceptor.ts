@@ -44,7 +44,7 @@ export class RateLimitInterceptor implements NestInterceptor {
   }
 
   private logRequest(request: any, status: 'success' | 'error', errorMessage?: string) {
-    const userId = request.user?.userId;
+    const userId = request.user?.userId || request.user?.sub;
     const endpoint = `${request.method} ${request.route?.path || request.url}`;
     
     if (status === 'error') {

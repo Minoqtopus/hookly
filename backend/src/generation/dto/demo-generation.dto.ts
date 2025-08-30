@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, MaxLength, IsIn, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class DemoGenerationDto {
@@ -31,4 +31,15 @@ export class DemoGenerationDto {
   @IsNotEmpty()
   @MaxLength(100)
   targetAudience: string;
+
+  @ApiProperty({
+    description: 'Platform to generate content for',
+    example: 'tiktok',
+    enum: ['tiktok', 'instagram'],
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(['tiktok', 'instagram'])
+  platform?: 'tiktok' | 'instagram';
 }
