@@ -1,26 +1,26 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Copy, Film, TrendingUp } from "lucide-react";
+import { Link2, Sparkles, Zap } from "lucide-react";
 
 const features = [
   {
-    title: "1. Tell Us About Your Brand",
+    title: "1. Paste Your Product URL",
     description:
-      "Describe your product, your niche, and your audience. Whether you're promoting a product or building your personal brand, our AI understands your creator goals.",
-    icon: Copy,
+      "Simply paste your product URL and let our AI analyze your product details, features, and target audience to understand what makes it special.",
+    icon: Link2,
   },
   {
-    title: "2. AI Creates Your UGC Script",
+    title: "2. AI Generates Viral Content",
     description:
-      "Our AI generates authentic UGC scripts for TikTok & Instagram that feel natural and convert viewers into followers and customers.",
-    icon: Film,
+      "Our advanced AI creates compelling hooks, engaging descriptions, and platform-optimized content for TikTok, Instagram, Twitter, and more.",
+    icon: Sparkles,
   },
   {
-    title: "3. Build Your Creator Empire",
+    title: "3. Launch Your Viral Campaign",
     description:
-      "Copy your viral script and create content that builds your personal brand, grows your audience, and converts viewers into loyal customers.",
-    icon: TrendingUp,
+      "Copy your viral-ready content and watch your product gain traction across social platforms, turning views into sales.",
+    icon: Zap,
   },
 ];
 
@@ -30,11 +30,12 @@ export const Features = () => {
       <div className="container">
         <div className="text-center max-w-3xl mx-auto">
           <h2 className="text-4xl font-bold mb-4">
-            Transform Your Ideas Into Viral UGC
+            Turn Any Product Into Viral Content
           </h2>
           <p className="text-muted-foreground mb-16">
-            In three simple steps, Hookly turns your ideas into
-            authentic UGC scripts that build your personal brand on TikTok & Instagram.
+            In three simple steps, Hookly transforms your product into
+            viral-worthy content that drives engagement and sales across all
+            social platforms.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
@@ -60,8 +61,13 @@ export const Features = () => {
             ))}
           </div>
           <div className="hidden md:block">
-            {/* Placeholder for sticky visual */}
-            <div className="h-[500px] bg-secondary/30 rounded-2xl border border-border sticky top-24" />
+            <div className="sticky top-24">
+              <img
+                src="https://res.cloudinary.com/farooq-storage/image/upload/v1756631705/hookly-generate_hocczm.png"
+                alt="Hookly content generation interface"
+                className="w-full h-[400px] object-contain rounded-2xl border border-border shadow-lg"
+              />
+            </div>
           </div>
         </div>
       </div>
