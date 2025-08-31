@@ -16,7 +16,7 @@ export const PricingCard = ({ plan }: PricingCardProps) => {
   return (
     <div
       className={cn(
-        "rounded-3xl p-8 ring-1 ring-border",
+        "rounded-3xl px-4 py-6 sm:p-8 ring-1 ring-border",
         plan.isRecommended
           ? "bg-secondary/30 ring-2 ring-primary"
           : "bg-secondary/10"
@@ -32,9 +32,7 @@ export const PricingCard = ({ plan }: PricingCardProps) => {
           /month
         </span>
       </p>
-      <Button
-        className="mt-8 w-full bg-white text-black hover:bg-gray-50 border border-gray-200 font-semibold"
-      >
+      <Button className="mt-8 w-full bg-white text-black hover:bg-gray-50 border border-gray-200 font-semibold">
         Upgrade to Pro
       </Button>
       <ul

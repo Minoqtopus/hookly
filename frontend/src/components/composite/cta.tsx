@@ -5,24 +5,24 @@ import Link from "next/link";
 
 export const CTA = () => {
   return (
-    <div className="py-24 relative overflow-hidden bg-background">
-      <div className="container text-center relative z-10">
+    <div className="py-12 sm:py-16 md:py-24 relative overflow-hidden bg-background">
+      <div className="container px-4 sm:px-6 text-center relative z-10">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           whileInView={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
           viewport={{ once: true, amount: 0.5 }}
-          className="bg-secondary/30 border border-border rounded-2xl p-8 md:p-16"
+          className="bg-secondary/30 border border-border rounded-xl sm:rounded-2xl p-6 sm:p-8 md:p-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
             Ready to Build Your Creator Brand?
           </h2>
-          <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg text-muted-foreground mb-6 sm:mb-8 md:mb-10 max-w-2xl mx-auto px-2">
             Try the demo and see how Hookly creates viral UGC scripts that build your personal brand on TikTok & Instagram. No credit card required.
           </p>
           <Link
             href="/demo"
-            className="bg-primary text-primary-foreground px-8 py-4 rounded-full font-semibold text-lg inline-block"
+            className="bg-primary text-primary-foreground px-6 py-3 sm:px-8 sm:py-4 rounded-full font-semibold text-sm sm:text-base md:text-lg inline-block"
           >
             Try the Demo for Free
           </Link>

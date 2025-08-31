@@ -64,26 +64,26 @@ export const Hero = () => {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: "easeInOut", delay: 0.5 }}
-        className="text-center z-10 p-4"
+        className="text-center z-10 px-4 py-8 md:p-4"
       >
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70">
-          Create Viral UGC That <br />
+        <h1 className="text-3xl sm:text-4xl md:text-7xl font-bold mb-4 md:mb-6 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70">
+          Create Viral UGC That <br className="hidden sm:block" />
           Builds Your Brand
         </h1>
-        <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
+        <p className="text-sm sm:text-base md:text-lg text-muted-foreground mb-6 md:mb-10 max-w-2xl mx-auto px-2">
           AI-powered UGC scripts for TikTok & Instagram. Perfect for creators
           building their personal brand and converting viewers into customers.
         </p>
-        <div className="flex justify-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 px-4 sm:px-0">
           <Link
             href="/demo"
-            className="bg-primary text-primary-foreground px-8 py-4 rounded-full font-semibold text-lg"
+            className="bg-primary text-primary-foreground px-6 py-3 sm:px-8 sm:py-4 rounded-full font-semibold text-sm sm:text-base md:text-lg"
           >
             Try the Demo
           </Link>
           <Link
             href="/pricing"
-            className="border px-8 py-4 rounded-full font-semibold text-lg"
+            className="border px-6 py-3 sm:px-8 sm:py-4 rounded-full font-semibold text-sm sm:text-base md:text-lg"
           >
             View Pricing
           </Link>

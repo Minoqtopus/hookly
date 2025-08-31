@@ -186,24 +186,24 @@ export const Demo = () => {
   };
 
   return (
-    <div className="py-24 sm:py-32">
-      <div className="container">
+    <div className="py-12 sm:py-16 md:py-24 lg:py-32">
+      <div className="container px-4 sm:px-6">
         {/* Header */}
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
             Experience the Magic
           </h1>
-          <p className="mt-6 text-lg leading-8 text-muted-foreground">
+          <p className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg leading-7 sm:leading-8 text-muted-foreground px-2">
             Watch AI create personalized UGC scripts for TikTok & Instagram in real-time. Perfect for creators building their brand.
           </p>
         </div>
 
         {/* Demo Sandbox */}
-        <div className="mt-16 max-w-4xl mx-auto">
-          <div className="bg-secondary/30 border border-border rounded-2xl p-8">
+        <div className="mt-8 sm:mt-12 md:mt-16 max-w-4xl mx-auto">
+          <div className="bg-secondary/30 border border-border rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8">
             {/* Input Section */}
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="product">Product/Service Name</Label>
                   <Input
@@ -253,16 +253,16 @@ export const Demo = () => {
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground mb-3">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
                   Or try one of our templates:
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {templates.map((template) => (
                     <button
                       key={template.product}
                       onClick={() => handleTemplateClick(template)}
                       disabled={isLoading}
-                      className="px-4 py-2 bg-secondary/50 text-sm rounded-md hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1.5 sm:px-4 sm:py-2 bg-secondary/50 text-xs sm:text-sm rounded-md hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {template.product}
                     </button>
@@ -278,7 +278,7 @@ export const Demo = () => {
               <Button 
                 onClick={handleGenerate} 
                 disabled={isLoading || !productName || !niche || !targetAudience}
-                size="lg"
+                className="px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base"
               >
                 {isLoading ? (
                   <>
@@ -471,7 +471,7 @@ export const Demo = () => {
                       <div className="text-center">
                         <Label className="text-base">Estimated Performance</Label>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
                         <MetricCard
                           icon={TrendingUp}
                           label="Views"
@@ -514,11 +514,11 @@ export const Demo = () => {
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.8 }}
                     >
-                      <h4 className="font-semibold text-lg mb-2">Ready to Create More?</h4>
-                      <p className="text-sm text-muted-foreground mb-4">
+                      <h4 className="font-semibold text-base sm:text-lg mb-2">Ready to Create More?</h4>
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
                         Sign up now and get 5 free scripts to start creating viral content
                       </p>
-                      <Button asChild>
+                      <Button asChild className="px-6 py-2.5 sm:px-8 sm:py-3 text-sm sm:text-base">
                         <a href="/register">Start Free Trial</a>
                       </Button>
                     </motion.div>
