@@ -15,7 +15,18 @@ export class AuthCoordinator {
   constructor() {
     this.tokenService = new TokenService();
     // Sync existing tokens with API client on initialization
-    this.tokenService.syncWithApiClient(apiClient);
+    this.initializeTokens();
+  }
+
+  // Initialize tokens from localStorage and sync with API client
+  private initializeTokens(): void {
+    if (typeof window !== 'undefined') {
+      const accessToken = this.tokenService.getAccessToken();
+      if (accessToken) {
+        // Sync token with API client
+        apiClient.setAuthToken(accessToken);
+      }
+    }
   }
 
   // Set access token and sync with API client
