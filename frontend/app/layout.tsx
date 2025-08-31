@@ -12,6 +12,7 @@ const fontSans = FontSans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.hookly.xyz'),
   title: "Hookly - AI UGC Script Generator for Creators",
   description:
     "AI-powered UGC scripts for TikTok & Instagram creators. Build your personal brand and convert viewers into customers. Perfect for individual creators.",
@@ -58,19 +59,10 @@ export const metadata: Metadata = {
     ],
   },
   manifest: "/manifest.json",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0F172A" },
-  ],
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-  },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://hookly.com",
+    url: "/",
     title: "Hookly - AI UGC Script Generator for Creators",
     description: "AI-powered UGC scripts for TikTok & Instagram creators. Build your personal brand and convert viewers into customers.",
     siteName: "Hookly",
@@ -91,10 +83,22 @@ export const metadata: Metadata = {
     creator: "@hookly",
   },
   alternates: {
-    canonical: "https://hookly.com",
+    canonical: "/",
   },
   category: "Business",
 };
+
+export function generateViewport() {
+  return {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    themeColor: [
+      { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+      { media: "(prefers-color-scheme: dark)", color: "#0F172A" },
+    ],
+  };
+}
 
 export default function RootLayout({
   children,
