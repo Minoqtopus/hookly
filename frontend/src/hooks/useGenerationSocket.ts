@@ -80,14 +80,19 @@ export function useGenerationSocket(events?: GenerationEvents): UseGenerationSoc
 
     console.log('🔌 Establishing WebSocket connection...');
     
-    // Create socket with enterprise-grade configuration
-    const socketInstance = io(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/generation`, {
+    // Create socket with production-ready configuration
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const socketUrl = apiUrl.replace(/^http/, 'ws').replace(/^https/, 'wss');
+    
+    const socketInstance = io(`${apiUrl}/generation`, {
       withCredentials: true,
       transports: ['websocket', 'polling'], // Fallback to polling if WebSocket fails
       autoConnect: true,
       reconnection: false, // We'll handle reconnection manually
-      timeout: 10000, // 10 second connection timeout
+      timeout: 20000, // Increased timeout for production
       forceNew: true, // Force new connection to prevent stale connections
+      upgrade: true, // Allow protocol upgrades
+      rememberUpgrade: true, // Remember successful upgrades
       query: {
         token: accessToken,
         clientId: `client_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
@@ -156,8 +161,11 @@ export function useGenerationSocket(events?: GenerationEvents): UseGenerationSoc
 
     socketInstance.on('connect_error', (error) => {
       console.error('❌ WebSocket connection error:', error.message);
+      console.error('❌ Error details:', error);
+      console.log('🔍 API URL being used:', apiUrl);
+      console.log('🔍 Token present:', !!accessToken);
       setIsConnected(false);
-      eventsRef.current?.onError?.(`Connection error: ${error.message}`);
+      eventsRef.current?.onError?.(`Connection failed: ${error.message}. Please check your internet connection and try again.`);
       scheduleReconnect();
     });
 
