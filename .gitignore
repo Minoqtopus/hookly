@@ -1,11 +1,13 @@
 # Environment Variables
 frontend/.env
 frontend/.env.local
+frontend/.env.prod
 frontend/.env.development.local
 frontend/.env.test.local
 frontend/.env.production.local
 backend/.env
 backend/.env.local
+backend/.env.prod
 backend/.env.development.local
 backend/.env.test.local
 backend/.env.production.local

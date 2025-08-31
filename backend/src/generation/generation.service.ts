@@ -1,9 +1,10 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThan } from 'typeorm';
 import { AiService } from '../ai/ai.service';
 import { Generation, GenerationStatus, GenerationType } from '../entities/generation.entity';
 import { User, UserPlan } from '../entities/user.entity';
+import { AnalyticsEvent, EventType } from '../entities/analytics-event.entity';
 import { BUSINESS_CONSTANTS, ERROR_MESSAGES, getGenerationLimit } from '../constants/business-rules';
 import { UserPlanModel } from '../domain/models/user-plan.model';
 import { GenerationRequestModel, GenerationRequestData } from '../domain/models/generation-request.model';
@@ -21,11 +22,54 @@ export class GenerationService {
     private generationRepository: Repository<Generation>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(AnalyticsEvent)
+    private analyticsRepository: Repository<AnalyticsEvent>,
     private aiService: AiService,
     private generationDomainService: GenerationDomainService,
     private validationService: ValidationService,
     private generationGateway: GenerationGateway,
   ) {}
+
+  /**
+   * Check if an IP address is eligible for demo generation
+   * Returns eligibility status and a user-friendly message
+   */
+  async checkDemoEligibility(ipAddress: string): Promise<{ eligible: boolean; message?: string }> {
+    // Calculate timestamp for 24 hours ago
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    // Check if this IP has completed a demo in the last 24 hours
+    const recentDemoCount = await this.analyticsRepository.count({
+      where: {
+        event_type: EventType.DEMO_COMPLETED,
+        ip_address: ipAddress,
+        created_at: MoreThan(twentyFourHoursAgo),
+      },
+    });
+
+    if (recentDemoCount > 0) {
+      return {
+        eligible: false,
+        message: 'You\'ve already tried the demo today. Sign up for a free trial to create unlimited scripts!',
+      };
+    }
+
+    return { eligible: true };
+  }
+
+  /**
+   * Track demo completion in analytics
+   */
+  async trackDemoCompletion(ipAddress: string, userAgent?: string, eventData?: any): Promise<void> {
+    await this.analyticsRepository.save({
+      event_type: EventType.DEMO_COMPLETED,
+      ip_address: ipAddress,
+      user_agent: userAgent,
+      event_data: eventData,
+      created_at: new Date(),
+    });
+  }
 
   /**
    * Create AI-generated demo content to showcase the product capabilities (public endpoint)
@@ -341,16 +385,35 @@ What's been your experience with ${niche}? Let me know! 👇`,
           .where('id = :id', { id: user.id })
           .execute();
       } else {
-        // Atomic increment for monthly count within transaction
-        await manager
-          .createQueryBuilder()
-          .update(User)
-          .set({
-            monthly_generation_count: () => 'monthly_generation_count + 1',
-            total_generations: () => 'total_generations + 1'
-          })
-          .where('id = :id', { id: user.id })
-          .execute();
+        // Check if monthly reset is needed for paid plans
+        const currentMonth = new Date().getMonth();
+        const resetMonth = user.monthly_reset_date ? user.monthly_reset_date.getMonth() : -1;
+        const needsMonthlyReset = currentMonth !== resetMonth;
+
+        if (needsMonthlyReset) {
+          // Reset monthly count and update reset date
+          await manager
+            .createQueryBuilder()
+            .update(User)
+            .set({
+              monthly_generation_count: 1, // Start with 1 for current generation
+              monthly_reset_date: new Date(), // Set new reset date
+              total_generations: () => 'total_generations + 1'
+            })
+            .where('id = :id', { id: user.id })
+            .execute();
+        } else {
+          // Normal monthly increment
+          await manager
+            .createQueryBuilder()
+            .update(User)
+            .set({
+              monthly_generation_count: () => 'monthly_generation_count + 1',
+              total_generations: () => 'total_generations + 1'
+            })
+            .where('id = :id', { id: user.id })
+            .execute();
+        }
       }
     }
   }

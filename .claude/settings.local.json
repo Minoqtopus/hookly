@@ -14,9 +14,13 @@
       "Bash(npm uninstall:*)",
       "Bash(touch:*)",
       "Bash(sed:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "mcp__postgres__query"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "postgres"
+  ]
 }
