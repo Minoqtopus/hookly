@@ -79,9 +79,38 @@ export class GenerationController {
     status: 429,
     description: 'Rate limit exceeded'
   })
-  async createDemoGenerations(@Body() demoData: DemoGenerationDto) {
+  @ApiResponse({
+    status: 403,
+    description: 'Demo limit reached'
+  })
+  async createDemoGenerations(@Body() demoData: DemoGenerationDto, @Request() req: any) {
     try {
+      // Get IP address from request
+      const ipAddress = req.ip || req.connection?.remoteAddress || 'unknown';
+      const userAgent = req.headers?.['user-agent'];
+      
+      // Check demo eligibility
+      const eligibility = await this.generationService.checkDemoEligibility(ipAddress);
+      
+      if (!eligibility.eligible) {
+        return {
+          success: false,
+          error: 'DEMO_LIMIT_REACHED',
+          message: eligibility.message,
+          statusCode: 403
+        };
+      }
+      
+      // Generate demo content
       const demoGenerations = await this.generationService.createDemoGenerations(demoData);
+      
+      // Track demo completion
+      await this.generationService.trackDemoCompletion(ipAddress, userAgent, {
+        productName: demoData.productName,
+        niche: demoData.niche,
+        targetAudience: demoData.targetAudience,
+        platform: demoData.platform
+      });
       
       return {
         success: true,

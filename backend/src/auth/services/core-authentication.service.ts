@@ -119,10 +119,13 @@ export class CoreAuthenticationService {
       role: isAdmin ? UserRole.ADMIN : UserRole.USER,
       plan: UserPlan.TRIAL,
       is_email_verified: false,
+      trial_started_at: new Date(), // Fix: Set trial start time for proper tracking
       trial_ends_at: new Date(Date.now() + BUSINESS_CONSTANTS.TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000),
       trial_generations_used: 0,
       monthly_generation_count: 0,
-      total_generations: 0
+      total_generations: 0,
+      registration_ip: ipAddress, // Fix: Store IP for trial abuse prevention
+      registration_user_agent: userAgent // Fix: Store user agent for abuse detection
     });
 
     const savedUser = await this.userRepository.save(user);

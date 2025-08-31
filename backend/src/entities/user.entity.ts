@@ -108,7 +108,7 @@ export class User {
   @Column({ default: false })
   has_youtube_access: boolean;
 
-  @Column({ default: false })
+  @Column({ default: true })
   has_instagram_access: boolean;
 
   // Trial abuse prevention fields
