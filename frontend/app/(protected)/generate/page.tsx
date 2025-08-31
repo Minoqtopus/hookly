@@ -14,8 +14,19 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/domains/auth";
 import { useGeneration } from "@/domains/generation";
 import { useGenerationSocket } from "@/hooks/useGenerationSocket";
-import { StreamingContent } from "@/components/feature/generation";
-import { Copy, Sparkles, Zap, ArrowRight, Link, Loader2 } from "lucide-react";
+import {
+  StreamingContent,
+  UGCScriptFormatter,
+} from "@/components/feature/generation";
+import {
+  Copy,
+  Sparkles,
+  Zap,
+  ArrowRight,
+  Link,
+  Loader2,
+  CheckCircle,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { TokenService } from "@/shared/services/token-service";
 
@@ -27,69 +38,86 @@ export default function GeneratePage() {
   const [result, setResult] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
-  
+  const [isCopied, setIsCopied] = useState(false);
+  const [copiedSection, setCopiedSection] = useState<string | null>(null);
+
   // URL Analyzer state
   const [productUrl, setProductUrl] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  
-  const { user, remainingGenerations, decrementGenerationCount, updateRemainingGenerations, getCurrentUser } = useAuth();
-  const { createGeneration } = useGeneration();
-  
-  // WebSocket streaming
+
   const {
-    isConnected,
-    joinGeneration,
-    currentStage,
-    streamedContent,
-  } = useGenerationSocket({
-    onCompleted: async (generation) => {
-      console.log('Generation completed:', generation);
-      setIsGenerating(false);
-      // Fetch fresh user data from backend to get updated counts
-      try {
-        const result = await getCurrentUser();
-        console.log('✅ User data refreshed after generation completion:', {
-          remainingGenerations: result?.remainingGenerations,
-          userTrialGenerationsUsed: result?.user?.trial_generations_used
-        });
-      } catch (error) {
-        console.error('Failed to refresh user data:', error);
-        // Fallback: decrement locally if refresh fails
-        console.log('⚠️ Using fallback: decrementing locally');
-        decrementGenerationCount();
-      }
-      // Don't set result here - let the streaming content display
-    },
-    onError: (error) => {
-      console.error('Generation error:', error);
-      setIsGenerating(false);
-      setGenerationError(error);
-    },
-    onContentChunk: (chunk) => {
-      console.log('Content chunk received in page:', chunk);
-    },
-    onStageUpdate: (stage) => {
-      console.log('Stage update in page:', stage);
-    }
-  });
+    user,
+    remainingGenerations,
+    decrementGenerationCount,
+    updateRemainingGenerations,
+    getCurrentUser,
+  } = useAuth();
+
+  // Debug: Log when remainingGenerations changes in generate page
+  useEffect(() => {
+    console.log(
+      "📊 Generate Page: remainingGenerations updated to:",
+      remainingGenerations
+    );
+  }, [remainingGenerations]);
+  const { createGeneration } = useGeneration();
+
+  // WebSocket streaming
+  const { isConnected, joinGeneration, currentStage, streamedContent } =
+    useGenerationSocket({
+      onCompleted: async (generation) => {
+        console.log("Generation completed:", generation);
+        setIsGenerating(false);
+
+        // FIXED: Single source of truth - only refresh user data, no local decrements
+        try {
+          const result = await getCurrentUser();
+          console.log("✅ User data refreshed after generation completion:", {
+            remainingGenerations: result?.remainingGenerations,
+            userTrialGenerationsUsed: result?.user?.trial_generations_used,
+          });
+        } catch (error) {
+          console.error(
+            "❌ Failed to refresh user data after generation completion:",
+            error
+          );
+          // Don't use fallback decrement - this causes inconsistency
+          // The backend has already updated counts, so refresh will work on retry
+        }
+
+        // Don't set result here - let the streaming content display
+      },
+      onError: (error) => {
+        console.error("Generation error:", error);
+        setIsGenerating(false);
+        setGenerationError(error);
+      },
+      onContentChunk: (chunk) => {
+        console.log("Content chunk received in page:", chunk);
+      },
+      onStageUpdate: (stage) => {
+        console.log("Stage update in page:", stage);
+      },
+    });
 
   // Platform restrictions based on user plan - MATCHES PRICING CONFIG
   const getAvailablePlatforms = () => {
-    const userPlan = user?.plan || 'trial';
-    
+    const userPlan = user?.plan || "trial";
+
     // All plans get TikTok & Instagram access (no YouTube)
     switch (userPlan) {
-      case 'pro':
-      case 'starter':  
-      case 'trial':
+      case "pro":
+      case "starter":
+      case "trial":
       default:
-        return ['tiktok', 'instagram'];
+        return ["tiktok", "instagram"];
     }
   };
 
   const availablePlatforms = getAvailablePlatforms();
-  const isPlatformDisabled = (platform: string) => !availablePlatforms.includes(platform);
+  const isPlatformDisabled = (platform: string) =>
+    !availablePlatforms.includes(platform);
 
   // Reset platform to first available if current platform is not available
   useEffect(() => {
@@ -99,18 +127,21 @@ export default function GeneratePage() {
   }, [platform, availablePlatforms, isPlatformDisabled]);
 
   const handleGenerate = async () => {
-    if (!productName || !niche || !targetAudience || remainingGenerations <= 0) return;
-    
+    if (!productName || !niche || !targetAudience || remainingGenerations <= 0)
+      return;
+
     setResult(null);
     setGenerationError(null);
     setIsGenerating(true);
-    
+
     // Generate a unique streaming ID and join the room BEFORE starting generation
-    const streamingId = `gen_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-    
+    const streamingId = `gen_${Date.now()}_${Math.random()
+      .toString(36)
+      .substring(2, 11)}`;
+
     // Join WebSocket room immediately (this also clears previous content)
     joinGeneration(streamingId);
-    
+
     try {
       const response = await createGeneration({
         productName,
@@ -119,66 +150,151 @@ export default function GeneratePage() {
         platform: platform as "tiktok" | "instagram" | "youtube",
         streamingId,
       });
-      
-      if (response.success && 'data' in response && response.data) {
-        // Update user stats if provided by backend
-        if ((response.data as any)?.user_stats?.generations_remaining !== undefined) {
-          updateRemainingGenerations((response.data as any).user_stats.generations_remaining);
+
+      if (response.success && "data" in response && response.data) {
+        // FIXED: Use backend response as single source of truth for generation counts
+        if (
+          (response.data as any)?.user_stats?.generations_remaining !==
+          undefined
+        ) {
+          updateRemainingGenerations(
+            (response.data as any).user_stats.generations_remaining
+          );
+          // REMOVED: decrementGenerationCount() - backend already decremented and returned correct count
+          console.log(
+            "✅ Updated generation count from backend response:",
+            (response.data as any).user_stats.generations_remaining
+          );
         }
-        
+
+        // Remove redundant getCurrentUser() call to prevent race conditions
+        // The backend already provides the updated count in user_stats
+
         // Fallback in case WebSocket doesn't work
         setTimeout(() => {
           if (isGenerating) {
-            setResult(`**Hook:** ${response.data?.hook}\n\n**Script:**\n${response.data?.script}`);
+            setResult(
+              `**Hook:** ${response.data?.hook}\n\n**Script:**\n${response.data?.script}`
+            );
             setIsGenerating(false);
           }
         }, 30000);
       } else {
         setIsGenerating(false);
-        setGenerationError('Failed to start generation');
+        // Use the specific error message from the response
+        setGenerationError(
+          ("message" in response ? response.message : response.error) ||
+            "Failed to start generation"
+        );
       }
-    } catch (error) {
+    } catch (error: any) {
       setIsGenerating(false);
-      setGenerationError('Failed to start generation');
+      // Extract error message from caught exception
+      const errorMessage = error?.message || "Failed to start generation";
+      setGenerationError(errorMessage);
+      console.error("Generation error:", error);
+
+      // FIXED: Only refresh on error if generation might have been partially processed
+      // Most errors happen before backend processing, so no refresh needed
+      console.log(
+        "❌ Generation failed before processing - no count refresh needed"
+      );
     }
   };
 
   const handleCopy = () => {
-    if (result) {
-      navigator.clipboard.writeText(result);
+    // Create clean content from both streaming and result data
+    const getCleanText = (text: string) => {
+      if (!text) return "";
+      return text
+        .replace(/\\n\\n/g, "\n\n")
+        .replace(/\\n/g, "\n")
+        .replace(/\*\*(.*?)\*\*/g, "$1")
+        .replace(/\*([^*]+)\*/g, "$1")
+        .replace(/\\\*/g, "*")
+        .trim();
+    };
+
+    let contentToCopy = "";
+
+    // Get content from streaming first, then fallback to result
+    const titleContent =
+      streamedContent.title ||
+      (result && result.includes("**Title:**")
+        ? result.split("**Title:**")[1]?.split("\n\n")[0]
+        : "");
+
+    const hookContent =
+      streamedContent.hook ||
+      (result && result.includes("**Hook:**")
+        ? result.split("**Hook:**")[1]?.split("\n\n")[0]
+        : "");
+    const scriptContent =
+      streamedContent.script ||
+      (result && result.includes("**Script:**")
+        ? result.split("**Script:**")[1]
+        : "");
+
+    if (titleContent) {
+      contentToCopy += `TITLE:\n${getCleanText(titleContent)}\n\n`;
+    }
+
+    if (hookContent) {
+      contentToCopy += `HOOK:\n${getCleanText(hookContent)}\n\n`;
+    }
+
+    if (scriptContent) {
+      contentToCopy += `SCRIPT:\n${getCleanText(scriptContent)}`;
+    }
+
+    // Fallback to raw result if no streaming content
+    if (!contentToCopy && result) {
+      contentToCopy = getCleanText(result);
+    }
+
+    if (contentToCopy) {
+      navigator.clipboard.writeText(contentToCopy);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+      console.log("Content copied to clipboard");
     }
   };
 
   // URL Analyzer function
   const analyzeProduct = async () => {
     if (!productUrl.trim()) return;
-    
+
     setIsAnalyzing(true);
     setAnalysisError(null);
-    
+
     try {
       const tokenService = new TokenService();
       const accessToken = tokenService.getAccessToken();
-      
+
       if (!accessToken) {
-        throw new Error('Authentication required');
+        throw new Error("Authentication required");
       }
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/generation/analyze-product`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ productUrl: productUrl.trim() }),
-      });
-      
+
+      const response = await fetch(
+        `${
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+        }/generation/analyze-product`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ productUrl: productUrl.trim() }),
+        }
+      );
+
       if (!response.ok) {
-        throw new Error('Failed to analyze product URL');
+        throw new Error("Failed to analyze product URL");
       }
-      
+
       const result = await response.json();
-      
+
       if (result.success && result.data) {
         // Auto-fill form with analyzed data
         if (result.data.product_name) {
@@ -190,34 +306,40 @@ export default function GeneratePage() {
         if (result.data.target_audience) {
           setTargetAudience(result.data.target_audience);
         }
-        
+
         // Show success message (you could add a toast here)
-        console.log('✅ Product analyzed successfully:', result.data);
+        console.log("✅ Product analyzed successfully:", result.data);
       } else {
-        throw new Error(result.message || 'Analysis failed');
+        throw new Error(result.message || "Analysis failed");
       }
     } catch (error) {
-      console.error('❌ Product analysis failed:', error);
-      setAnalysisError(error instanceof Error ? error.message : 'Failed to analyze product URL');
+      console.error("❌ Product analysis failed:", error);
+      setAnalysisError(
+        error instanceof Error ? error.message : "Failed to analyze product URL"
+      );
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  const isFormValid = productName && 
-    productName.length >= 10 && 
-    niche && 
-    niche.length >= 3 && 
-    targetAudience && 
-    targetAudience.length >= 20 && 
+  const isFormValid =
+    productName &&
+    productName.length >= 10 &&
+    niche &&
+    niche.length >= 3 &&
+    targetAudience &&
+    targetAudience.length >= 20 &&
     remainingGenerations > 0;
 
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-foreground mb-2">Generate Viral UGC Scripts</h1>
+        <h1 className="text-4xl font-bold text-foreground mb-2">
+          Generate Viral UGC Scripts
+        </h1>
         <p className="text-lg text-muted-foreground">
-          Generate TikTok & Instagram scripts that actually convert. Perfect for creators building their brand.
+          Generate TikTok & Instagram scripts that actually convert. Perfect for
+          creators building their brand.
         </p>
       </div>
 
@@ -228,12 +350,16 @@ export default function GeneratePage() {
             <div className="space-y-5">
               {/* NEW: URL Analyzer Section */}
               <div className="border-b border-border pb-5">
-                <Label htmlFor="productUrl" className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Label
+                  htmlFor="productUrl"
+                  className="text-sm font-medium text-foreground flex items-center gap-2"
+                >
                   <Link className="h-4 w-4" />
                   Paste your product URL (optional)
                 </Label>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Paste your website, landing page, or product URL to auto-fill the form below
+                  Paste your website, landing page, or product URL to auto-fill
+                  the form below
                 </p>
                 <div className="flex gap-2">
                   <Input
@@ -244,7 +370,7 @@ export default function GeneratePage() {
                     className="flex-1"
                     disabled={isAnalyzing}
                   />
-                  <Button 
+                  <Button
                     onClick={analyzeProduct}
                     disabled={!productUrl.trim() || isAnalyzing}
                     variant="outline"
@@ -270,9 +396,12 @@ export default function GeneratePage() {
                   Or fill out the form manually below
                 </p>
               </div>
-              
+
               <div>
-                <Label htmlFor="productName" className="text-sm font-medium text-foreground">
+                <Label
+                  htmlFor="productName"
+                  className="text-sm font-medium text-foreground"
+                >
                   What are you promoting? (Product or Personal Brand)
                 </Label>
                 <Textarea
@@ -289,9 +418,12 @@ export default function GeneratePage() {
                   </p>
                 )}
               </div>
-              
+
               <div>
-                <Label htmlFor="niche" className="text-sm font-medium text-foreground">
+                <Label
+                  htmlFor="niche"
+                  className="text-sm font-medium text-foreground"
+                >
                   What niche are you in?
                 </Label>
                 <Textarea
@@ -303,9 +435,12 @@ export default function GeneratePage() {
                   className="mt-1"
                 />
               </div>
-              
+
               <div>
-                <Label htmlFor="targetAudience" className="text-sm font-medium text-foreground">
+                <Label
+                  htmlFor="targetAudience"
+                  className="text-sm font-medium text-foreground"
+                >
                   Who's your target audience?
                 </Label>
                 <Textarea
@@ -322,9 +457,12 @@ export default function GeneratePage() {
                   </p>
                 )}
               </div>
-              
+
               <div>
-                <Label htmlFor="platform" className="text-sm font-medium text-foreground">
+                <Label
+                  htmlFor="platform"
+                  className="text-sm font-medium text-foreground"
+                >
                   Platform
                 </Label>
                 <Select value={platform} onValueChange={setPlatform}>
@@ -338,7 +476,7 @@ export default function GeneratePage() {
                 </Select>
               </div>
             </div>
-            
+
             <Button
               onClick={handleGenerate}
               disabled={!isFormValid || isGenerating}
@@ -360,7 +498,7 @@ export default function GeneratePage() {
                 </>
               )}
             </Button>
-            
+
             {!isConnected && (
               <p className="text-sm text-amber-600 mt-2 text-center">
                 ⚡ Connecting for real-time streaming...
@@ -373,34 +511,79 @@ export default function GeneratePage() {
         <div className="lg:col-span-3">
           <div className="bg-card rounded-xl border border-border p-6 min-h-[500px]">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-foreground">Your Generated UGC Script</h2>
-              {(result || (streamedContent.title || streamedContent.hook || streamedContent.script)) && (
-                <Button variant="outline" size="sm" onClick={handleCopy}>
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy All
+              <h2 className="text-xl font-semibold text-foreground">
+                Your Generated UGC Script
+              </h2>
+              {(result ||
+                streamedContent.title ||
+                streamedContent.hook ||
+                streamedContent.script) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopy}
+                  disabled={isCopied}
+                >
+                  {isCopied ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy All
+                    </>
+                  )}
                 </Button>
               )}
             </div>
-            
+
             <div className="min-h-[400px]">
-              {isGenerating || currentStage || streamedContent.title || streamedContent.hook || streamedContent.script ? (
+              {isGenerating || currentStage ? (
                 <StreamingContent
                   title={streamedContent.title}
                   hook={streamedContent.hook}
                   script={streamedContent.script}
                   stage={currentStage?.stage || null}
                   progress={currentStage?.progress || 0}
-                  message={currentStage?.message || ''}
+                  message={currentStage?.message || ""}
                   error={generationError || undefined}
                 />
               ) : (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <Sparkles className="w-16 h-16 mx-auto mb-4 text-muted-foreground/60" />
-                    <h3 className="text-lg font-medium text-foreground mb-2">Ready to create viral UGC scripts?</h3>
-                    <p className="text-muted-foreground">Fill out the form on the left and click "Generate UGC Script" to get started</p>
-                  </div>
-                </div>
+                <UGCScriptFormatter
+                  content={{
+                    title:
+                      streamedContent.title ||
+                      (result && result.includes("**Title:**")
+                        ? result
+                            .split("**Title:**")[1]
+                            ?.split("\n\n")[0]
+                            ?.replace(/\*\*/g, "")
+                        : undefined),
+                    hook:
+                      streamedContent.hook ||
+                      (result && result.includes("**Hook:**")
+                        ? result
+                            .split("**Hook:**")[1]
+                            ?.split("\n\n")[0]
+                            ?.replace(/\*\*/g, "")
+                        : undefined),
+                    script:
+                      streamedContent.script ||
+                      (result && result.includes("**Script:**")
+                        ? result.split("**Script:**")[1]?.replace(/\*\*/g, "")
+                        : undefined),
+                  }}
+                  platform={platform as "tiktok" | "instagram"}
+                  onCopy={(section) => {
+                    console.log(`✅ Section copied: ${section}`);
+                    if (section !== "all") {
+                      setCopiedSection(section);
+                      setTimeout(() => setCopiedSection(null), 2000);
+                    }
+                  }}
+                />
               )}
             </div>
           </div>

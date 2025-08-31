@@ -1,6 +1,6 @@
 /**
  * Protected Layout - Authentication Guard
- * 
+ *
  * Staff Engineer Implementation:
  * - Client-side authentication checks
  * - Automatic redirects for unauthenticated users
@@ -8,7 +8,7 @@
  * - Integration with useAuth hook
  */
 
-'use client';
+"use client";
 
 import { Sidebar } from "@/components/layout";
 
@@ -20,7 +20,7 @@ export default function ProtectedLayout({
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="md:pl-64">
+      <main className="md:pl-72">
         <div className="p-4 sm:p-6 lg:p-8">{children}</div>
       </main>
     </div>

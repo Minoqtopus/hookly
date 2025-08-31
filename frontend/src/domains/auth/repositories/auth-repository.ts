@@ -154,9 +154,12 @@ export class AuthRepository {
   /**
    * Get Current User (authenticated)
    * Endpoint: GET /auth/profile
+   * FIXED: Cache busting to ensure fresh generation counts
    */
   async getCurrentUser(): Promise<GetCurrentUserResponse> {
-    const response = await apiClient.get<GetCurrentUserResponse>('/auth/profile');
+    // Add cache buster to ensure fresh generation counts after operations
+    const cacheBuster = `_t=${Date.now()}`;
+    const response = await apiClient.get<GetCurrentUserResponse>(`/auth/profile?${cacheBuster}`);
     return response.data;
   }
 }

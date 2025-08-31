@@ -85,7 +85,7 @@ export function useGeneration() {
       const result = await createGenerationUseCase.execute(data);
       
       if (result.success && result.data) {
-        // Add new generation to state
+        // Add new generation to state (Note: count updates handled by auth hook)
         setGenerationState(prev => ({
           ...prev,
           generations: [result.data!, ...prev.generations],

@@ -40,8 +40,37 @@ export class GenerationRepository {
    * Endpoint: POST /generation
    */
   async createGeneration(data: CreateGenerationRequest): Promise<CreateGenerationResponse> {
-    const response = await apiClient.post<CreateGenerationResponse>('/generation', data);
-    return response.data;
+    try {
+      const response = await apiClient.post<CreateGenerationResponse>('/generation', data);
+      return response.data;
+    } catch (error: any) {
+      // Extract specific error message from backend
+      const backendMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
+      
+      // Check for specific error types
+      if (backendMessage.includes('Generation limit reached')) {
+        return {
+          success: false,
+          message: 'You\'ve reached your generation limit. Upgrade to create more content.',
+          error: backendMessage
+        };
+      }
+      
+      if (backendMessage.includes('validation failed')) {
+        return {
+          success: false,
+          message: backendMessage,
+          error: backendMessage
+        };
+      }
+      
+      // Generic error handling
+      return {
+        success: false,
+        message: 'Failed to generate content. Please try again.',
+        error: backendMessage
+      };
+    }
   }
 
   /**
