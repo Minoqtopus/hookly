@@ -1,10 +1,10 @@
 "use client";
 
-import { createContext, useContext, useCallback, useEffect, useState, ReactNode } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import {
+  AuthCoordinator,
   NavigationService,
-  NotificationService,
-  TokenService
+  NotificationService
 } from '../../../shared/services';
 import type {
   LoginRequest,
@@ -31,7 +31,7 @@ const authRepository = new AuthRepository();
 const authService = new AuthService(authRepository);
 
 // Create shared services
-const tokenService = new TokenService();
+const authCoordinator = new AuthCoordinator();
 const navigationService = new NavigationService();
 const notificationService = new NotificationService();
 
@@ -96,8 +96,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result.success) {
         // Handle UI concerns in hook using use-case result
         if (result.tokens) {
-          tokenService.setAccessToken(result.tokens.access_token);
-          tokenService.setRefreshToken(result.tokens.refresh_token);
+          authCoordinator.setAccessToken(result.tokens.access_token);
+          authCoordinator.setRefreshToken(result.tokens.refresh_token);
         }
         
         // UI STATE: Show notifications (business logic already handled in Use-Case)
@@ -145,8 +145,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result.success) {
         // Handle UI concerns in hook using use-case result
         if (result.tokens) {
-          tokenService.setAccessToken(result.tokens.access_token);
-          tokenService.setRefreshToken(result.tokens.refresh_token);
+          authCoordinator.setAccessToken(result.tokens.access_token);
+          authCoordinator.setRefreshToken(result.tokens.refresh_token);
         }
         
         // UI STATE: Show notifications (business logic already handled in Use-Case)
@@ -322,11 +322,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthState(prev => ({ ...prev, isLoading: true }));
     
     try {
-      const refreshTokenValue = tokenService.getRefreshToken();
+      const refreshTokenValue = authCoordinator.getRefreshToken();
       const result = await logoutUseCase.execute({ refresh_token: refreshTokenValue || '' });
       
       // Always clear local state regardless of backend result
-      tokenService.clearTokens();
+      authCoordinator.clearTokens();
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -342,7 +342,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: true, message: 'Logged out successfully' };
     } catch (error) {
       // Even if backend logout fails, clear local state
-      tokenService.clearTokens();
+      authCoordinator.clearTokens();
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -384,7 +384,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Refresh Token - Uses RefreshTokenUseCase
   const refreshToken = useCallback(async () => {
     try {
-      const refreshTokenValue = tokenService.getRefreshToken();
+      const refreshTokenValue = authCoordinator.getRefreshToken();
       if (!refreshTokenValue) {
         throw new Error('No refresh token available');
       }
@@ -393,8 +393,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (result.success && result.tokens) {
         // Store new tokens
-        tokenService.setAccessToken(result.tokens.access_token);
-        tokenService.setRefreshToken(result.tokens.refresh_token);
+        authCoordinator.setAccessToken(result.tokens.access_token);
+        authCoordinator.setRefreshToken(result.tokens.refresh_token);
         return result;
       } else {
         // Refresh failed, logout user
@@ -485,7 +485,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const checkAuthStatus = async () => {
       try {
         // Check if we have valid tokens
-        const hasTokens = tokenService.hasValidToken();
+        const hasTokens = authCoordinator.hasValidToken();
         
         if (!hasTokens) {
           setAuthState({
@@ -499,13 +499,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         // Check if access token is expired
-        const accessToken = tokenService.getAccessToken();
-        if (accessToken && tokenService.isTokenExpired(accessToken)) {
+        const accessToken = authCoordinator.getAccessToken();
+        if (accessToken && authCoordinator.isTokenExpired(accessToken)) {
           // Try to refresh token
           const refreshResult = await refreshToken();
           if (!refreshResult.success) {
             // Refresh failed, clear tokens and redirect to login
-            tokenService.clearTokens();
+            authCoordinator.clearTokens();
             setAuthState({
               user: null,
               isAuthenticated: false,

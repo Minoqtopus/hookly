@@ -3,11 +3,9 @@
  * 
  * Staff Engineer Design: Clean, scalable API client with centralized auth
  * Business Logic: Connects to real backend endpoints
- * Authentication: Uses TokenService for consistent token management
+ * Authentication: Uses token parameter for consistent token management
  * No Mock Data: All calls go to actual API
  */
-
-import { TokenService } from '../services/token-service';
 
 export interface ApiResponse<T = any> {
   data: T;
@@ -24,7 +22,7 @@ export interface ApiError {
 export class ApiClient {
   private baseURL: string;
   private defaultHeaders: Record<string, string>;
-  private tokenService: TokenService;
+  private currentToken: string | null = null;
 
   constructor() {
     // Use environment variable or default to local backend
@@ -32,7 +30,21 @@ export class ApiClient {
     this.defaultHeaders = {
       'Content-Type': 'application/json',
     };
-    this.tokenService = new TokenService();
+  }
+
+  // Set the current auth token
+  setAuthToken(token: string): void {
+    this.currentToken = token;
+  }
+
+  // Clear the current auth token
+  clearAuthToken(): void {
+    this.currentToken = null;
+  }
+
+  // Get the current auth token
+  getAuthToken(): string | null {
+    return this.currentToken;
   }
 
   private async request<T>(
@@ -42,15 +54,12 @@ export class ApiClient {
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
     
-    // Get fresh token from TokenService
-    const accessToken = this.tokenService.getAccessToken();
-    
     const config: RequestInit = {
       ...options,
       headers: {
         ...this.defaultHeaders,
         // Automatically include Authorization header if token exists
-        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+        ...(this.currentToken && { 'Authorization': `Bearer ${this.currentToken}` }),
         // Prevent HTTP caching for API calls to ensure fresh data
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
@@ -64,33 +73,10 @@ export class ApiClient {
       
       // Handle 401 with automatic token refresh (only retry once)
       if (response.status === 401 && retryAttempt === 0) {
-        const refreshToken = this.tokenService.getRefreshToken();
-        if (refreshToken) {
-          try {
-            // Try to refresh the token
-            const refreshResponse = await fetch(`${this.baseURL}/auth/refresh`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ refresh_token: refreshToken })
-            });
-
-            if (refreshResponse.ok) {
-              const tokenData = await refreshResponse.json();
-              this.tokenService.setAccessToken(tokenData.access_token);
-              this.tokenService.setRefreshToken(tokenData.refresh_token);
-              
-              // Retry the original request with new token
-              return this.request(endpoint, options, retryAttempt + 1);
-            }
-          } catch (refreshError) {
-            console.error('Token refresh failed:', refreshError);
-            // Clear tokens - user will need to login again
-            this.tokenService.clearTokens();
-          }
-        }
-        
-        // If refresh fails or no refresh token, clear tokens
-        this.tokenService.clearTokens();
+        // Note: Token refresh logic should be handled by the calling service
+        // to avoid circular dependencies. The service can call setAuthToken
+        // with the new token after a successful refresh.
+        this.currentToken = null; // Clear invalid token
       }
       
       if (!response.ok) {
@@ -161,21 +147,6 @@ export class ApiClient {
       method: 'DELETE',
       ...(headers && { headers }),
     });
-  }
-
-  // Set auth token for authenticated requests (legacy method - use TokenService instead)
-  setAuthToken(token: string): void {
-    this.tokenService.setAccessToken(token);
-  }
-
-  // Clear auth token (legacy method - use TokenService instead)
-  clearAuthToken(): void {
-    this.tokenService.clearTokens();
-  }
-
-  // Get current token service instance (for advanced use cases)
-  getTokenService(): TokenService {
-    return this.tokenService;
   }
 }
 

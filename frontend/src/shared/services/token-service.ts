@@ -1,5 +1,3 @@
-import { apiClient } from '../api/api-client';
-
 /**
  * Enhanced Token Service - Manages authentication tokens
  * 
@@ -7,6 +5,7 @@ import { apiClient } from '../api/api-client';
  * - Dual storage: localStorage for client-side, cookies for server-side
  * - Secure token management with proper expiration
  * - Cookie security flags for production
+ * - No circular dependencies with ApiClient
  */
 
 export class TokenService {
@@ -20,7 +19,7 @@ export class TokenService {
   };
 
   // Set access token in both localStorage and cookies
-  setAccessToken(token: string): void {
+  setAccessToken(token: string, apiClient?: any): void {
     try {
       // Client-side storage only
       if (typeof window !== 'undefined') {
@@ -32,8 +31,10 @@ export class TokenService {
           maxAge: 15 * 60, // 15 minutes (access token lifetime)
         });
 
-        // Immediately update API client with new token
-        apiClient.setAuthToken(token);
+        // Update API client with new token if provided
+        if (apiClient && typeof apiClient.setAuthToken === 'function') {
+          apiClient.setAuthToken(token);
+        }
       }
     } catch (error) {
       console.error('Failed to set access token:', error);
@@ -85,7 +86,7 @@ export class TokenService {
   }
 
   // Clear all tokens from both storage mechanisms
-  clearTokens(): void {
+  clearTokens(apiClient?: any): void {
     try {
       // Client-side only operations
       if (typeof window !== 'undefined') {
@@ -97,11 +98,23 @@ export class TokenService {
         this.deleteCookie(this.ACCESS_TOKEN_KEY);
         this.deleteCookie(this.REFRESH_TOKEN_KEY);
 
-        // Clear API client authorization
-        apiClient.clearAuthToken();
+        // Clear API client authorization if provided
+        if (apiClient && typeof apiClient.clearAuthToken === 'function') {
+          apiClient.clearAuthToken();
+        }
       }
     } catch (error) {
       console.error('Failed to clear tokens:', error);
+    }
+  }
+
+  // Sync tokens with API client (call this after initialization)
+  syncWithApiClient(apiClient: any): void {
+    if (typeof window !== 'undefined' && apiClient) {
+      const accessToken = this.getAccessToken();
+      if (accessToken && typeof apiClient.setAuthToken === 'function') {
+        apiClient.setAuthToken(accessToken);
+      }
     }
   }
 
