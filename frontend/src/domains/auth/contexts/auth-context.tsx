@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: null,
     isAuthenticated: false,
     remainingGenerations: 0,
-    isLoading: false,
+    isLoading: true, // Start with loading true for initialization
     error: null,
   });
 
@@ -484,6 +484,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
+        // Initialize tokens from localStorage and sync with API client
+        const accessToken = authCoordinator.getAccessToken();
+        const refreshTokenValue = authCoordinator.getRefreshToken();
+        
+        // If we have tokens, sync them with the API client
+        if (accessToken) {
+          authCoordinator.setAccessToken(accessToken); // This syncs with API client
+        }
+        
         // Check if we have valid tokens
         const hasTokens = authCoordinator.hasValidToken();
         
@@ -499,7 +508,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         // Check if access token is expired
-        const accessToken = authCoordinator.getAccessToken();
         if (accessToken && authCoordinator.isTokenExpired(accessToken)) {
           // Try to refresh token
           const refreshResult = await refreshToken();
