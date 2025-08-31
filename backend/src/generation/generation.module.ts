@@ -5,6 +5,7 @@ import { AiModule } from '../ai/ai.module';
 import { ScrapingModule } from '../scraping/scraping.module';
 import { Generation } from '../entities/generation.entity';
 import { User } from '../entities/user.entity';
+import { AnalyticsEvent } from '../entities/analytics-event.entity';
 import { GenerationController } from './generation.controller';
 import { GenerationService } from './generation.service';
 import { GenerationGateway } from './generation.gateway';
@@ -13,7 +14,7 @@ import { ValidationService } from '../domain/services/validation.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Generation, User]),
+    TypeOrmModule.forFeature([Generation, User, AnalyticsEvent]),
     JwtModule.register({}), // For GenerationGateway JWT authentication
     AiModule,
     ScrapingModule

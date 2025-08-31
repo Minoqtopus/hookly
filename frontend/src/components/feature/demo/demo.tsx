@@ -9,6 +9,8 @@ import { AlertCircle, Copy, Film, Sparkles, TrendingUp, Loader2, CheckCircle } f
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { MetricCard } from "./MetricCard";
+import { DemoLimitModal } from "./DemoLimitModal";
+import { demoTrackingService } from "@/shared/services/demo-tracking.service";
 import { motion, AnimatePresence } from "framer-motion";
 
 const templates = [
@@ -65,6 +67,8 @@ export const Demo = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentStage, setCurrentStage] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [lastGeneratedContent, setLastGeneratedContent] = useState<any>(null);
   
   // Streaming states
   const [titleComplete, setTitleComplete] = useState(false);
@@ -72,9 +76,23 @@ export const Demo = () => {
   const [scriptComplete, setScriptComplete] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
+  // Check for last generated content on mount
+  useEffect(() => {
+    const lastContent = demoTrackingService.getLastGeneratedContent();
+    if (lastContent) {
+      setLastGeneratedContent(lastContent);
+    }
+  }, []);
+
   const handleGenerate = async () => {
     if (!productName || !niche || !targetAudience) {
       toast.error("Please fill in all fields");
+      return;
+    }
+
+    // Check client-side demo availability first
+    if (!demoTrackingService.isDemoAvailable()) {
+      setShowLimitModal(true);
       return;
     }
 
@@ -123,10 +141,26 @@ export const Demo = () => {
         setCurrentStage('completed');
         setShowResults(true);
         
+        // Track successful demo usage
+        const contentToTrack = {
+          title: selectedPlatformGen.title,
+          hook: selectedPlatformGen.hook,
+          script: selectedPlatformGen.script,
+          platform: platform
+        };
+        demoTrackingService.trackDemoUsage(contentToTrack);
+        setLastGeneratedContent(contentToTrack);
+        
         // Small delay before starting typewriter
         setTimeout(() => {
           toast.success("Script generated successfully!");
         }, 500);
+      } else if (response.error === 'DEMO_LIMIT_REACHED') {
+        // Backend says limit reached
+        demoTrackingService.trackDemoUsage(); // Ensure client tracking is synced
+        setShowLimitModal(true);
+        setError(null);
+        setCurrentStage(null);
       } else {
         setError(response.error || "Failed to generate content");
         toast.error(response.error || "Failed to generate content");
@@ -529,6 +563,13 @@ export const Demo = () => {
           </div>
         </div>
       </div>
+
+      {/* Demo Limit Modal */}
+      <DemoLimitModal
+        isOpen={showLimitModal}
+        onClose={() => setShowLimitModal(false)}
+        lastGeneratedContent={lastGeneratedContent}
+      />
     </div>
   );
 };
