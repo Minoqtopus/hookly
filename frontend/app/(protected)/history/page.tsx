@@ -32,14 +32,17 @@ import { useRouter } from "next/navigation";
 export default function HistoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
-  
+
   const { generations, isLoading } = useGeneration();
   const router = useRouter();
 
   const filteredGenerations = useMemo(() => {
     return generations.filter((gen) => {
-      const matchesSearch = gen.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesPlatform = platformFilter === "all" || gen.platform === platformFilter;
+      const matchesSearch = gen.title
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesPlatform =
+        platformFilter === "all" || gen.platform === platformFilter;
       return matchesSearch && matchesPlatform;
     });
   }, [generations, searchTerm, platformFilter]);
@@ -47,7 +50,10 @@ export default function HistoryPage() {
   const calculateViralScore = (gen: any) => {
     if (gen.performance_data) {
       const { views, clicks, engagement_rate } = gen.performance_data;
-      return Math.min(10, (engagement_rate + (clicks / views) * 100) / 2).toFixed(1);
+      return Math.min(
+        10,
+        (engagement_rate + (clicks / views) * 100) / 2
+      ).toFixed(1);
     }
     return "5.0";
   };
@@ -67,9 +73,9 @@ export default function HistoryPage() {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search by title..." 
-                  className="pl-10" 
+                <Input
+                  placeholder="Search by title..."
+                  className="pl-10"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -110,10 +116,14 @@ export default function HistoryPage() {
                   <TableRow key={gen.id}>
                     <TableCell className="font-medium">{gen.title}</TableCell>
                     <TableCell className="capitalize">{gen.platform}</TableCell>
-                    <TableCell>{new Date(gen.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell>{calculateViralScore(gen)}/10</TableCell>
+                    <TableCell>
+                      {new Date(gen.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {calculateViralScore(gen)}/10
+                    </TableCell>
                     <TableCell className="text-right">
-                       <DropdownMenu>
+                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>
@@ -121,7 +131,9 @@ export default function HistoryPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => router.push(`/history/${gen.id}`)}>
+                          <DropdownMenuItem
+                            onClick={() => router.push(`/history/${gen.id}`)}
+                          >
                             <FileText className="mr-2 h-4 w-4" />
                             <span>View Details</span>
                           </DropdownMenuItem>
@@ -137,8 +149,8 @@ export default function HistoryPage() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8">
-                    {searchTerm || platformFilter !== "all" 
-                      ? "No UGC scripts found matching your filters." 
+                    {searchTerm || platformFilter !== "all"
+                      ? "No UGC scripts found matching your filters."
                       : "No UGC scripts yet. Create your first viral script in the Generate tab!"}
                   </TableCell>
                 </TableRow>
