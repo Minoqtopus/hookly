@@ -8,8 +8,8 @@ const links = {
     { name: "Pricing", href: "/pricing" },
   ],
   Company: [
-    { name: "About Us", href: "#" },
-    { name: "Careers", href: "#" },
+    { name: "About Us", href: "/about" },
+    { name: "Careers", href: "/careers" },
   ],
   Legal: [
     { name: "Terms of Service", href: "/terms" },
@@ -48,18 +48,27 @@ export const Footer = () => {
             </div>
           ))}
         </div>
-        <div className="mt-12 border-t border-border pt-8 flex justify-between items-center">
+        <div className="mt-12 border-t border-border pt-8 flex justify-center items-center">
           <p className="text-muted-foreground text-sm">
             © {new Date().getFullYear()} Hookly. All rights reserved.
           </p>
-          <div className="flex gap-4">
-            <Link href="#" className="text-muted-foreground hover:text-foreground">
+          {/* <div className="flex gap-4">
+            <Link
+              href="#"
+              className="text-muted-foreground hover:text-foreground"
+            >
               <Twitter className="w-5 h-5" />
             </Link>
-            <Link href="#" className="text-muted-foreground hover:text-foreground">
+            <Link
+              href="#"
+              className="text-muted-foreground hover:text-foreground"
+            >
               <Instagram className="w-5 h-5" />
             </Link>
-            <Link href="#" className="text-muted-foreground hover:text-foreground">
+            <Link
+              href="#"
+              className="text-muted-foreground hover:text-foreground"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="20"
@@ -76,7 +85,7 @@ export const Footer = () => {
                 <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </Link>
-          </div>
+          </div> */}
         </div>
       </div>
     </footer>
