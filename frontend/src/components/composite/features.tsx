@@ -26,20 +26,20 @@ const features = [
 
 export const Features = () => {
   return (
-    <div className="py-24 bg-background">
-      <div className="container">
+    <div className="py-12 sm:py-16 md:py-24 bg-background">
+      <div className="container px-4 sm:px-6">
         <div className="text-center max-w-3xl mx-auto">
-          <h2 className="text-4xl font-bold mb-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4">
             Turn Any Product Into Viral Content
           </h2>
-          <p className="text-muted-foreground mb-16">
+          <p className="text-sm sm:text-base text-muted-foreground mb-8 sm:mb-12 md:mb-16 px-2">
             In three simple steps, Hookly transforms your product into
             viral-worthy content that drives engagement and sales across all
             social platforms.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-          <div className="space-y-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 md:gap-16 items-center">
+          <div className="space-y-8 sm:space-y-10 md:space-y-12">
             {features.map((feature, i) => (
               <motion.div
                 key={feature.title}
@@ -48,13 +48,13 @@ export const Features = () => {
                 transition={{ delay: i * 0.2, duration: 0.5 }}
                 viewport={{ once: true, amount: 0.5 }}
               >
-                <div className="flex items-center gap-4 mb-2">
-                  <div className="bg-primary/10 p-2 rounded-full border border-primary/20">
-                    <feature.icon className="w-5 h-5 text-primary" />
+                <div className="flex items-start sm:items-center gap-3 sm:gap-4 mb-2">
+                  <div className="bg-primary/10 p-1.5 sm:p-2 rounded-full border border-primary/20 flex-shrink-0">
+                    <feature.icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold">{feature.title}</h3>
+                  <h3 className="text-base sm:text-lg md:text-xl font-bold leading-tight">{feature.title}</h3>
                 </div>
-                <p className="text-muted-foreground pl-14">
+                <p className="text-sm sm:text-base text-muted-foreground pl-0 sm:pl-14">
                   {feature.description}
                 </p>
               </motion.div>
