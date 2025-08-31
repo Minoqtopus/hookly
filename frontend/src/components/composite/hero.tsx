@@ -67,10 +67,12 @@ export const Hero = () => {
         className="text-center z-10 p-4"
       >
         <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70">
-          Create Viral UGC That Builds Your Brand
+          Create Viral UGC That <br />
+          Builds Your Brand
         </h1>
         <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
-          AI-powered UGC scripts for TikTok & Instagram. Perfect for creators building their personal brand and converting viewers into customers.
+          AI-powered UGC scripts for TikTok & Instagram. Perfect for creators
+          building their personal brand and converting viewers into customers.
         </p>
         <div className="flex justify-center gap-4">
           <Link
@@ -89,11 +91,18 @@ export const Hero = () => {
       </motion.div>
 
       {/* Scroll Down Indicator */}
-      <motion.div
-        className="absolute bottom-10"
+      <motion.button
+        className="absolute bottom-10 cursor-pointer z-10 p-2"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5, duration: 0.5 }}
+        onClick={() => {
+          window.scrollTo({
+            top: window.innerHeight,
+            behavior: 'smooth'
+          });
+        }}
+        aria-label="Scroll to next section"
       >
         <motion.div
           animate={{ y: [0, 10, 0] }}
@@ -103,9 +112,9 @@ export const Hero = () => {
             ease: "easeInOut",
           }}
         >
-          <ArrowDown className="text-muted-foreground" />
+          <ArrowDown className="text-muted-foreground hover:text-foreground transition-colors" />
         </motion.div>
-      </motion.div>
+      </motion.button>
     </div>
   );
 };

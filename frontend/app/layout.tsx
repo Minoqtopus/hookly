@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter as FontSans } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/contexts/theme-context";
+import { AuthProvider } from "@/domains/auth";
 import "./globals.css";
 
 const fontSans = FontSans({
@@ -12,7 +13,87 @@ const fontSans = FontSans({
 
 export const metadata: Metadata = {
   title: "Hookly - AI UGC Script Generator for Creators",
-  description: "AI-powered UGC scripts for TikTok & Instagram creators. Build your personal brand and convert viewers into customers. Perfect for individual creators.",
+  description:
+    "AI-powered UGC scripts for TikTok & Instagram creators. Build your personal brand and convert viewers into customers. Perfect for individual creators.",
+  keywords: [
+    "UGC scripts", 
+    "AI content creation", 
+    "TikTok creator tools", 
+    "Instagram content", 
+    "viral content generator", 
+    "creator economy", 
+    "social media scripts",
+    "content marketing",
+    "AI writing assistant"
+  ],
+  authors: [{ name: "Hookly Team" }],
+  creator: "Hookly",
+  publisher: "Hookly",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  icons: {
+    icon: [
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico", type: "image/x-icon" }
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }
+    ],
+    other: [
+      {
+        rel: "mask-icon",
+        url: "/favicon.ico",
+        color: "#1E40AF",
+      },
+    ],
+  },
+  manifest: "/manifest.json",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0F172A" },
+  ],
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://hookly.com",
+    title: "Hookly - AI UGC Script Generator for Creators",
+    description: "AI-powered UGC scripts for TikTok & Instagram creators. Build your personal brand and convert viewers into customers.",
+    siteName: "Hookly",
+    images: [
+      {
+        url: "/android-chrome-512x512.png",
+        width: 512,
+        height: 512,
+        alt: "Hookly - AI UGC Script Generator",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Hookly - AI UGC Script Generator for Creators",
+    description: "AI-powered UGC scripts for TikTok & Instagram creators. Build your personal brand and convert viewers into customers.",
+    images: ["/android-chrome-512x512.png"],
+    creator: "@hookly",
+  },
+  alternates: {
+    canonical: "https://hookly.com",
+  },
+  category: "Business",
 };
 
 export default function RootLayout({
@@ -43,7 +124,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body 
+      <body
         className={cn(
           "min-h-screen bg-background font-sans antialiased",
           fontSans.variable
@@ -51,14 +132,16 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <ThemeProvider defaultTheme="dark" storageKey="hookly-theme">
-          {children}
-          <Toaster 
-            position="bottom-right"
-            toastOptions={{
-              className: 'bg-card text-card-foreground border border-border',
-              duration: 4000,
-            }}
-          />
+          <AuthProvider>
+            {children}
+            <Toaster
+              position="bottom-right"
+              toastOptions={{
+                className: "bg-card text-card-foreground border border-border",
+                duration: 4000,
+              }}
+            />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
