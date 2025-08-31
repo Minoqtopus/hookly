@@ -17,7 +17,6 @@
 'use client';
 
 import { useAuth } from '@/domains/auth';
-import { TokenService } from '@/shared/services';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -25,9 +24,6 @@ export default function OAuthCallbackPage() {
   const { getCurrentUser, isLoading } = useAuth();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-
-  // Create token service instance
-  const tokenService = new TokenService();
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
@@ -56,9 +52,11 @@ export default function OAuthCallbackPage() {
         }
 
 
-        // Store tokens in token service
-        tokenService.setAccessToken(accessToken);
-        tokenService.setRefreshToken(refreshToken);
+        // Store tokens using AuthCoordinator
+        const { AuthCoordinator } = await import('@/shared/services');
+        const authCoordinator = new AuthCoordinator();
+        authCoordinator.setAccessToken(accessToken);
+        authCoordinator.setRefreshToken(refreshToken);
 
         // Small delay to ensure token storage is complete
         await new Promise(resolve => setTimeout(resolve, 100));

@@ -1,6 +1,11 @@
 "use client";
 
+import {
+  StreamingContent,
+  UGCScriptFormatter,
+} from "@/components/feature/generation";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -10,25 +15,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/domains/auth";
 import { useGeneration } from "@/domains/generation";
 import { useGenerationSocket } from "@/hooks/useGenerationSocket";
 import {
-  StreamingContent,
-  UGCScriptFormatter,
-} from "@/components/feature/generation";
-import {
-  Copy,
-  Sparkles,
-  Zap,
   ArrowRight,
+  CheckCircle,
+  Copy,
   Link,
   Loader2,
-  CheckCircle,
+  Sparkles,
+  Zap,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { TokenService } from "@/shared/services/token-service";
+import { useEffect, useState } from "react";
 
 export default function GeneratePage() {
   const [productName, setProductName] = useState("");
@@ -268,8 +267,9 @@ export default function GeneratePage() {
     setAnalysisError(null);
 
     try {
-      const tokenService = new TokenService();
-      const accessToken = tokenService.getAccessToken();
+      const { AuthCoordinator } = await import('@/shared/services');
+      const authCoordinator = new AuthCoordinator();
+      const accessToken = authCoordinator.getAccessToken();
 
       if (!accessToken) {
         throw new Error("Authentication required");
