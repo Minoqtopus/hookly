@@ -267,7 +267,7 @@ export default function GeneratePage() {
     setAnalysisError(null);
 
     try {
-      const { AuthCoordinator } = await import('@/shared/services');
+      const { AuthCoordinator } = await import("@/shared/services");
       const authCoordinator = new AuthCoordinator();
       const accessToken = authCoordinator.getAccessToken();
 
@@ -357,7 +357,7 @@ export default function GeneratePage() {
                   <Link className="h-4 w-4" />
                   Paste your product URL (optional)
                 </Label>
-                <p className="text-xs text-muted-foreground mb-3">
+                <p className="text-xs text-muted-foreground my-3">
                   Paste your website, landing page, or product URL to auto-fill
                   the form below
                 </p>
@@ -410,7 +410,7 @@ export default function GeneratePage() {
                   onChange={(e) => setProductName(e.target.value)}
                   placeholder="e.g., FitTracker Pro Smartwatch, My Personal Fitness Journey, My New Course, etc."
                   rows={2}
-                  className="mt-1"
+                  className="mt-2"
                 />
                 {productName && productName.length < 10 && (
                   <p className="text-xs text-amber-500 mt-1">
@@ -432,7 +432,7 @@ export default function GeneratePage() {
                   onChange={(e) => setNiche(e.target.value)}
                   placeholder="e.g., Health & Fitness, Business & Productivity, etc."
                   rows={2}
-                  className="mt-1"
+                  className="mt-2"
                 />
               </div>
 
@@ -449,7 +449,7 @@ export default function GeneratePage() {
                   onChange={(e) => setTargetAudience(e.target.value)}
                   placeholder="e.g., Fitness enthusiasts aged 25-40 who want to track their workouts and improve their health"
                   rows={3}
-                  className="mt-1"
+                  className="mt-2"
                 />
                 {targetAudience && targetAudience.length < 20 && (
                   <p className="text-xs text-amber-500 mt-1">
@@ -466,7 +466,7 @@ export default function GeneratePage() {
                   Platform
                 </Label>
                 <Select value={platform} onValueChange={setPlatform}>
-                  <SelectTrigger id="platform" className="mt-1">
+                  <SelectTrigger id="platform" className="mt-2">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

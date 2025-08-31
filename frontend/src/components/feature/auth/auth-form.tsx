@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Chrome } from "lucide-react";
+import { Chrome, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/domains/auth";
@@ -15,6 +15,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   
   const { login, register, googleOAuth, isLoading, error } = useAuth();
 
@@ -123,15 +124,30 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
                   </Link>
                 )}
               </div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
-                disabled={isLoading}
-                className="w-full bg-background border border-border rounded-md px-4 py-2 text-sm disabled:opacity-50"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                  disabled={isLoading}
+                  className="w-full bg-background border border-border rounded-md px-4 py-2 pr-10 text-sm disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
             <button
               type="submit"
