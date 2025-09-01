@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { Check } from "lucide-react";
+import { useAnalytics } from "@/shared/services";
 
 interface PricingCardProps {
   plan: {
@@ -13,6 +14,13 @@ interface PricingCardProps {
 }
 
 export const PricingCard = ({ plan }: PricingCardProps) => {
+  const analytics = useAnalytics();
+  
+  const handleUpgradeClick = () => {
+    // Track upgrade initiation
+    analytics.trackUpgradeInitiated(plan.name.toLowerCase(), 'monthly');
+  };
+
   return (
     <div
       className={cn(
@@ -32,7 +40,10 @@ export const PricingCard = ({ plan }: PricingCardProps) => {
           /month
         </span>
       </p>
-      <Button className="mt-8 w-full bg-white text-black hover:bg-gray-50 border border-gray-200 font-semibold">
+      <Button 
+        className="mt-8 w-full bg-white text-black hover:bg-gray-50 border border-gray-200 font-semibold"
+        onClick={handleUpgradeClick}
+      >
         Upgrade to Pro
       </Button>
       <ul

@@ -5,6 +5,7 @@ import { Chrome, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/domains/auth";
+import { useAnalytics } from "@/shared/services";
 import { Logo } from "@/components/layout";
 
 interface AuthFormProps {
@@ -18,6 +19,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
   const [showPassword, setShowPassword] = useState(false);
   
   const { login, register, googleOAuth, isLoading, error } = useAuth();
+  const analytics = useAnalytics();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,12 +31,23 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
     
     if (mode === "login") {
       await login({ email, password });
+      // Track login (successful tracking will be handled in auth hook)
+      analytics.trackLogin('email');
     } else {
       await register({ email, password });
+      // Track registration (successful tracking will be handled in auth hook)
+      analytics.trackRegistration('email');
     }
   };
 
   const handleGoogleAuth = async () => {
+    // Track OAuth attempt
+    if (mode === "login") {
+      analytics.trackLogin('oauth', 'google');
+    } else {
+      analytics.trackRegistration('oauth', 'google');
+    }
+    
     await googleOAuth();
   };
 

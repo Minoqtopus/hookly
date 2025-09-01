@@ -9,4 +9,5 @@ export { AuthCoordinator } from './auth-coordinator';
 export { NavigationService } from './navigation-service';
 export { NotificationService } from './notification-service';
 export { TokenService } from './token-service';
+export { analyticsService, useAnalytics } from './analytics.service';
 

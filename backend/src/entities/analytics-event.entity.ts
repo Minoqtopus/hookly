@@ -49,13 +49,13 @@ export class AnalyticsEvent {
   })
   event_type: EventType;
 
-  @Column({ type: 'varchar', length: 200, nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   page_url?: string;
 
-  @Column({ type: 'varchar', length: 200, nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   referrer?: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   user_agent?: string;
 
   @Column({ type: 'varchar', length: 45, nullable: true })

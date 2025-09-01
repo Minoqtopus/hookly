@@ -59,7 +59,7 @@ export class EmailVerification {
   @Column({ type: 'varchar', length: 45, nullable: true })
   ip_address?: string;
 
-  @Column({ type: 'varchar', length: 200, nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   user_agent?: string;
 
   @Column({ type: 'int', default: 0 })

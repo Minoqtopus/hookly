@@ -34,7 +34,7 @@ export class RefreshToken {
   @Column({ type: 'timestamp', nullable: true })
   revoked_at?: Date;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 200, nullable: true })
   revoked_reason?: string; // 'user_logout', 'admin_revoke', 'security_breach', 'token_rotation'
 
   @Column({ type: 'timestamp', nullable: true })

@@ -199,6 +199,20 @@ What's been your experience with ${niche}? Let me know! 👇`,
     try {
       console.log(`🚀 Starting streaming generation with ID: ${streamingId}`);
       
+      // ANALYTICS: Track generation started
+      await this.analyticsRepository.save({
+        event_type: EventType.GENERATION_STARTED,
+        user_id: userId,
+        event_data: {
+          generation_id: streamingId,
+          platform: requestData.platform,
+          product_name: requestData.productName,
+          niche: requestData.niche,
+          target_audience: requestData.targetAudience,
+        },
+        created_at: new Date(),
+      });
+      
       // Emit generation started stage
       this.generationGateway.emitGenerationStage(streamingId, {
         stage: 'analyzing',
@@ -335,11 +349,43 @@ What's been your experience with ${niche}? Let me know! 👇`,
         return savedGeneration;
       });
 
+      // ANALYTICS: Track generation completed
+      await this.analyticsRepository.save({
+        event_type: EventType.GENERATION_COMPLETED,
+        user_id: userId,
+        event_data: {
+          generation_id: streamingId,
+          platform: requestData.platform,
+          generation_database_id: savedGeneration.id,
+          success: true,
+          title_length: generatedContent.title?.length || 0,
+          script_length: generatedContent.script?.length || 0,
+        },
+        created_at: new Date(),
+      });
+      
       // Emit completion
       this.generationGateway.emitGenerationCompleted(streamingId, savedGeneration);
 
       return savedGeneration;
     } catch (error) {
+      // ANALYTICS: Track generation failed
+      try {
+        await this.analyticsRepository.save({
+          event_type: EventType.GENERATION_FAILED,
+          user_id: userId,
+          event_data: {
+            generation_id: streamingId,
+            platform: requestData.platform,
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+            error_type: error.constructor.name,
+          },
+          created_at: new Date(),
+        });
+      } catch (analyticsError) {
+        console.error('Failed to track generation failure:', analyticsError);
+      }
+      
       // Emit error to connected clients
       const errorMessage = error instanceof Error ? error.message : 'Generation failed';
       this.generationGateway.emitGenerationError(streamingId, errorMessage);
