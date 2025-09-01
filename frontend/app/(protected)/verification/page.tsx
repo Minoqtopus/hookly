@@ -2,7 +2,7 @@
  * Email Verification Page - Protected Route
  * 
  * Staff Engineer Design: Users verify email while using the app
- * Business Logic: Verification unlocks additional generations (5→15)
+ * Business Logic: Verification enables trial access (5 generations total)
  */
 
 export default function EmailVerificationPage() {
@@ -129,7 +129,7 @@ export default function EmailVerificationPage() {
           
           <div className="flex items-start space-x-3">
             <span className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-medium text-sm">4</span>
-            <p className="text-sm text-gray-700">Return to the app to access 15 total generations</p>
+            <p className="text-sm text-gray-700">Return to the app to access your full trial</p>
           </div>
         </div>
       </div>

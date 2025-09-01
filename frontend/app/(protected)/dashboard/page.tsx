@@ -80,7 +80,7 @@ export default function DashboardPage() {
 
   // Calculate dynamic values
   const generationsUsed = user?.trial_generations_used || 0;
-  const totalGenerations = user?.is_email_verified ? 15 : 5;
+  const totalGenerations = 5; // All trial users get 5 generations regardless of verification status
   const displayName = user?.first_name || user?.email?.split('@')[0] || 'User';
   
   // Calculate trial status
