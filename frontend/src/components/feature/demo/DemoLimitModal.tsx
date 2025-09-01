@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle, Sparkles, TrendingUp, Users, X } from "lucide-react";
 import Link from "next/link";
+import { useAnalytics } from "@/shared/services";
+import { useEffect } from "react";
 
 interface DemoLimitModalProps {
   isOpen: boolean;
@@ -21,6 +23,14 @@ export const DemoLimitModal: React.FC<DemoLimitModalProps> = ({
   onClose,
   lastGeneratedContent,
 }) => {
+  const analytics = useAnalytics();
+
+  // Track upgrade modal shown when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      analytics.trackUpgradeModalShown('demo_limit_reached', 'trial');
+    }
+  }, [isOpen, analytics]);
   return (
     <AnimatePresence>
       {isOpen && (
@@ -122,13 +132,21 @@ export const DemoLimitModal: React.FC<DemoLimitModalProps> = ({
 
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/register" className="flex-1">
+                <Link 
+                  href="/register" 
+                  className="flex-1"
+                  onClick={() => analytics.trackUpgradeInitiated('trial', 'monthly')}
+                >
                   <Button className="w-full" size="lg">
                     <Sparkles className="w-4 h-4 mr-2" />
                     Start Free Trial
                   </Button>
                 </Link>
-                <Link href="/pricing" className="flex-1">
+                <Link 
+                  href="/pricing" 
+                  className="flex-1"
+                  onClick={() => analytics.trackPricingPageViewed('demo_limit_modal')}
+                >
                   <Button variant="outline" className="w-full" size="lg">
                     View All Plans
                   </Button>

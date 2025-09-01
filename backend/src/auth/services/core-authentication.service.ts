@@ -153,6 +153,18 @@ export class CoreAuthenticationService {
           ip_address: ipAddress
         }
       );
+      
+      // ANALYTICS: Track trial started for new users
+      await this.analyticsService.trackEvent(
+        EventType.TRIAL_STARTED,
+        savedUser.id,
+        {
+          trial_start_date: savedUser.trial_started_at,
+          trial_end_date: savedUser.trial_ends_at,
+          registration_source: 'email_signup',
+          plan: UserPlan.TRIAL,
+        }
+      );
     } catch (error) {
       console.error('Failed to track registration analytics:', error);
     }

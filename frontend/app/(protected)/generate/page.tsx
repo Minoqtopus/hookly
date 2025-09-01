@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/domains/auth";
 import { useGeneration } from "@/domains/generation";
 import { useGenerationSocket } from "@/hooks/useGenerationSocket";
+import { useAnalytics } from "@/shared/services";
 import {
   ArrowRight,
   CheckCircle,
@@ -30,6 +31,7 @@ import {
 import { useEffect, useState } from "react";
 
 export default function GeneratePage() {
+  const analytics = useAnalytics();
   const [productName, setProductName] = useState("");
   const [niche, setNiche] = useState("");
   const [targetAudience, setTargetAudience] = useState("");
@@ -69,6 +71,9 @@ export default function GeneratePage() {
         console.log("Generation completed:", generation);
         setIsGenerating(false);
 
+        // Track generation completed
+        analytics.trackGenerationCompleted(platform, generation.id, true);
+
         // FIXED: Single source of truth - only refresh user data, no local decrements
         try {
           const result = await getCurrentUser();
@@ -91,6 +96,10 @@ export default function GeneratePage() {
         console.error("Generation error:", error);
         setIsGenerating(false);
         setGenerationError(error);
+        
+        // Track generation failed - need to get streaming ID from current state
+        const currentStreamingId = `gen_${Date.now()}_error`; // Fallback ID
+        analytics.trackGenerationCompleted(platform, currentStreamingId, false, error);
       },
       onContentChunk: (chunk) => {
         console.log("Content chunk received in page:", chunk);
@@ -140,6 +149,9 @@ export default function GeneratePage() {
 
     // Join WebSocket room immediately (this also clears previous content)
     joinGeneration(streamingId);
+
+    // Track generation started
+    analytics.trackGenerationStarted(platform, streamingId);
 
     try {
       const response = await createGeneration({
@@ -256,6 +268,9 @@ export default function GeneratePage() {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
       console.log("Content copied to clipboard");
+      
+      // Track copy engagement
+      analytics.trackCopyToClipboard('script'); // Full script copy
     }
   };
 
