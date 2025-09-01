@@ -212,20 +212,40 @@ export class RefreshTokenService {
   }
 
   /**
-   * Clean up expired and old revoked tokens (maintenance task)
-   * Should be run periodically to keep database clean
+   * Clean up expired and old revoked tokens (HYBRID STRATEGY)
+   * - Expired tokens: Delete immediately (no audit value)
+   * - Revoked tokens: Keep for 7 days (security audit trail)
+   * - Active expired: Delete immediately (invalid anyway)
    * 
-   * @param olderThanDays - Remove tokens older than this many days (default: 30)
+   * @returns Object with cleanup statistics
    */
-  async cleanupExpiredTokens(olderThanDays: number = 30): Promise<number> {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+  async cleanupExpiredTokens(): Promise<{
+    expiredDeleted: number;
+    revokedDeleted: number;
+    totalDeleted: number;
+  }> {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const result = await this.refreshTokenRepository.delete({
-      expires_at: LessThan(cutoffDate),
+    // Delete expired tokens (regardless of revocation status)
+    const expiredResult = await this.refreshTokenRepository.delete({
+      expires_at: LessThan(new Date()),
     });
 
-    return result.affected || 0;
+    // Delete old revoked tokens (keep for 7 days for audit)
+    const revokedResult = await this.refreshTokenRepository.delete({
+      is_revoked: true,
+      revoked_at: LessThan(sevenDaysAgo),
+    });
+
+    const expiredDeleted = expiredResult.affected || 0;
+    const revokedDeleted = revokedResult.affected || 0;
+
+    return {
+      expiredDeleted,
+      revokedDeleted,
+      totalDeleted: expiredDeleted + revokedDeleted,
+    };
   }
 
   /**
