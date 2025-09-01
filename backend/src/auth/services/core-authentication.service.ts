@@ -293,8 +293,14 @@ export class CoreAuthenticationService {
       throw new UnauthorizedException('User not found');
     }
 
-    // Generate new tokens (same as original)
-    const newTokens = await this.generateTokensWithStorage(user.id, user.email, ipAddress, userAgent);
+    // FIX: Generate new tokens with SAME token family for proper rotation
+    const newTokens = await this.generateTokensWithStorage(
+      user.id, 
+      user.email, 
+      ipAddress, 
+      userAgent,
+      tokenData.token_family // Pass existing family for rotation
+    );
 
     // Revoke the used refresh token (same as original)
     await this.refreshTokenService.revokeToken(tokenData, 'Token refresh');
@@ -381,7 +387,8 @@ export class CoreAuthenticationService {
     userId: string, 
     email: string, 
     ipAddress?: string, 
-    userAgent?: string
+    userAgent?: string,
+    existingTokenFamily?: string // Optional: for token rotation
   ): Promise<{ access_token: string; refresh_token: string }> {
     const user = await this.userRepository.findOne({ 
       where: { id: userId },
@@ -410,8 +417,8 @@ export class CoreAuthenticationService {
       expiresIn: this.configService.get('JWT_EXPIRES_IN', '15m')
     });
 
-    // Generate refresh token (same as original AuthService logic)
-    const tokenFamily = this.refreshTokenService.generateTokenFamily();
+    // Generate refresh token with proper rotation support
+    const tokenFamily = existingTokenFamily || this.refreshTokenService.generateTokenFamily();
     const refreshToken = await this.jwtService.signAsync(
       { ...payload, family: tokenFamily },
       {
