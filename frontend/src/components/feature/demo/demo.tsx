@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 import { MetricCard } from "./MetricCard";
 import { DemoLimitModal } from "./DemoLimitModal";
 import { demoTrackingService } from "@/shared/services/demo-tracking.service";
+import { useAnalytics } from "@/shared/services";
 import { motion, AnimatePresence } from "framer-motion";
 
 const templates = [
@@ -58,6 +59,7 @@ const TypewriterText: React.FC<{
 };
 
 export const Demo = () => {
+  const analytics = useAnalytics();
   const [productName, setProductName] = useState("");
   const [niche, setNiche] = useState("");
   const [targetAudience, setTargetAudience] = useState("");
@@ -151,6 +153,16 @@ export const Demo = () => {
         demoTrackingService.trackDemoUsage(contentToTrack);
         setLastGeneratedContent(contentToTrack);
         
+        // Track demo completion analytics
+        analytics.trackDemoCompleted({
+          platform,
+          productName,
+          niche,
+          targetAudience,
+          generation_id: selectedPlatformGen.id,
+          has_performance_data: !!selectedPlatformGen.performance_data,
+        });
+        
         // Small delay before starting typewriter
         setTimeout(() => {
           toast.success("Script generated successfully!");
@@ -186,6 +198,15 @@ export const Demo = () => {
     const textContent = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
     navigator.clipboard.writeText(textContent);
     toast.success(`${type} copied to clipboard!`);
+    
+    // Track copy engagement
+    const contentTypeMap: { [key: string]: 'script' | 'hook' | 'title' } = {
+      'Title': 'title',
+      'Hook': 'hook',
+      'Script': 'script'
+    };
+    const contentType = contentTypeMap[type] || 'script';
+    analytics.trackCopyToClipboard(contentType, generation?.id);
   };
 
   const handleTemplateClick = (template: typeof templates[0]) => {

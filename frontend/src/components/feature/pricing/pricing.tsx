@@ -2,6 +2,7 @@
 
 import { Switch } from "@/components/ui/switch";
 import { useState, useEffect } from "react";
+import { useAnalytics } from "@/shared/services";
 import { FaqItem } from "./FaqItem";
 import { PricingCard } from "./PricingCard";
 import {
@@ -46,6 +47,7 @@ const faqs = [
 ];
 
 export const Pricing = () => {
+  const analytics = useAnalytics();
   const [isYearly, setIsYearly] = useState(false);
   const [pricingConfig, setPricingConfig] =
     useState<PricingConfiguration | null>(null);
@@ -60,6 +62,9 @@ export const Pricing = () => {
         console.log("Received pricing config:", config);
         setPricingConfig(config);
         setError(null);
+        
+        // Track pricing page view
+        analytics.trackPricingPageViewed('direct');
       } catch (err) {
         console.error("Failed to load pricing config:", err);
         setError("Failed to load pricing - please refresh");
@@ -69,7 +74,7 @@ export const Pricing = () => {
     }
 
     loadPricing();
-  }, []);
+  }, [analytics]);
 
   // Convert API data to component format - BACKEND ONLY, NO FALLBACKS
   const getCurrentPlans = () => {

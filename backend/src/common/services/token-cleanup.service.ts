@@ -19,16 +19,21 @@ export class TokenCleanupService {
   ) {}
 
   /**
-   * Clean up expired refresh tokens (runs daily at 2 AM)
+   * Clean up expired refresh tokens using HYBRID STRATEGY (runs daily at 2 AM)
+   * - Expired tokens: Delete immediately
+   * - Revoked tokens: Keep for 7 days for audit, then delete
    */
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
   async cleanupExpiredRefreshTokens(): Promise<void> {
     try {
-      this.logger.log('🧹 Starting expired refresh token cleanup...');
+      this.logger.log('🧹 Starting hybrid refresh token cleanup...');
       
-      const deletedCount = await this.refreshTokenService.cleanupExpiredTokens(30); // 30 days
+      const stats = await this.refreshTokenService.cleanupExpiredTokens();
       
-      this.logger.log(`✅ Cleaned up ${deletedCount} expired refresh tokens`);
+      this.logger.log(`✅ Hybrid cleanup complete:
+        - Expired tokens deleted: ${stats.expiredDeleted}
+        - Old revoked tokens deleted: ${stats.revokedDeleted}
+        - Total cleaned: ${stats.totalDeleted}`);
     } catch (error) {
       this.logger.error('❌ Failed to clean up expired refresh tokens:', error);
     }
@@ -165,8 +170,8 @@ export class TokenCleanupService {
     try {
       this.logger.log('🔧 Performing manual cleanup...');
       
-      // Clean up expired refresh tokens
-      const refreshTokensDeleted = await this.refreshTokenService.cleanupExpiredTokens(30);
+      // Clean up expired refresh tokens using hybrid strategy
+      const tokenStats = await this.refreshTokenService.cleanupExpiredTokens();
       
       // Clean up old email verifications
       const cutoffDate = new Date();
@@ -188,7 +193,7 @@ export class TokenCleanupService {
       );
 
       const results = {
-        refreshTokensDeleted,
+        refreshTokensDeleted: tokenStats.totalDeleted,
         emailVerificationsDeleted: emailResult.affected || 0,
         verificationStatusesUpdated: statusResult.affected || 0,
       };
